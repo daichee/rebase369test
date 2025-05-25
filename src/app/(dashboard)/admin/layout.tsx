@@ -2,54 +2,39 @@
 
 import type React from "react"
 
-import { usePathname } from "next/navigation"
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
-export default function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-
-  // 現在のタブを判定
-  const getCurrentTab = () => {
-    if (pathname.includes("/admin/rooms")) return "rooms"
-    if (pathname.includes("/admin/rates")) return "rates"
-    if (pathname.includes("/admin/addons")) return "addons"
-    if (pathname.includes("/admin/seasons")) return "seasons"
-    return "rooms"
-  }
+  const currentTab = pathname.split("/").pop() || "rooms"
 
   return (
-    <div className="container p-6 space-y-6">
-      {/* 管理画面ヘッダー */}
-      <div>
+    <div className="space-y-6">
+      <div className="flex flex-col">
         <h1 className="text-3xl font-bold tracking-tight">管理画面</h1>
-        <p className="text-muted-foreground">システムの基本設定を管理</p>
+        <p className="text-muted-foreground">部屋、料金、アドオン、シーズンなどのマスターデータを管理します。</p>
       </div>
 
-      {/* タブナビゲーション */}
-      <Tabs value={getCurrentTab()} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+      <Tabs value={currentTab} className="w-full">
+        <TabsList className="w-full justify-start">
           <TabsTrigger value="rooms" asChild>
-            <Link href="/admin/rooms">部屋管理</Link>
+            <Link href="/admin/rooms">部屋</Link>
           </TabsTrigger>
           <TabsTrigger value="rates" asChild>
-            <Link href="/admin/rates">料金管理</Link>
+            <Link href="/admin/rates">料金</Link>
           </TabsTrigger>
           <TabsTrigger value="addons" asChild>
-            <Link href="/admin/addons">オプション管理</Link>
+            <Link href="/admin/addons">アドオン</Link>
           </TabsTrigger>
           <TabsTrigger value="seasons" asChild>
-            <Link href="/admin/seasons">シーズン管理</Link>
+            <Link href="/admin/seasons">シーズン</Link>
           </TabsTrigger>
         </TabsList>
       </Tabs>
 
-      {/* コンテンツエリア */}
-      <div className="mt-6">{children}</div>
+      <div>{children}</div>
     </div>
   )
 }
