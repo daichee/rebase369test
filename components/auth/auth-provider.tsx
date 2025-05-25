@@ -11,7 +11,7 @@ interface AuthContextType {
   loading: boolean
   signIn: (email: string, password: string) => Promise<void>
   signOut: () => Promise<void>
-  signUp: (email: string, password: string, name?: string) => Promise<any>
+  signUp: (email: string, password: string) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -55,38 +55,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) throw error
   }
 
-  const signUp = async (email: string, password: string, name?: string) => {
-    const { data, error } = await supabase.auth.signUp({
+  const signUp = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        data: {
-          name: name || email.split("@")[0], // 名前が提供されない場合はメールアドレスの@より前を使用
-        },
-      },
     })
-
     if (error) throw error
-
-    // サインアップ成功時にユーザープロフィールを作成
-    if (data.user) {
-      try {
-        const { error: profileError } = await supabase.from("user_profiles").insert({
-          id: data.user.id,
-          email: data.user.email!,
-          name: name || email.split("@")[0],
-          first_login: true,
-        })
-
-        if (profileError) {
-          console.error("プロフィール作成エラー:", profileError)
-        }
-      } catch (profileError) {
-        console.error("プロフィール作成エラー:", profileError)
-      }
-    }
-
-    return data
   }
 
   return <AuthContext.Provider value={{ user, loading, signIn, signOut, signUp }}>{children}</AuthContext.Provider>
