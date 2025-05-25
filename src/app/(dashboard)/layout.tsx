@@ -1,19 +1,17 @@
 "use client"
 
 import type React from "react"
-
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { Calendar, Home, Settings, Users, BookOpen, TestTube } from "lucide-react"
+import { Calendar, Home, Settings, Users, BookOpen } from "lucide-react"
 
 const navigation = [
   { name: "ダッシュボード", href: "/dashboard", icon: Home },
   { name: "予約管理", href: "/booking", icon: BookOpen },
   { name: "カレンダー", href: "/calendar", icon: Calendar },
   { name: "管理画面", href: "/admin", icon: Settings },
-  { name: "コンポーネントテスト", href: "/test-components", icon: TestTube },
 ]
 
 export default function DashboardLayout({
