@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { useAuth } from "./auth-provider"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Loader2 } from "lucide-react"
@@ -16,12 +16,17 @@ interface AuthGuardProps {
 export function AuthGuard({ children, requireAuth = true }: AuthGuardProps) {
   const { user, loading } = useAuth()
   const router = useRouter()
+  const pathname = usePathname()
+
+  // 認証不要ページのリスト
+  const publicPages = ["/", "/login", "/signup", "/reset-password"]
+  const isPublicPage = publicPages.includes(pathname)
 
   useEffect(() => {
-    if (!loading && requireAuth && !user) {
+    if (!loading && requireAuth && !user && !isPublicPage) {
       router.push("/login")
     }
-  }, [user, loading, requireAuth, router])
+  }, [user, loading, requireAuth, router, isPublicPage])
 
   if (loading) {
     return (
@@ -38,7 +43,7 @@ export function AuthGuard({ children, requireAuth = true }: AuthGuardProps) {
     )
   }
 
-  if (requireAuth && !user) {
+  if (requireAuth && !user && !isPublicPage) {
     return null
   }
 

@@ -1,36 +1,56 @@
 "use client"
 
+import { CardFooter } from "@/components/ui/card"
+
 import type React from "react"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useAuth } from "@/components/auth/auth-provider"
-import { Loader2, ArrowLeft } from "lucide-react"
+import { Loader2, ArrowLeft, CheckCircle } from "lucide-react"
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { signIn } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+
+  useEffect(() => {
+    const message = searchParams.get("message")
+    if (message === "signup_success") {
+      setSuccessMessage("アカウントが作成されました。ログインしてください。")
+    }
+  }, [searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     setError(null)
+    setSuccessMessage(null)
 
     try {
       await signIn(email, password)
       router.push("/dashboard")
-    } catch (error) {
-      setError(error instanceof Error ? error.message : "ログインに失敗しました")
+    } catch (error: any) {
+      console.error("ログインエラー:", error)
+
+      if (error.message?.includes("Invalid login credentials")) {
+        setError("メールアドレスまたはパスワードが正しくありません")
+      } else if (error.message?.includes("Email not confirmed")) {
+        setError("メールアドレスの確認が完了していません。確認メールをご確認ください。")
+      } else {
+        setError("ログインに失敗しました。もう一度お試しください。")
+      }
     } finally {
       setIsLoading(false)
     }
@@ -53,6 +73,13 @@ export default function LoginPage() {
           </CardHeader>
           <form onSubmit={handleSubmit}>
             <CardContent className="grid gap-4">
+              {successMessage && (
+                <Alert>
+                  <CheckCircle className="h-4 w-4" />
+                  <AlertDescription>{successMessage}</AlertDescription>
+                </Alert>
+              )}
+
               {error && (
                 <Alert variant="destructive">
                   <AlertDescription>{error}</AlertDescription>
@@ -72,7 +99,12 @@ export default function LoginPage() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="password">パスワード</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">パスワード</Label>
+                  <Link href="/reset-password" className="text-xs text-primary hover:underline">
+                    パスワードを忘れた方
+                  </Link>
+                </div>
                 <Input
                   id="password"
                   type="password"
@@ -83,7 +115,7 @@ export default function LoginPage() {
                 />
               </div>
             </CardContent>
-            <CardFooter>
+            <CardFooter className="flex flex-col space-y-4">
               <Button className="w-full" type="submit" disabled={isLoading}>
                 {isLoading ? (
                   <>
@@ -94,6 +126,13 @@ export default function LoginPage() {
                   "ログイン"
                 )}
               </Button>
+
+              <div className="text-center text-sm text-muted-foreground">
+                アカウントをお持ちでない方は{" "}
+                <Link href="/signup" className="text-primary hover:underline">
+                  新規登録
+                </Link>
+              </div>
             </CardFooter>
           </form>
         </Card>

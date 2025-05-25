@@ -1,8 +1,8 @@
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Enable RLS
-ALTER DATABASE postgres SET "app.jwt_secret" TO 'your-jwt-secret';
+-- -- Enable RLS
+-- ALTER DATABASE postgres SET "app.jwt_secret" TO 'your-jwt-secret';
 
 -- Create custom types
 CREATE TYPE booking_status AS ENUM ('draft', 'confirmed', 'cancelled', 'completed');
