@@ -4,7 +4,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
-export default function HomePage() {
+export default function Page() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex flex-col items-center justify-center min-h-[80vh] text-center">

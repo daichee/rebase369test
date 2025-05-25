@@ -13,7 +13,6 @@ export function EstimateSyncButton({ bookingId }: EstimateSyncButtonProps) {
 
   const handleSync = async () => {
     setIsLoading(true)
-    // 同期処理のロジックをここに実装
     setTimeout(() => setIsLoading(false), 2000)
   }
 
