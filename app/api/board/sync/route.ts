@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { boardApiClient } from "@/lib/board/client"
 
 export async function POST(request: NextRequest) {
   try {
@@ -93,47 +94,43 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Board API呼び出し関数（プレースホルダー）
+// Board API呼び出し関数
 async function syncEstimateToBoard(params: {
   projectId: number
   estimateData: any
   bookingInfo: any
 }): Promise<{ success: boolean; error?: string }> {
   try {
-    // 実際のBoard APIへのHTTPリクエスト
-    // const response = await fetch(`${BOARD_API_BASE_URL}/projects/${params.projectId}/estimates`, {
-    //   method: 'POST',
-    //   headers: {
-    //     'Authorization': `Bearer ${BOARD_API_TOKEN}`,
-    //     'Content-Type': 'application/json',
-    //   },
-    //   body: JSON.stringify({
-    //     items: [
-    //       {
-    //         name: '室料',
-    //         amount: params.estimateData.roomAmount,
-    //         quantity: 1,
-    //         unit: '一式',
-    //       },
-    //       {
-    //         name: '個人料金',
-    //         amount: params.estimateData.guestAmount,
-    //         quantity: 1,
-    //         unit: '一式',
-    //       },
-    //       {
-    //         name: 'オプション',
-    //         amount: params.estimateData.addonAmount,
-    //         quantity: 1,
-    //         unit: '一式',
-    //       },
-    //     ],
-    //     memo: `予約者: ${params.bookingInfo.guestName}\n期間: ${params.bookingInfo.dates.startDate} - ${params.bookingInfo.dates.endDate}`,
-    //   }),
-    // })
+    // Board APIに見積明細を送信
+    const syncRequest = {
+      project_id: params.projectId,
+      items: [
+        {
+          name: '室料',
+          amount: params.estimateData.roomAmount,
+          quantity: 1,
+          unit: '一式',
+          memo: `部屋: ${params.bookingInfo.rooms?.map((r: any) => r.name).join(', ') || ''}`,
+        },
+        {
+          name: '個人料金',
+          amount: params.estimateData.guestAmount,
+          quantity: 1,
+          unit: '一式',
+          memo: '年齢区分別料金',
+        },
+        {
+          name: 'オプション',
+          amount: params.estimateData.addonAmount,
+          quantity: 1,
+          unit: '一式',
+          memo: 'オプションサービス',
+        },
+      ],
+      memo: `予約者: ${params.bookingInfo.guestName}\n期間: ${params.bookingInfo.dates?.startDate} - ${params.bookingInfo.dates?.endDate}`,
+    }
 
-    // プレースホルダーレスポンス
-    console.log("Board API sync:", params)
+    const response = await boardApiClient.syncEstimate(syncRequest)
     
     return { success: true }
   } catch (error) {
@@ -147,32 +144,14 @@ async function syncEstimateToBoard(params: {
 async function fetchBoardProjects(): Promise<any[]> {
   try {
     // 実際のBoard APIからプロジェクト一覧を取得
-    // const response = await fetch(`${BOARD_API_BASE_URL}/projects`, {
-    //   headers: {
-    //     'Authorization': `Bearer ${BOARD_API_TOKEN}`,
-    //   },
-    // })
-    // const projects = await response.json()
-
-    // プレースホルダーデータ
-    return [
-      {
-        id: 12345,
-        projectNo: 1001,
-        clientName: "株式会社サンプル",
-        title: "合宿プロジェクト",
-        status: "active",
-      },
-      {
-        id: 12346,
-        projectNo: 1002,
-        clientName: "○○大学",
-        title: "研修合宿",
-        status: "active",
-      },
-    ]
+    const response = await boardApiClient.getProjects({
+      limit: 100, // 最大100件取得
+    })
+    
+    return response.projects || []
   } catch (error) {
     console.error("Board projects fetch error:", error)
+    // エラー時は空配列を返す
     return []
   }
 }
