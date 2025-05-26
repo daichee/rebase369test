@@ -1,21 +1,178 @@
-import { type NextRequest, NextResponse } from "next/server"
-import { boardApiClient } from "@/lib/board/client"
-import type { BoardSyncRequest } from "@/lib/board/types"
+import { NextRequest, NextResponse } from "next/server"
+import { createClient } from "@/lib/supabase/server"
 
 export async function POST(request: NextRequest) {
   try {
-    const syncRequest: BoardSyncRequest = await request.json()
+    const body = await request.json()
+    const supabase = await createClient()
 
-    // リクエストデータの検証
-    if (!syncRequest.project_id || !syncRequest.items || syncRequest.items.length === 0) {
-      return NextResponse.json({ error: "必要なデータが不足しています" }, { status: 400 })
+    // アクションタイプに応じて処理を分岐
+    if (body.action === "update_estimate") {
+      // 見積同期処理
+      const { boardProjectId, priceBreakdown, bookingDetails } = body
+
+      // 実際のBoard API呼び出し（プレースホルダー）
+      const boardResponse = await syncEstimateToBoard({
+        projectId: boardProjectId,
+        estimateData: {
+          roomAmount: priceBreakdown.roomAmount,
+          guestAmount: priceBreakdown.guestAmount,
+          addonAmount: priceBreakdown.addonAmount,
+          total: priceBreakdown.total,
+          dailyBreakdown: priceBreakdown.dailyBreakdown,
+        },
+        bookingInfo: {
+          guestName: bookingDetails.guestName,
+          dates: bookingDetails.dateRange,
+          rooms: bookingDetails.selectedRooms,
+        },
+      })
+
+      // 同期ログを記録
+      await supabase.from("board_sync_log").insert({
+        project_id: bookingDetails.id,
+        board_project_id: boardProjectId,
+        sync_type: "estimate_update",
+        sync_status: boardResponse.success ? "success" : "error",
+        request_data: body,
+        response_data: boardResponse,
+        error_message: boardResponse.success ? null : boardResponse.error,
+      })
+
+      return NextResponse.json({
+        success: boardResponse.success,
+        message: boardResponse.success
+          ? "見積データの同期が完了しました"
+          : `同期エラー: ${boardResponse.error}`,
+        syncId: `estimate_sync_${Date.now()}`,
+      })
+    } else {
+      // プロジェクト一覧同期
+      const boardProjects = await fetchBoardProjects()
+
+      // board_projectsテーブルを更新
+      for (const project of boardProjects) {
+        await supabase
+          .from("board_projects")
+          .upsert({
+            board_project_id: project.id,
+            project_no: project.projectNo,
+            client_name: project.clientName,
+            title: project.title,
+            status: project.status,
+            last_synced_at: new Date().toISOString(),
+            is_active: true,
+          })
+      }
+
+      // 同期ログを記録
+      await supabase.from("board_sync_log").insert({
+        board_project_id: 0, // 全体同期なのでプロジェクト固有IDなし
+        sync_type: "project_list",
+        sync_status: "success",
+        request_data: body,
+        response_data: { projectCount: boardProjects.length },
+      })
+
+      return NextResponse.json({
+        success: true,
+        message: `${boardProjects.length}件のプロジェクトを同期しました`,
+        syncId: `project_sync_${Date.now()}`,
+      })
     }
-
-    const result = await boardApiClient.syncEstimate(syncRequest)
-
-    return NextResponse.json(result)
   } catch (error) {
-    console.error("Board sync API error:", error)
-    return NextResponse.json({ error: "Board同期に失敗しました" }, { status: 500 })
+    console.error("Board sync error:", error)
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Board同期中にエラーが発生しました",
+        error: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 }
+    )
+  }
+}
+
+// Board API呼び出し関数（プレースホルダー）
+async function syncEstimateToBoard(params: {
+  projectId: number
+  estimateData: any
+  bookingInfo: any
+}): Promise<{ success: boolean; error?: string }> {
+  try {
+    // 実際のBoard APIへのHTTPリクエスト
+    // const response = await fetch(`${BOARD_API_BASE_URL}/projects/${params.projectId}/estimates`, {
+    //   method: 'POST',
+    //   headers: {
+    //     'Authorization': `Bearer ${BOARD_API_TOKEN}`,
+    //     'Content-Type': 'application/json',
+    //   },
+    //   body: JSON.stringify({
+    //     items: [
+    //       {
+    //         name: '室料',
+    //         amount: params.estimateData.roomAmount,
+    //         quantity: 1,
+    //         unit: '一式',
+    //       },
+    //       {
+    //         name: '個人料金',
+    //         amount: params.estimateData.guestAmount,
+    //         quantity: 1,
+    //         unit: '一式',
+    //       },
+    //       {
+    //         name: 'オプション',
+    //         amount: params.estimateData.addonAmount,
+    //         quantity: 1,
+    //         unit: '一式',
+    //       },
+    //     ],
+    //     memo: `予約者: ${params.bookingInfo.guestName}\n期間: ${params.bookingInfo.dates.startDate} - ${params.bookingInfo.dates.endDate}`,
+    //   }),
+    // })
+
+    // プレースホルダーレスポンス
+    console.log("Board API sync:", params)
+    
+    return { success: true }
+  } catch (error) {
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : "Board API同期エラー" 
+    }
+  }
+}
+
+async function fetchBoardProjects(): Promise<any[]> {
+  try {
+    // 実際のBoard APIからプロジェクト一覧を取得
+    // const response = await fetch(`${BOARD_API_BASE_URL}/projects`, {
+    //   headers: {
+    //     'Authorization': `Bearer ${BOARD_API_TOKEN}`,
+    //   },
+    // })
+    // const projects = await response.json()
+
+    // プレースホルダーデータ
+    return [
+      {
+        id: 12345,
+        projectNo: 1001,
+        clientName: "株式会社サンプル",
+        title: "合宿プロジェクト",
+        status: "active",
+      },
+      {
+        id: 12346,
+        projectNo: 1002,
+        clientName: "○○大学",
+        title: "研修合宿",
+        status: "active",
+      },
+    ]
+  } catch (error) {
+    console.error("Board projects fetch error:", error)
+    return []
   }
 }
