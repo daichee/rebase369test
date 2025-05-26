@@ -6,7 +6,7 @@ class BoardApiClient {
   private token: string
 
   constructor() {
-    this.baseUrl = process.env.BOARD_API_URL || ""
+    this.baseUrl = process.env.BOARD_API_URL || "https://api.the-board.jp/v1"
     this.apiKey = process.env.BOARD_API_KEY || ""
     this.token = process.env.BOARD_API_TOKEN || ""
   }
@@ -16,8 +16,8 @@ class BoardApiClient {
 
     const headers = {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${this.token}`,
-      "X-API-Key": this.apiKey,
+      "Authorization": `Bearer ${this.token}`,
+      "x-api-key": this.apiKey,
       ...options.headers,
     }
 
@@ -58,30 +58,30 @@ class BoardApiClient {
       })
     }
 
-    const endpoint = `/api/projects${searchParams.toString() ? `?${searchParams.toString()}` : ""}`
+    const endpoint = `/projects${searchParams.toString() ? `?${searchParams.toString()}` : ""}`
     return this.request<{ projects: BoardProject[]; total: number }>(endpoint)
   }
 
   // 特定案件の詳細取得
   async getProject(projectId: number): Promise<BoardProject> {
-    return this.request<BoardProject>(`/api/projects/${projectId}`)
+    return this.request<BoardProject>(`/projects/${projectId}`)
   }
 
   // 案件の見積もり一覧取得
   async getEstimates(projectId: number): Promise<BoardEstimate[]> {
-    return this.request<BoardEstimate[]>(`/api/projects/${projectId}/estimates`)
+    return this.request<BoardEstimate[]>(`/projects/${projectId}/estimates`)
   }
 
   // 見積もり詳細取得
   async getEstimate(projectId: number, estimateId: number): Promise<BoardEstimate> {
-    return this.request<BoardEstimate>(`/api/projects/${projectId}/estimates/${estimateId}`)
+    return this.request<BoardEstimate>(`/projects/${projectId}/estimates/${estimateId}`)
   }
 
   // 見積もり明細の同期
   async syncEstimate(request: BoardSyncRequest): Promise<BoardSyncResponse> {
-    const endpoint = `/api/projects/${request.project_id}/estimates${
+    const endpoint = `/projects/${request.project_id}/estimates${
       request.estimate_id ? `/${request.estimate_id}` : ""
-    }/sync`
+    }/items`
 
     return this.request<BoardSyncResponse>(endpoint, {
       method: "POST",
@@ -95,7 +95,7 @@ class BoardApiClient {
     estimateId: number,
     items: BoardEstimateItem[],
   ): Promise<BoardSyncResponse> {
-    return this.request<BoardSyncResponse>(`/api/projects/${projectId}/estimates/${estimateId}/items`, {
+    return this.request<BoardSyncResponse>(`/projects/${projectId}/estimates/${estimateId}/items`, {
       method: "PUT",
       body: JSON.stringify({ items }),
     })
@@ -103,13 +103,14 @@ class BoardApiClient {
 
   // Board書類編集ページのURL生成
   getEditUrl(projectId: number, documentType: "estimate" | "invoice" = "estimate"): string {
-    return `${this.baseUrl}/projects/${projectId}/${documentType}/edit`
+    return `https://the-board.jp/projects/${projectId}/${documentType}/edit`
   }
 
   // 接続テスト
   async testConnection(): Promise<{ success: boolean; message: string }> {
     try {
-      await this.request<any>("/api/health")
+      // Board APIは /projects エンドポイントで接続テスト
+      await this.request<any>("/projects?limit=1")
       return { success: true, message: "Board API接続成功" }
     } catch (error) {
       return {

@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test:system": "node scripts/test-system.js",
+    "setup": "npm install && npm run test:system"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
