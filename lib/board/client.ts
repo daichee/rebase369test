@@ -106,6 +106,30 @@ class BoardApiClient {
     return `${this.baseUrl}/projects/${projectId}/${documentType}/edit`
   }
 
+  // プロジェクト同期（Board側から最新データを取得）
+  async syncProjects(): Promise<BoardProject[]> {
+    try {
+      const result = await this.getProjects({ limit: 1000 })
+      return result.projects
+    } catch (error) {
+      console.error("Board projects sync failed:", error)
+      throw new Error("Board案件の同期に失敗しました")
+    }
+  }
+
+  // 新しいBoard案件を作成
+  async createProject(projectData: {
+    client_name: string
+    title?: string
+    status?: string
+    [key: string]: any
+  }): Promise<BoardProject> {
+    return this.request<BoardProject>("/api/projects", {
+      method: "POST",
+      body: JSON.stringify(projectData)
+    })
+  }
+
   // 接続テスト
   async testConnection(): Promise<{ success: boolean; message: string }> {
     try {
