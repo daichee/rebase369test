@@ -15,6 +15,12 @@ export interface AvailabilityCheck {
   isAvailable: boolean
   conflictingBookings: string[]
   availableCapacity: number
+  partialAvailability?: {
+    availableDates: string[]
+    conflictDates: string[]
+    suggestionScore: number
+  }
+  suggestionScore?: number
 }
 
 export interface OccupancyStats {
@@ -189,12 +195,212 @@ export function useAvailability() {
     }
   }
 
+  const checkPartialAvailability = async (
+    roomIds: string[],
+    dateRange: DateRange
+  ): Promise<AvailabilityCheck[]> => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      // 部分的な空室状況をチェック
+      const results = await checkAvailability(roomIds, dateRange)
+      
+      // 部分利用可能な部屋を詳細分析
+      const enhancedResults = await Promise.all(results.map(async (result) => {
+        if (!result.isAvailable) {
+          // 部分利用可能かチェック
+          const partialInfo = await analyzePartialAvailability(result.roomId, dateRange)
+          return {
+            ...result,
+            partialAvailability: partialInfo,
+            suggestionScore: partialInfo ? partialInfo.suggestionScore : 0
+          }
+        }
+        return {
+          ...result,
+          suggestionScore: 10 // 完全に利用可能な場合は最高スコア
+        }
+      }))
+
+      return enhancedResults
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "部分空室チェックに失敗しました")
+      return []
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const analyzePartialAvailability = async (
+    roomId: string,
+    dateRange: DateRange
+  ) => {
+    // 指定期間の日付を生成
+    const requestedDates = generateDateRange(dateRange.startDate, dateRange.endDate)
+    
+    // 各日の予約状況をチェック
+    const { data: conflicts } = await supabase
+      .from("project_rooms")
+      .select(`
+        room_id,
+        projects!inner(
+          start_date,
+          end_date,
+          status
+        )
+      `)
+      .eq("room_id", roomId)
+      .neq("projects.status", "cancelled")
+
+    const occupiedDates = new Set<string>()
+    conflicts?.forEach(conflict => {
+      const conflictDates = generateDateRange(
+        conflict.projects?.start_date || "",
+        conflict.projects?.end_date || ""
+      )
+      conflictDates.forEach(date => occupiedDates.add(date))
+    })
+
+    const availableDates = requestedDates.filter(date => !occupiedDates.has(date))
+    const conflictDates = requestedDates.filter(date => occupiedDates.has(date))
+
+    if (availableDates.length > 0 && conflictDates.length > 0) {
+      return {
+        availableDates,
+        conflictDates,
+        suggestionScore: (availableDates.length / requestedDates.length) * 10
+      }
+    }
+
+    return null
+  }
+
+  const generateDateRange = (startDate: string, endDate: string): string[] => {
+    const dates: string[] = []
+    const current = new Date(startDate)
+    const end = new Date(endDate)
+
+    while (current < end) {
+      dates.push(current.toISOString().split('T')[0])
+      current.setDate(current.getDate() + 1)
+    }
+
+    return dates
+  }
+
+  const findIntelligentAlternatives = async (
+    requestedCapacity: number,
+    dateRange: DateRange,
+    searchMode: "standard" | "flexible" | "intelligent" = "standard"
+  ) => {
+    try {
+      const alternatives = []
+
+      // 標準的な代替案
+      const basicAlternatives = await suggestAlternativeRooms(requestedCapacity, dateRange)
+      
+      if (searchMode === "intelligent" || searchMode === "flexible") {
+        // 前後2週間の日程提案
+        for (let offset = 1; offset <= 14; offset++) {
+          const newStart = new Date(dateRange.startDate)
+          newStart.setDate(newStart.getDate() + offset)
+          
+          const newEnd = new Date(dateRange.endDate)
+          newEnd.setDate(newEnd.getDate() + offset)
+
+          const newDateRange = {
+            startDate: newStart.toISOString().split('T')[0],
+            endDate: newEnd.toISOString().split('T')[0],
+            nights: dateRange.nights
+          }
+
+          const altAvailability = await checkAvailability(
+            rooms.map(r => r.roomId),
+            newDateRange
+          )
+
+          const availableCount = altAvailability.filter(a => a.isAvailable).length
+          if (availableCount > 0) {
+            // 平日かどうかで優先度決定
+            const dayOfWeek = newStart.getDay()
+            const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 4
+            
+            alternatives.push({
+              type: "alternative_dates",
+              dateRange: newDateRange,
+              availableRooms: availableCount,
+              priority: offset <= 7 ? "high" : "medium",
+              score: isWeekday ? 8 : 6,
+              description: `${offset}日${offset > 0 ? '後' : '前'}の${isWeekday ? '平日' : '週末'}プラン`
+            })
+          }
+        }
+      }
+
+      return alternatives.slice(0, 6) // 最大6件の提案
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "代替案の検索に失敗しました")
+      return []
+    }
+  }
+
+  const analyzeRoomCombinations = async (
+    requestedCapacity: number,
+    dateRange: DateRange
+  ) => {
+    try {
+      const availability = await checkAvailability(
+        rooms.map(r => r.roomId),
+        dateRange
+      )
+
+      const availableRooms = availability
+        .filter(a => a.isAvailable)
+        .map(a => rooms.find(r => r.roomId === a.roomId))
+        .filter(room => room !== undefined)
+
+      // 動的プログラミングで最適な組み合わせを探す
+      const optimalCombination = findOptimalCombination(availableRooms as any[], requestedCapacity)
+      
+      return optimalCombination ? {
+        rooms: optimalCombination,
+        totalCapacity: optimalCombination.reduce((sum, room) => sum + room.capacity, 0),
+        efficiency: requestedCapacity / optimalCombination.reduce((sum, room) => sum + room.capacity, 0),
+        roomCount: optimalCombination.length
+      } : null
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "部屋組み合わせ分析に失敗しました")
+      return null
+    }
+  }
+
+  const findOptimalCombination = (availableRooms: any[], targetCapacity: number) => {
+    // 簡易版の最適化アルゴリズム
+    const sortedRooms = availableRooms.sort((a, b) => b.capacity - a.capacity)
+    const combination = []
+    let remainingCapacity = targetCapacity
+
+    for (const room of sortedRooms) {
+      if (remainingCapacity <= 0) break
+      if (room.capacity <= remainingCapacity * 1.5) { // 効率的な組み合わせのみ
+        combination.push(room)
+        remainingCapacity -= room.capacity
+      }
+    }
+
+    return remainingCapacity <= 0 ? combination : null
+  }
+
   return {
     loading,
     error,
     checkAvailability,
+    checkPartialAvailability,
     getOccupancyStats,
     preventDoubleBooking,
     suggestAlternativeRooms,
+    findIntelligentAlternatives,
+    analyzeRoomCombinations,
   }
 }
