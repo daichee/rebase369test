@@ -8,7 +8,12 @@ import { Label } from "@/components/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Search, ExternalLink, RefreshCw, CheckCircle, AlertCircle } from "lucide-react"
+import { Calendar } from "@/components/ui/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Search, ExternalLink, RefreshCw, CheckCircle, AlertCircle, Calendar as CalendarIcon } from "lucide-react"
+import { format } from "date-fns"
+import { ja } from "date-fns/locale"
+import { cn } from "@/lib/utils"
 import { boardApiClient } from "@/lib/board/client"
 import type { BoardProject } from "@/lib/board/types"
 
@@ -25,6 +30,8 @@ export function BoardProjectSelector({ bookingId, onProjectSelect, selectedProje
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [selectedProject, setSelectedProject] = useState<BoardProject | null>(null)
+  const [dateFrom, setDateFrom] = useState<Date>()
+  const [dateTo, setDateTo] = useState<Date>()
 
   // Board案件一覧の取得
   const fetchProjects = async () => {
@@ -35,6 +42,8 @@ export function BoardProjectSelector({ bookingId, onProjectSelect, selectedProje
       const params = {
         client_name: searchTerm || undefined,
         status: statusFilter !== "all" ? statusFilter : undefined,
+        date_from: dateFrom ? format(dateFrom, "yyyy-MM-dd") : undefined,
+        date_to: dateTo ? format(dateTo, "yyyy-MM-dd") : undefined,
         limit: 50,
       }
 
@@ -103,7 +112,7 @@ export function BoardProjectSelector({ bookingId, onProjectSelect, selectedProje
           <CardDescription>予約に関連するBoard案件を選択してください</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div className="space-y-2">
               <Label htmlFor="search">顧客名・案件名</Label>
               <Input
@@ -128,6 +137,60 @@ export function BoardProjectSelector({ bookingId, onProjectSelect, selectedProje
                   <SelectItem value="completed">完了</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>開始日</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !dateFrom && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {dateFrom ? format(dateFrom, "yyyy年MM月dd日", { locale: ja }) : "開始日を選択"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={dateFrom}
+                    onSelect={setDateFrom}
+                    initialFocus
+                    locale={ja}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div className="space-y-2">
+              <Label>終了日</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !dateTo && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {dateTo ? format(dateTo, "yyyy年MM月dd日", { locale: ja }) : "終了日を選択"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={dateTo}
+                    onSelect={setDateTo}
+                    initialFocus
+                    locale={ja}
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div className="flex items-end gap-2">

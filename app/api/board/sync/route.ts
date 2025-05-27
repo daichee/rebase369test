@@ -1,54 +1,53 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { boardApiClient } from "@/lib/board/client"
+import { BoardSyncService } from "@/lib/board/board-sync-service"
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const supabase = await createClient()
+    const syncService = new BoardSyncService()
 
     // アクションタイプに応じて処理を分岐
     if (body.action === "update_estimate") {
-      // 見積同期処理
+      // 見積同期処理（リトライ機能付き）
       const { boardProjectId, priceBreakdown, bookingDetails } = body
 
-      // 実際のBoard API呼び出し（プレースホルダー）
-      const boardResponse = await syncEstimateToBoard({
-        projectId: boardProjectId,
-        estimateData: {
-          roomAmount: priceBreakdown.roomAmount,
-          guestAmount: priceBreakdown.guestAmount,
-          addonAmount: priceBreakdown.addonAmount,
-          total: priceBreakdown.total,
-          dailyBreakdown: priceBreakdown.dailyBreakdown,
-        },
-        bookingInfo: {
-          guestName: bookingDetails.guestName,
-          dates: bookingDetails.dateRange,
-          rooms: bookingDetails.selectedRooms,
-        },
-      })
+      const estimateData = {
+        roomAmount: priceBreakdown.roomAmount,
+        guestAmount: priceBreakdown.guestAmount,
+        addonAmount: priceBreakdown.addonAmount,
+        total: priceBreakdown.total,
+        roomMemo: `部屋: ${bookingDetails.selectedRooms?.map((r: any) => r.name).join(', ') || ''}`,
+        guestMemo: `予約者: ${bookingDetails.guestName}`,
+        addonMemo: 'オプションサービス',
+        memo: `期間: ${bookingDetails.dateRange?.startDate} - ${bookingDetails.dateRange?.endDate}`,
+      }
 
-      // 同期ログを記録
-      await supabase.from("board_sync_log").insert({
-        project_id: bookingDetails.id,
-        board_project_id: boardProjectId,
-        sync_type: "estimate_update",
-        sync_status: boardResponse.success ? "success" : "error",
-        request_data: body,
-        response_data: boardResponse,
-        error_message: boardResponse.success ? null : boardResponse.error,
-      })
+      // 変更検知
+      const hasChanges = await syncService.detectChanges(bookingDetails.id, estimateData)
+      if (!hasChanges) {
+        return NextResponse.json({
+          success: true,
+          message: "見積データに変更がないため、同期をスキップしました",
+          syncId: `estimate_skip_${Date.now()}`,
+        })
+      }
+
+      // リトライ付き同期実行
+      const result = await syncService.syncEstimateWithRetry(boardProjectId, estimateData)
 
       return NextResponse.json({
-        success: boardResponse.success,
-        message: boardResponse.success
-          ? "見積データの同期が完了しました"
-          : `同期エラー: ${boardResponse.error}`,
+        ...result,
         syncId: `estimate_sync_${Date.now()}`,
       })
+    } else if (body.action === "daily_sync") {
+      // 定期同期処理
+      const result = await syncService.performDailySync()
+      return NextResponse.json(result)
     } else {
-      // プロジェクト一覧同期
+      // 手動プロジェクト一覧同期
       const boardProjects = await fetchBoardProjects()
 
       // board_projectsテーブルを更新
@@ -57,10 +56,11 @@ export async function POST(request: NextRequest) {
           .from("board_projects")
           .upsert({
             board_project_id: project.id,
-            project_no: project.projectNo,
-            client_name: project.clientName,
+            project_no: project.project_no,
+            client_name: project.client_name,
             title: project.title,
             status: project.status,
+            estimate_amount: project.estimate_amount,
             last_synced_at: new Date().toISOString(),
             is_active: true,
           })
@@ -68,8 +68,8 @@ export async function POST(request: NextRequest) {
 
       // 同期ログを記録
       await supabase.from("board_sync_log").insert({
-        board_project_id: 0, // 全体同期なのでプロジェクト固有IDなし
-        sync_type: "project_list",
+        board_project_id: 0,
+        sync_type: "manual_project_sync",
         sync_status: "success",
         request_data: body,
         response_data: { projectCount: boardProjects.length },
@@ -145,7 +145,7 @@ async function fetchBoardProjects(): Promise<any[]> {
   try {
     // 実際のBoard APIからプロジェクト一覧を取得
     const response = await boardApiClient.getProjects({
-      limit: 100, // 最大100件取得
+      limit: 200, // 最大200件取得
     })
     
     return response.projects || []

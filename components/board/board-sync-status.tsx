@@ -4,8 +4,11 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { RefreshCw, CheckCircle, AlertCircle, Clock, ExternalLink } from "lucide-react"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { RefreshCw, CheckCircle, AlertCircle, Clock, ExternalLink, ChevronDown, History } from "lucide-react"
 import { boardApiClient } from "@/lib/board/client"
+import { BoardSyncService } from "@/lib/board/board-sync-service"
 import type { BoardSyncResponse } from "@/lib/board/types"
 
 interface BoardSyncStatusProps {
@@ -25,6 +28,9 @@ interface SyncStatus {
 export function BoardSyncStatus({ bookingId, boardProjectId, estimateId, onSyncComplete }: BoardSyncStatusProps) {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>({ status: "idle" })
   const [isConnected, setIsConnected] = useState<boolean | null>(null)
+  const [syncHistory, setSyncHistory] = useState<any[]>([])
+  const [showHistory, setShowHistory] = useState(false)
+  const syncService = new BoardSyncService()
 
   // Board API接続テスト
   const testConnection = async () => {
@@ -121,9 +127,20 @@ export function BoardSyncStatus({ bookingId, boardProjectId, estimateId, onSyncC
     }
   }
 
-  // 初期化時に接続テスト
+  // 同期履歴を読み込み
+  const loadSyncHistory = async () => {
+    try {
+      const history = await syncService.getSyncHistory(10)
+      setSyncHistory(history)
+    } catch (error) {
+      console.error("同期履歴の取得に失敗:", error)
+    }
+  }
+
+  // 初期化時に接続テストと履歴読み込み
   useEffect(() => {
     testConnection()
+    loadSyncHistory()
   }, [])
 
   const getStatusIcon = () => {
@@ -247,6 +264,77 @@ export function BoardSyncStatus({ bookingId, boardProjectId, estimateId, onSyncC
           <RefreshCw className="mr-2 h-4 w-4" />
           接続テスト
         </Button>
+
+        {/* 同期履歴 */}
+        <Collapsible open={showHistory} onOpenChange={setShowHistory}>
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" className="w-full justify-between">
+              <span className="flex items-center gap-2">
+                <History className="h-4 w-4" />
+                同期履歴 ({syncHistory.length}件)
+              </span>
+              <ChevronDown className={`h-4 w-4 transition-transform ${showHistory ? "rotate-180" : ""}`} />
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="space-y-2">
+            {syncHistory.length > 0 ? (
+              <div className="max-h-60 overflow-y-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-xs">日時</TableHead>
+                      <TableHead className="text-xs">種別</TableHead>
+                      <TableHead className="text-xs">状態</TableHead>
+                      <TableHead className="text-xs">詳細</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {syncHistory.map((log, index) => (
+                      <TableRow key={index}>
+                        <TableCell className="text-xs">
+                          {new Date(log.created_at).toLocaleString("ja-JP", {
+                            month: "2-digit",
+                            day: "2-digit",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          <Badge variant="outline" className="text-xs">
+                            {log.sync_type === "daily_sync" ? "定期同期" : 
+                             log.sync_type === "estimate_update" ? "見積更新" : 
+                             log.sync_type}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          <Badge 
+                            variant={log.sync_status === "success" ? "default" : "destructive"}
+                            className="text-xs"
+                          >
+                            {log.sync_status === "success" ? "成功" : "エラー"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          {log.error_message ? (
+                            <span className="text-red-600 truncate max-w-32 block">
+                              {log.error_message}
+                            </span>
+                          ) : (
+                            <span className="text-green-600">正常完了</span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            ) : (
+              <div className="text-center py-4 text-muted-foreground text-sm">
+                同期履歴がありません
+              </div>
+            )}
+          </CollapsibleContent>
+        </Collapsible>
       </CardContent>
     </Card>
   )
