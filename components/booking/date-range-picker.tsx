@@ -1,11 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Calendar } from "@/components/ui/calendar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { CalendarDays, Info } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { CalendarDays, Info, RefreshCw, Search } from "lucide-react"
+import { useAvailability } from "@/lib/hooks/use-availability"
+import { useRooms } from "@/lib/hooks/use-rooms"
 
 interface DateRangePickerProps {
   value: {
@@ -25,6 +28,44 @@ export function DateRangePicker({ value, onChange, availabilityResults = [] }: D
     from: value.startDate ? new Date(value.startDate) : undefined,
     to: value.endDate ? new Date(value.endDate) : undefined,
   })
+  
+  const [realTimeAvailability, setRealTimeAvailability] = useState<any[]>([])
+  const [isCheckingAvailability, setIsCheckingAvailability] = useState(false)
+  
+  const { rooms } = useRooms()
+  const { checkAvailability, getOccupancyStats } = useAvailability()
+
+  // リアルタイム空室チェック
+  useEffect(() => {
+    if (selectedRange.from && selectedRange.to) {
+      const timer = setTimeout(() => {
+        performAvailabilityCheck()
+      }, 1000) // 1秒のデバウンス
+
+      return () => clearTimeout(timer)
+    }
+  }, [selectedRange])
+
+  const performAvailabilityCheck = async () => {
+    if (!selectedRange.from || !selectedRange.to) return
+
+    setIsCheckingAvailability(true)
+    try {
+      const dateRange = {
+        startDate: selectedRange.from.toISOString().split("T")[0],
+        endDate: selectedRange.to.toISOString().split("T")[0],
+        nights: Math.ceil((selectedRange.to.getTime() - selectedRange.from.getTime()) / (1000 * 60 * 60 * 24)),
+      }
+
+      const allRoomIds = rooms.map(room => room.roomId)
+      const availability = await checkAvailability(allRoomIds, dateRange)
+      setRealTimeAvailability(availability)
+    } catch (error) {
+      console.error("空室チェックエラー:", error)
+    } finally {
+      setIsCheckingAvailability(false)
+    }
+  }
 
   const handleDateSelect = (range: { from: Date | undefined; to: Date | undefined } | undefined) => {
     if (!range) return
@@ -45,15 +86,19 @@ export function DateRangePicker({ value, onChange, availabilityResults = [] }: D
   }
 
   const getAvailabilityInfo = () => {
-    if (availabilityResults.length === 0) return null
+    // リアルタイムデータがある場合はそれを使用、なければ既存データを使用
+    const dataToUse = realTimeAvailability.length > 0 ? realTimeAvailability : availabilityResults
+    
+    if (dataToUse.length === 0) return null
 
-    const availableRooms = availabilityResults.filter((r) => r.isAvailable).length
-    const totalRooms = availabilityResults.length
+    const availableRooms = dataToUse.filter((r) => r.isAvailable).length
+    const totalRooms = dataToUse.length
 
     return {
       availableRooms,
       totalRooms,
       occupancyRate: totalRooms > 0 ? ((totalRooms - availableRooms) / totalRooms) * 100 : 0,
+      isRealTime: realTimeAvailability.length > 0,
     }
   }
 
@@ -112,7 +157,17 @@ export function DateRangePicker({ value, onChange, availabilityResults = [] }: D
               {availabilityInfo && (
                 <Card>
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-sm">空室状況</CardTitle>
+                    <CardTitle className="text-sm flex items-center justify-between">
+                      空室状況
+                      {isCheckingAvailability && (
+                        <RefreshCw className="h-3 w-3 animate-spin" />
+                      )}
+                      {availabilityInfo.isRealTime && (
+                        <Badge variant="outline" className="text-xs">
+                          リアルタイム
+                        </Badge>
+                      )}
+                    </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div className="flex justify-between items-center">
@@ -132,11 +187,36 @@ export function DateRangePicker({ value, onChange, availabilityResults = [] }: D
                       </span>
                     </div>
 
+                    {/* 即座確認機能 */}
+                    {selectedRange.from && selectedRange.to && (
+                      <div className="pt-2 border-t">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={performAvailabilityCheck}
+                          disabled={isCheckingAvailability}
+                          className="w-full"
+                        >
+                          <Search className="h-3 w-3 mr-1" />
+                          {isCheckingAvailability ? "確認中..." : "即座確認"}
+                        </Button>
+                      </div>
+                    )}
+
                     {availabilityInfo.occupancyRate > 80 && (
                       <Alert>
                         <Info className="h-4 w-4" />
                         <AlertDescription className="text-xs">
                           稼働率が高い期間です。早めのご予約をお勧めします。
+                        </AlertDescription>
+                      </Alert>
+                    )}
+
+                    {availabilityInfo.availableRooms === 0 && selectedRange.from && selectedRange.to && (
+                      <Alert variant="destructive">
+                        <Info className="h-4 w-4" />
+                        <AlertDescription className="text-xs">
+                          選択期間は満室です。代替日程をご検討ください。
                         </AlertDescription>
                       </Alert>
                     )}
