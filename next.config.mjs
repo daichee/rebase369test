@@ -6,10 +6,10 @@ const nextConfig = {
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons']
   },
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
   images: {
     unoptimized: true,
