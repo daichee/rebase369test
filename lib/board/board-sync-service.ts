@@ -76,7 +76,7 @@ export class BoardSyncService {
         const syncRequest: BoardSyncRequest = {
           project_id: projectId,
           items: this.mapEstimateItems(estimateData),
-          memo: estimateData.memo || "",
+          sync_type: "update",
         }
 
         const response = await boardApiClient.syncEstimate(syncRequest)
@@ -159,33 +159,42 @@ export class BoardSyncService {
     // 室料
     if (estimateData.roomAmount > 0) {
       items.push({
-        name: "室料",
-        amount: estimateData.roomAmount,
+        item_code: "ROOM_001",
+        item_name: "室料",
+        category: "宿泊",
         quantity: 1,
         unit: "一式",
-        memo: estimateData.roomMemo || "",
+        unit_price: estimateData.roomAmount,
+        amount: estimateData.roomAmount,
+        description: estimateData.roomMemo || "",
       })
     }
 
     // 個人料金
     if (estimateData.guestAmount > 0) {
       items.push({
-        name: "個人料金",
-        amount: estimateData.guestAmount,
+        item_code: "GUEST_001",
+        item_name: "個人料金",
+        category: "宿泊",
         quantity: estimateData.guestCount || 1,
         unit: "名",
-        memo: estimateData.guestMemo || "年齢区分別料金",
+        unit_price: estimateData.guestAmount / (estimateData.guestCount || 1),
+        amount: estimateData.guestAmount,
+        description: estimateData.guestMemo || "年齢区分別料金",
       })
     }
 
     // オプション料金
     if (estimateData.addonAmount > 0) {
       items.push({
-        name: "オプション",
-        amount: estimateData.addonAmount,
+        item_code: "ADDON_001",
+        item_name: "オプション",
+        category: "オプション",
         quantity: 1,
         unit: "一式",
-        memo: estimateData.addonMemo || "オプションサービス",
+        unit_price: estimateData.addonAmount,
+        amount: estimateData.addonAmount,
+        description: estimateData.addonMemo || "オプションサービス",
       })
     }
 

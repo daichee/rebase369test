@@ -6,7 +6,7 @@ import { BoardSyncService } from "@/lib/board/board-sync-service"
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const supabase = await createClient()
+    const supabase = createClient()
     const syncService = new BoardSyncService()
 
     // アクションタイプに応じて処理を分岐
@@ -106,28 +106,37 @@ async function syncEstimateToBoard(params: {
       project_id: params.projectId,
       items: [
         {
-          name: '室料',
+          item_code: "ROOM_001",
+          item_name: '室料',
+          category: "宿泊",
+          quantity: 1,
+          unit: '一式',
+          unit_price: params.estimateData.roomAmount,
           amount: params.estimateData.roomAmount,
-          quantity: 1,
-          unit: '一式',
-          memo: `部屋: ${params.bookingInfo.rooms?.map((r: any) => r.name).join(', ') || ''}`,
+          description: `部屋: ${params.bookingInfo.rooms?.map((r: any) => r.name).join(', ') || ''}`,
         },
         {
-          name: '個人料金',
+          item_code: "GUEST_001",
+          item_name: '個人料金',
+          category: "宿泊",
+          quantity: 1,
+          unit: '一式',
+          unit_price: params.estimateData.guestAmount,
           amount: params.estimateData.guestAmount,
-          quantity: 1,
-          unit: '一式',
-          memo: '年齢区分別料金',
+          description: '年齢区分別料金',
         },
         {
-          name: 'オプション',
-          amount: params.estimateData.addonAmount,
+          item_code: "ADDON_001",
+          item_name: 'オプション',
+          category: "オプション",
           quantity: 1,
           unit: '一式',
-          memo: 'オプションサービス',
+          unit_price: params.estimateData.addonAmount,
+          amount: params.estimateData.addonAmount,
+          description: 'オプションサービス',
         },
       ],
-      memo: `予約者: ${params.bookingInfo.guestName}\n期間: ${params.bookingInfo.dates?.startDate} - ${params.bookingInfo.dates?.endDate}`,
+      sync_type: "update" as const,
     }
 
     const response = await boardApiClient.syncEstimate(syncRequest)

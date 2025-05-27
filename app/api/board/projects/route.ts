@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
 
     if (includeLocal) {
       // ローカルDBからキャッシュされた案件を取得
-      const supabase = await createClient()
+      const supabase = createClient()
       const query = supabase
         .from("board_projects")
         .select("*")
