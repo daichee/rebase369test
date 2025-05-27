@@ -6,17 +6,15 @@ import type { BoardSyncRequest, BoardEstimateItem } from "./types"
  * Board APIとの連携を管理するクラス
  */
 export class BoardSyncService {
-  private supabase
-
   constructor() {
-    this.supabase = createClient()
+    // BoardSyncService constructor - no state needed
   }
 
   // 定期同期機能（1日1回）
   async performDailySync(): Promise<{ success: boolean; message: string; projectCount?: number }> {
     try {
       const response = await boardApiClient.getProjects({ limit: 200 })
-      const supabase = await this.supabase
+      const supabase = createClient()
 
       let syncedCount = 0
       for (const project of response.projects) {
@@ -28,7 +26,7 @@ export class BoardSyncService {
             client_name: project.client_name,
             title: project.title,
             status: project.status,
-            estimate_amount: project.estimate_amount,
+            estimate_amount: project.estimate_amount || 0,
             last_synced_at: new Date().toISOString(),
             is_active: true,
           })
@@ -50,7 +48,7 @@ export class BoardSyncService {
         projectCount: syncedCount,
       }
     } catch (error) {
-      const supabase = await this.supabase
+      const supabase = createClient()
       await supabase.from("board_sync_log").insert({
         board_project_id: 0,
         sync_type: "daily_sync",
@@ -84,7 +82,7 @@ export class BoardSyncService {
         const response = await boardApiClient.syncEstimate(syncRequest)
 
         // 成功時のログ記録
-        const supabase = await this.supabase
+        const supabase = createClient()
         await supabase.from("board_sync_log").insert({
           board_project_id: projectId,
           sync_type: "estimate_update",
@@ -104,7 +102,7 @@ export class BoardSyncService {
         
         if (retryCount >= maxRetries) {
           // 最大リトライ回数に達した場合のエラーログ
-          const supabase = await this.supabase
+          const supabase = createClient()
           await supabase.from("board_sync_log").insert({
             board_project_id: projectId,
             sync_type: "estimate_update",
@@ -134,7 +132,7 @@ export class BoardSyncService {
   // 変更検知機能
   async detectChanges(bookingId: string, currentEstimateData: any): Promise<boolean> {
     try {
-      const supabase = await this.supabase
+      const supabase = createClient()
       const { data: lastSync } = await supabase
         .from("board_sync_log")
         .select("request_data")
@@ -209,7 +207,7 @@ export class BoardSyncService {
 
   async getSyncInfoByBookingId(bookingId: string): Promise<any> {
     try {
-      const supabase = await this.supabase
+      const supabase = createClient()
       const { data } = await supabase
         .from("board_sync_log")
         .select("*")
@@ -227,7 +225,7 @@ export class BoardSyncService {
   // 同期履歴取得
   async getSyncHistory(limit: number = 10): Promise<any[]> {
     try {
-      const supabase = await this.supabase
+      const supabase = createClient()
       const { data } = await supabase
         .from("board_sync_log")
         .select("*")
