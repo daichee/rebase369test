@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
+import { createServerClient } from "@/lib/supabase/server"
 import { boardApiClient } from "@/lib/board/client"
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const supabase = await createClient()
+    const supabase = createServerClient()
 
     // アクションタイプに応じて処理を分岐
     if (body.action === "update_estimate") {
