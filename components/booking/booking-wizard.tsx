@@ -17,6 +17,8 @@ import { BoardProjectSelector } from "./board-project-selector"
 import { useAvailability } from "@/lib/hooks/use-availability"
 import { usePricing } from "@/lib/hooks/use-pricing"
 import { useBoardProjects } from "@/lib/hooks/use-board-projects"
+import { useDoubleBookingPrevention } from "@/lib/hooks/use-double-booking-prevention"
+import { useToast } from "@/hooks/use-toast"
 import type { GuestCount } from "@/lib/pricing/types"
 
 interface BookingWizardProps {
@@ -80,20 +82,82 @@ export function BookingWizard({ onComplete, initialData }: BookingWizardProps) {
 
   const [validationErrors, setValidationErrors] = useState<string[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [conflictWarnings, setConflictWarnings] = useState<string[]>([])
+  const [hasActiveConflicts, setHasActiveConflicts] = useState(false)
 
   const { checkAvailability, suggestAlternativeRooms } = useAvailability()
   const { calculateBookingPrice, validateGuestCapacity, optimizeRoomSelection } = usePricing()
   const { syncEstimateToBoard } = useBoardProjects()
+  const {
+    checkForConflicts,
+    validateExclusively,
+    finalValidation,
+    acquireLock,
+    detectAndResolveConflicts,
+    hasConflicts,
+    hasLock,
+    isLockExpiring,
+    otherActiveSessions,
+    conflicts,
+    getConflictSummary,
+    reset: resetConflictState
+  } = useDoubleBookingPrevention({ autoCheck: true, checkInterval: 30000 })
+  const { toast } = useToast()
 
   const [priceBreakdown, setPriceBreakdown] = useState<any>(null)
   const [availabilityResults, setAvailabilityResults] = useState<any[]>([])
 
-  // リアルタイム料金計算
+  // リアルタイム料金計算と競合チェック
   useEffect(() => {
     if (formData.selectedRooms.length > 0 && formData.dateRange.nights > 0) {
       calculatePrice()
+      performRealtimeConflictCheck()
     }
   }, [formData.selectedRooms, formData.guests, formData.dateRange, formData.selectedAddons])
+
+  // 競合状態の監視とユーザー通知
+  useEffect(() => {
+    if (hasConflicts) {
+      const summary = getConflictSummary()
+      setHasActiveConflicts(true)
+      setConflictWarnings([
+        `${summary?.totalConflicts}件の予約競合が検出されました`,
+        `影響部屋: ${summary?.roomNames}`,
+        '別の部屋または日程をご検討ください'
+      ])
+      
+      toast({
+        title: "⚠️ 予約競合が検出されました",
+        description: `${summary?.affectedRooms}室で重複が発生しています`,
+        variant: "destructive"
+      })
+    } else {
+      setHasActiveConflicts(false)
+      setConflictWarnings([])
+    }
+  }, [hasConflicts, conflicts, toast])
+
+  // 他ユーザーのアクティブセッション監視
+  useEffect(() => {
+    if (otherActiveSessions > 0) {
+      toast({
+        title: "👥 他のユーザーが同じ期間を検討中です",
+        description: `${otherActiveSessions}名のユーザーが同時に予約を検討しています`,
+        variant: "default"
+      })
+    }
+  }, [otherActiveSessions, toast])
+
+  // ロック期限切れ警告
+  useEffect(() => {
+    if (isLockExpiring && hasLock) {
+      toast({
+        title: "⏰ 予約ロックの期限が近づいています",
+        description: "1分以内にロックが解除されます。お早めに完了してください",
+        variant: "destructive"
+      })
+    }
+  }, [isLockExpiring, hasLock, toast])
 
   const calculatePrice = async () => {
     try {
@@ -110,6 +174,41 @@ export function BookingWizard({ onComplete, initialData }: BookingWizardProps) {
       setPriceBreakdown(breakdown)
     } catch (error) {
       console.error("料金計算エラー:", error)
+    }
+  }
+
+  // リアルタイム競合チェック
+  const performRealtimeConflictCheck = async () => {
+    if (!formData.dateRange.startDate || !formData.dateRange.endDate || formData.selectedRooms.length === 0) {
+      return
+    }
+
+    try {
+      const result = await checkForConflicts(
+        formData.selectedRooms,
+        formData.dateRange.startDate,
+        formData.dateRange.endDate
+      )
+
+      if (!result.success && result.conflicts.length > 0) {
+        // 代替案の検出と提案
+        const resolutionResult = await detectAndResolveConflicts(
+          '',  // 新規予約なので既存ID無し
+          formData.selectedRooms,
+          formData.dateRange.startDate,
+          formData.dateRange.endDate
+        )
+
+        if (resolutionResult.resolutionOptions.length > 0) {
+          toast({
+            title: "💡 代替案が見つかりました",
+            description: `${resolutionResult.resolutionOptions.length}件の代替案があります`,
+            variant: "default"
+          })
+        }
+      }
+    } catch (error) {
+      console.error("リアルタイム競合チェックエラー:", error)
     }
   }
 
@@ -165,6 +264,16 @@ export function BookingWizard({ onComplete, initialData }: BookingWizardProps) {
   const handleNext = async () => {
     if (!validateCurrentStep()) return
 
+    // 重複があれば進行を阻止
+    if (hasActiveConflicts) {
+      toast({
+        title: "❌ 予約競合のため進行できません",
+        description: "競合を解決してから次のステップに進んでください",
+        variant: "destructive"
+      })
+      return
+    }
+
     // Step 1完了時: 空室チェック
     if (currentStep === 1) {
       await checkRoomAvailability()
@@ -173,6 +282,30 @@ export function BookingWizard({ onComplete, initialData }: BookingWizardProps) {
     // Step 2完了時: 部屋の最適化提案
     if (currentStep === 2) {
       await suggestOptimalRooms()
+    }
+
+    // Step 3完了時: 予約ロック取得
+    if (currentStep === 3 && formData.selectedRooms.length > 0) {
+      const lockAcquired = await acquireLock(
+        formData.selectedRooms,
+        formData.dateRange.startDate,
+        formData.dateRange.endDate
+      )
+
+      if (!lockAcquired) {
+        toast({
+          title: "🔒 予約ロックの取得に失敗しました",
+          description: "他のユーザーが同じ部屋・期間を予約中です。しばらく待ってからお試しください",
+          variant: "destructive"
+        })
+        return
+      }
+
+      toast({
+        title: "🔐 予約ロックを取得しました",
+        description: "10分間この予約をキープします",
+        variant: "default"
+      })
     }
 
     if (currentStep < STEPS.length) {
@@ -221,6 +354,27 @@ export function BookingWizard({ onComplete, initialData }: BookingWizardProps) {
 
     setIsSubmitting(true)
     try {
+      // 最終検証（排他制御付き）
+      const finalValidationResult = await finalValidation({
+        roomIds: formData.selectedRooms,
+        startDate: formData.dateRange.startDate,
+        endDate: formData.dateRange.endDate,
+        guestCount: Object.values(formData.guests).reduce((sum, count) => sum + count, 0),
+        guestName: formData.guestName
+      })
+
+      if (!finalValidationResult.isValid) {
+        setValidationErrors(finalValidationResult.errors)
+        if (finalValidationResult.conflicts.length > 0) {
+          toast({
+            title: "❌ 予約確定に失敗しました",
+            description: "最終確認で競合が検出されました",
+            variant: "destructive"
+          })
+        }
+        return
+      }
+
       // 予約データを作成
       const bookingData = {
         ...formData,
@@ -242,6 +396,15 @@ export function BookingWizard({ onComplete, initialData }: BookingWizardProps) {
         }
       }
 
+      // 競合状態をリセット
+      resetConflictState()
+
+      toast({
+        title: "✅ 予約が完了しました",
+        description: "確認メールをお送りしました",
+        variant: "default"
+      })
+
       // 完了コールバック実行
       if (onComplete) {
         onComplete(bookingData)
@@ -252,6 +415,12 @@ export function BookingWizard({ onComplete, initialData }: BookingWizardProps) {
     } catch (error) {
       console.error("予約完了エラー:", error)
       setValidationErrors(["予約の作成に失敗しました。もう一度お試しください。"])
+      
+      toast({
+        title: "❌ 予約作成エラー",
+        description: "システムエラーが発生しました。お時間をおいてお試しください",
+        variant: "destructive"
+      })
     } finally {
       setIsSubmitting(false)
     }
@@ -348,6 +517,39 @@ export function BookingWizard({ onComplete, initialData }: BookingWizardProps) {
                 <li key={index}>{error}</li>
               ))}
             </ul>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* 競合警告 */}
+      {conflictWarnings.length > 0 && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            <div className="space-y-2">
+              <div className="font-semibold">予約競合が検出されました</div>
+              <ul className="list-disc list-inside space-y-1">
+                {conflictWarnings.map((warning, index) => (
+                  <li key={index}>{warning}</li>
+                ))}
+              </ul>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* ロック状態とセッション情報 */}
+      {(hasLock || otherActiveSessions > 0) && (
+        <Alert variant={hasLock ? "default" : "destructive"}>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            <div className="space-y-1">
+              {hasLock && <div>🔐 予約ロック取得済み（他のユーザーによる変更をブロック中）</div>}
+              {isLockExpiring && <div>⏰ ロック期限切れまで1分を切りました</div>}
+              {otherActiveSessions > 0 && (
+                <div>👥 {otherActiveSessions}名のユーザーが同じ期間を検討中です</div>
+              )}
+            </div>
           </AlertDescription>
         </Alert>
       )}

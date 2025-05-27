@@ -10,6 +10,8 @@ import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { CheckCircle, User, Mail, Phone, Building2 } from "lucide-react"
 import { BoardProjectSelector } from "./board-project-selector"
+import { ConflictNotification } from "./conflict-notification"
+import { RealtimeBookingStatus } from "./realtime-booking-status"
 import { useRooms } from "@/lib/hooks/use-rooms"
 import type { BookingFormData } from "./booking-wizard"
 
@@ -49,6 +51,25 @@ export function BookingConfirmation({
 
   return (
     <div className="space-y-6">
+      {/* リアルタイム予約ステータス */}
+      <RealtimeBookingStatus
+        roomIds={formData.selectedRooms}
+        startDate={formData.dateRange.startDate}
+        endDate={formData.dateRange.endDate}
+        isActive={true}
+      />
+
+      {/* 競合通知 */}
+      <ConflictNotification
+        roomIds={formData.selectedRooms}
+        startDate={formData.dateRange.startDate}
+        endDate={formData.dateRange.endDate}
+        onResolve={(resolutionType) => {
+          console.log("解決方法選択:", resolutionType)
+          // 親コンポーネントに通知
+        }}
+      />
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
