@@ -8,14 +8,16 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Edit, Trash2, Save, X } from "lucide-react"
+import { Plus, Edit, Trash2, Save, X, Calculator } from "lucide-react"
 import { usePricingStore } from "@/store/pricing-store"
+import { PricingMatrix } from "@/components/admin/pricing-matrix"
 
 export default function PricingAdminPage() {
   const { rules, addRule, updateRule, deleteRule } = usePricingStore()
   const [isEditing, setIsEditing] = useState<string | null>(null)
   const [isAdding, setIsAdding] = useState(false)
   const [editForm, setEditForm] = useState<any>({})
+  const [activeTab, setActiveTab] = useState<string>("rules")
   const [newRuleForm, setNewRuleForm] = useState({
     name: "",
     type: "seasonal" as const,
@@ -120,10 +122,25 @@ export default function PricingAdminPage() {
           <h1 className="text-3xl font-bold">料金設定</h1>
           <p className="text-muted-foreground">料金ルールとシーズン料金の設定</p>
         </div>
-        <Button onClick={() => setIsAdding(true)} disabled={isAdding}>
-          <Plus className="mr-2 h-4 w-4" />
-          新規ルール追加
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant={activeTab === "rules" ? "default" : "outline"} 
+            onClick={() => setActiveTab("rules")}
+          >
+            料金ルール
+          </Button>
+          <Button 
+            variant={activeTab === "matrix" ? "default" : "outline"} 
+            onClick={() => setActiveTab("matrix")}
+          >
+            <Calculator className="mr-2 h-4 w-4" />
+            料金マトリクス
+          </Button>
+          <Button onClick={() => setIsAdding(true)} disabled={isAdding}>
+            <Plus className="mr-2 h-4 w-4" />
+            新規ルール追加
+          </Button>
+        </div>
       </div>
 
       {/* 新規ルール追加フォーム */}
@@ -246,7 +263,13 @@ export default function PricingAdminPage() {
         </Card>
       )}
 
+      {/* 料金マトリクス表示 */}
+      {activeTab === "matrix" && (
+        <PricingMatrix />
+      )}
+
       {/* 料金ルール一覧 */}
+      {activeTab === "rules" && (
       <Card>
         <CardHeader>
           <CardTitle>料金ルール一覧</CardTitle>
@@ -367,6 +390,7 @@ export default function PricingAdminPage() {
           </Table>
         </CardContent>
       </Card>
+      )}
     </div>
   )
 }

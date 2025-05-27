@@ -197,6 +197,44 @@ export default function AdminPage() {
             </Button>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Settings className="mr-2 h-5 w-5" />
+              オプション管理
+            </CardTitle>
+            <CardDescription>食事・施設・備品オプションの管理</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2 mb-4">
+              <p className="text-sm">食事オプション: 3件</p>
+              <p className="text-sm">施設・備品: 3件</p>
+            </div>
+            <Button asChild className="w-full">
+              <Link href="/admin/options">オプション管理を開く</Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Settings className="mr-2 h-5 w-5" />
+              データ管理
+            </CardTitle>
+            <CardDescription>インポート・エクスポート・バックアップ</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2 mb-4">
+              <p className="text-sm">部屋データ: {rooms.length}件</p>
+              <p className="text-sm">予約データ: {bookings.length}件</p>
+            </div>
+            <Button asChild className="w-full">
+              <Link href="/admin/data">データ管理を開く</Link>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )
