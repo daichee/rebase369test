@@ -101,9 +101,53 @@ class BoardApiClient {
     })
   }
 
-  // Board書類編集ページのURL生成
+  // 案件詳細取得（拡張版）
+  async getProjectDetails(projectId: number): Promise<BoardProject | null> {
+    try {
+      const project = await this.getProject(projectId)
+      const estimates = await this.getEstimates(projectId)
+      
+      return {
+        ...project,
+        estimates
+      }
+    } catch (error) {
+      if (error instanceof Error && error.message.includes("404")) {
+        return null
+      }
+      throw error
+    }
+  }
+
+  // 案件の存在確認
+  async checkProjectExists(projectId: number): Promise<boolean> {
+    try {
+      await this.getProject(projectId)
+      return true
+    } catch (error) {
+      if (error instanceof Error && error.message.includes("404")) {
+        return false
+      }
+      throw error
+    }
+  }
+
+  // Board書類編集ページのURL生成（拡張版）
+  generateEditUrl(projectId: number, documentType: "estimate" | "invoice" = "estimate"): string {
+    const baseUrl = "https://the-board.jp"
+    return `${baseUrl}/projects/${projectId}/${documentType}/edit`
+  }
+
+  // アクセストークン生成（仮想的な実装）
+  async generateAccessToken(projectId: number): Promise<string> {
+    // 実際のBoard APIにアクセストークン生成エンドポイントがある場合はそれを使用
+    // ここでは仮想的な実装として既存のトークンを返す
+    return `temp_${this.token}_${projectId}_${Date.now()}`
+  }
+
+  // Board書類編集ページのURL生成（レガシー互換性のため残す）
   getEditUrl(projectId: number, documentType: "estimate" | "invoice" = "estimate"): string {
-    return `https://the-board.jp/projects/${projectId}/${documentType}/edit`
+    return this.generateEditUrl(projectId, documentType)
   }
 
   // 接続テスト
@@ -122,3 +166,4 @@ class BoardApiClient {
 }
 
 export const boardApiClient = new BoardApiClient()
+export const BoardClient = BoardApiClient
