@@ -80,7 +80,7 @@ export interface SeasonPeriod {
 export interface GuestRateMatrix {
   matrixId: string
   ageGroup: "adult" | "student" | "child" | "infant" | "baby"
-  usageType: "shared" | "private"
+  roomType: "large" | "medium_a" | "medium_b" | "small_a" | "small_b" | "small_c"
   dayType: "weekday" | "weekend"
   seasonType: "off_season" | "on_season"
   isLeader: boolean // 付添割引フラグ

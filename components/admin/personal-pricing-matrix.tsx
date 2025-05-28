@@ -12,65 +12,49 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Users, Save, RefreshCw } from "lucide-react"
 import type { GuestRateMatrix } from "@/lib/pricing/types"
 
-// デフォルト個人料金マトリクス（実際の料金表から）
+// デフォルト個人料金マトリクス（部屋タイプ別・実際の料金表から）
 const DEFAULT_RATES: GuestRateMatrix[] = [
-  // 大部屋・中部屋（共同利用）
-  { matrixId: "shared_adult_weekday_off", ageGroup: "adult", usageType: "shared", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 4800, effectiveFrom: "2024-01-01", isActive: true },
-  { matrixId: "shared_adult_weekday_on", ageGroup: "adult", usageType: "shared", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 5800, effectiveFrom: "2024-01-01", isActive: true },
-  { matrixId: "shared_adult_weekend_off", ageGroup: "adult", usageType: "shared", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 5800, effectiveFrom: "2024-01-01", isActive: true },
-  { matrixId: "shared_adult_weekend_on", ageGroup: "adult", usageType: "shared", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 7000, effectiveFrom: "2024-01-01", isActive: true },
+  // 大部屋（large）
+  { matrixId: "large_adult_weekday_off", ageGroup: "adult", roomType: "large", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 4800, effectiveFrom: "2024-01-01", isActive: true },
+  { matrixId: "large_adult_weekday_on", ageGroup: "adult", roomType: "large", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 5800, effectiveFrom: "2024-01-01", isActive: true },
+  { matrixId: "large_adult_weekend_off", ageGroup: "adult", roomType: "large", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 5800, effectiveFrom: "2024-01-01", isActive: true },
+  { matrixId: "large_adult_weekend_on", ageGroup: "adult", roomType: "large", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 7000, effectiveFrom: "2024-01-01", isActive: true },
   
-  { matrixId: "shared_student_weekday_off", ageGroup: "student", usageType: "shared", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 4000, effectiveFrom: "2024-01-01", isActive: true },
-  { matrixId: "shared_student_weekday_on", ageGroup: "student", usageType: "shared", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 4800, effectiveFrom: "2024-01-01", isActive: true },
-  { matrixId: "shared_student_weekend_off", ageGroup: "student", usageType: "shared", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 4800, effectiveFrom: "2024-01-01", isActive: true },
-  { matrixId: "shared_student_weekend_on", ageGroup: "student", usageType: "shared", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 5800, effectiveFrom: "2024-01-01", isActive: true },
+  { matrixId: "large_student_weekday_off", ageGroup: "student", roomType: "large", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 4000, effectiveFrom: "2024-01-01", isActive: true },
+  { matrixId: "large_student_weekday_on", ageGroup: "student", roomType: "large", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 4800, effectiveFrom: "2024-01-01", isActive: true },
+  { matrixId: "large_student_weekend_off", ageGroup: "student", roomType: "large", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 4800, effectiveFrom: "2024-01-01", isActive: true },
+  { matrixId: "large_student_weekend_on", ageGroup: "student", roomType: "large", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 5800, effectiveFrom: "2024-01-01", isActive: true },
 
-  { matrixId: "shared_child_weekday_off", ageGroup: "child", usageType: "shared", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 3200, effectiveFrom: "2024-01-01", isActive: true },
-  { matrixId: "shared_child_weekday_on", ageGroup: "child", usageType: "shared", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 3800, effectiveFrom: "2024-01-01", isActive: true },
-  { matrixId: "shared_child_weekend_off", ageGroup: "child", usageType: "shared", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 3800, effectiveFrom: "2024-01-01", isActive: true },
-  { matrixId: "shared_child_weekend_on", ageGroup: "child", usageType: "shared", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 4600, effectiveFrom: "2024-01-01", isActive: true },
+  { matrixId: "large_child_weekday_off", ageGroup: "child", roomType: "large", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 3200, effectiveFrom: "2024-01-01", isActive: true },
+  { matrixId: "large_child_weekday_on", ageGroup: "child", roomType: "large", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 3800, effectiveFrom: "2024-01-01", isActive: true },
+  { matrixId: "large_child_weekend_off", ageGroup: "child", roomType: "large", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 3800, effectiveFrom: "2024-01-01", isActive: true },
+  { matrixId: "large_child_weekend_on", ageGroup: "child", roomType: "large", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 4600, effectiveFrom: "2024-01-01", isActive: true },
 
-  { matrixId: "shared_infant_weekday_off", ageGroup: "infant", usageType: "shared", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 2500, effectiveFrom: "2024-01-01", isActive: true },
-  { matrixId: "shared_infant_weekday_on", ageGroup: "infant", usageType: "shared", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 3000, effectiveFrom: "2024-01-01", isActive: true },
-  { matrixId: "shared_infant_weekend_off", ageGroup: "infant", usageType: "shared", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 3000, effectiveFrom: "2024-01-01", isActive: true },
-  { matrixId: "shared_infant_weekend_on", ageGroup: "infant", usageType: "shared", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 3600, effectiveFrom: "2024-01-01", isActive: true },
+  { matrixId: "large_infant_weekday_off", ageGroup: "infant", roomType: "large", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 2500, effectiveFrom: "2024-01-01", isActive: true },
+  { matrixId: "large_infant_weekday_on", ageGroup: "infant", roomType: "large", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 3000, effectiveFrom: "2024-01-01", isActive: true },
+  { matrixId: "large_infant_weekend_off", ageGroup: "infant", roomType: "large", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 3000, effectiveFrom: "2024-01-01", isActive: true },
+  { matrixId: "large_infant_weekend_on", ageGroup: "infant", roomType: "large", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 3600, effectiveFrom: "2024-01-01", isActive: true },
 
-  // 個室利用
-  { matrixId: "private_adult_weekday_off", ageGroup: "adult", usageType: "private", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 8500, effectiveFrom: "2024-01-01", isActive: true },
-  { matrixId: "private_adult_weekday_on", ageGroup: "adult", usageType: "private", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 10200, effectiveFrom: "2024-01-01", isActive: true },
-  { matrixId: "private_adult_weekend_off", ageGroup: "adult", usageType: "private", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 10200, effectiveFrom: "2024-01-01", isActive: true },
-  { matrixId: "private_adult_weekend_on", ageGroup: "adult", usageType: "private", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 12200, effectiveFrom: "2024-01-01", isActive: true },
+  // 個室A（small_a）
+  { matrixId: "small_a_adult_weekday_off", ageGroup: "adult", roomType: "small_a", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 8500, effectiveFrom: "2024-01-01", isActive: true },
+  { matrixId: "small_a_adult_weekday_on", ageGroup: "adult", roomType: "small_a", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 10200, effectiveFrom: "2024-01-01", isActive: true },
+  { matrixId: "small_a_adult_weekend_off", ageGroup: "adult", roomType: "small_a", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 10200, effectiveFrom: "2024-01-01", isActive: true },
+  { matrixId: "small_a_adult_weekend_on", ageGroup: "adult", roomType: "small_a", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 12200, effectiveFrom: "2024-01-01", isActive: true },
 
-  // 個室利用（付添）
-  { matrixId: "private_adult_leader_weekday_off", ageGroup: "adult", usageType: "private", dayType: "weekday", seasonType: "off_season", isLeader: true, price: 6800, effectiveFrom: "2024-01-01", isActive: true },
-  { matrixId: "private_adult_leader_weekday_on", ageGroup: "adult", usageType: "private", dayType: "weekday", seasonType: "on_season", isLeader: true, price: 8200, effectiveFrom: "2024-01-01", isActive: true },
-  { matrixId: "private_adult_leader_weekend_off", ageGroup: "adult", usageType: "private", dayType: "weekend", seasonType: "off_season", isLeader: true, price: 8200, effectiveFrom: "2024-01-01", isActive: true },
-  { matrixId: "private_adult_leader_weekend_on", ageGroup: "adult", usageType: "private", dayType: "weekend", seasonType: "on_season", isLeader: true, price: 9800, effectiveFrom: "2024-01-01", isActive: true },
+  // 個室A（付添）
+  { matrixId: "small_a_adult_leader_weekday_off", ageGroup: "adult", roomType: "small_a", dayType: "weekday", seasonType: "off_season", isLeader: true, price: 6800, effectiveFrom: "2024-01-01", isActive: true },
+  { matrixId: "small_a_adult_leader_weekday_on", ageGroup: "adult", roomType: "small_a", dayType: "weekday", seasonType: "on_season", isLeader: true, price: 8200, effectiveFrom: "2024-01-01", isActive: true },
+  { matrixId: "small_a_adult_leader_weekend_off", ageGroup: "adult", roomType: "small_a", dayType: "weekend", seasonType: "off_season", isLeader: true, price: 8200, effectiveFrom: "2024-01-01", isActive: true },
+  { matrixId: "small_a_adult_leader_weekend_on", ageGroup: "adult", roomType: "small_a", dayType: "weekend", seasonType: "on_season", isLeader: true, price: 9800, effectiveFrom: "2024-01-01", isActive: true },
 
-  { matrixId: "private_student_weekday_off", ageGroup: "student", usageType: "private", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 5900, effectiveFrom: "2024-01-01", isActive: true },
-  { matrixId: "private_student_weekday_on", ageGroup: "student", usageType: "private", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 7100, effectiveFrom: "2024-01-01", isActive: true },
-  { matrixId: "private_student_weekend_off", ageGroup: "student", usageType: "private", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 7100, effectiveFrom: "2024-01-01", isActive: true },
-  { matrixId: "private_student_weekend_on", ageGroup: "student", usageType: "private", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 8500, effectiveFrom: "2024-01-01", isActive: true },
+  { matrixId: "small_a_student_weekday_off", ageGroup: "student", roomType: "small_a", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 5900, effectiveFrom: "2024-01-01", isActive: true },
+  { matrixId: "small_a_student_weekday_on", ageGroup: "student", roomType: "small_a", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 7100, effectiveFrom: "2024-01-01", isActive: true },
 
-  { matrixId: "private_child_weekday_off", ageGroup: "child", usageType: "private", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 5000, effectiveFrom: "2024-01-01", isActive: true },
-  { matrixId: "private_child_weekday_on", ageGroup: "child", usageType: "private", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 6000, effectiveFrom: "2024-01-01", isActive: true },
-  { matrixId: "private_child_weekend_off", ageGroup: "child", usageType: "private", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 6000, effectiveFrom: "2024-01-01", isActive: true },
-  { matrixId: "private_child_weekend_on", ageGroup: "child", usageType: "private", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 7200, effectiveFrom: "2024-01-01", isActive: true },
-
-  { matrixId: "private_infant_weekday_off", ageGroup: "infant", usageType: "private", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 4200, effectiveFrom: "2024-01-01", isActive: true },
-  { matrixId: "private_infant_weekday_on", ageGroup: "infant", usageType: "private", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 5000, effectiveFrom: "2024-01-01", isActive: true },
-  { matrixId: "private_infant_weekend_off", ageGroup: "infant", usageType: "private", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 5000, effectiveFrom: "2024-01-01", isActive: true },
-  { matrixId: "private_infant_weekend_on", ageGroup: "infant", usageType: "private", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 6000, effectiveFrom: "2024-01-01", isActive: true },
-
-  // 乳児は常に0円
-  { matrixId: "shared_baby_weekday_off", ageGroup: "baby", usageType: "shared", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 0, effectiveFrom: "2024-01-01", isActive: true },
-  { matrixId: "shared_baby_weekday_on", ageGroup: "baby", usageType: "shared", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 0, effectiveFrom: "2024-01-01", isActive: true },
-  { matrixId: "shared_baby_weekend_off", ageGroup: "baby", usageType: "shared", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 0, effectiveFrom: "2024-01-01", isActive: true },
-  { matrixId: "shared_baby_weekend_on", ageGroup: "baby", usageType: "shared", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 0, effectiveFrom: "2024-01-01", isActive: true },
-  { matrixId: "private_baby_weekday_off", ageGroup: "baby", usageType: "private", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 0, effectiveFrom: "2024-01-01", isActive: true },
-  { matrixId: "private_baby_weekday_on", ageGroup: "baby", usageType: "private", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 0, effectiveFrom: "2024-01-01", isActive: true },
-  { matrixId: "private_baby_weekend_off", ageGroup: "baby", usageType: "private", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 0, effectiveFrom: "2024-01-01", isActive: true },
-  { matrixId: "private_baby_weekend_on", ageGroup: "baby", usageType: "private", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 0, effectiveFrom: "2024-01-01", isActive: true },
+  // 乳児は全ての部屋タイプで0円
+  { matrixId: "large_baby_weekday_off", ageGroup: "baby", roomType: "large", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 0, effectiveFrom: "2024-01-01", isActive: true },
+  { matrixId: "large_baby_weekday_on", ageGroup: "baby", roomType: "large", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 0, effectiveFrom: "2024-01-01", isActive: true },
+  { matrixId: "small_a_baby_weekday_off", ageGroup: "baby", roomType: "small_a", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 0, effectiveFrom: "2024-01-01", isActive: true },
+  { matrixId: "small_a_baby_weekday_on", ageGroup: "baby", roomType: "small_a", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 0, effectiveFrom: "2024-01-01", isActive: true },
 ]
 
 const ageGroupLabels = {
@@ -91,9 +75,23 @@ const seasonTypeLabels = {
   on_season: "オンシーズン"
 }
 
+const roomTypeLabels = {
+  large: "大部屋（作法室・被服室）",
+  medium_a: "中部屋A（視聴覚室）",
+  medium_b: "中部屋B（図書室）",
+  small_a: "個室A（1年1組・1年2組）",
+  small_b: "個室B（理科室）",
+  small_c: "個室C（2年組・3年組）"
+}
+
+const roomTypeGroups = {
+  shared: ["large", "medium_a", "medium_b"],
+  private: ["small_a", "small_b", "small_c"]
+}
+
 export function PersonalPricingMatrix() {
   const [rates, setRates] = useState<GuestRateMatrix[]>(DEFAULT_RATES)
-  const [selectedUsageType, setSelectedUsageType] = useState<"shared" | "private">("shared")
+  const [selectedRoomType, setSelectedRoomType] = useState<"large" | "medium_a" | "medium_b" | "small_a" | "small_b" | "small_c">("large")
   const [hasChanges, setHasChanges] = useState(false)
 
   const getRate = (
@@ -104,7 +102,7 @@ export function PersonalPricingMatrix() {
   ) => {
     return rates.find(r => 
       r.ageGroup === ageGroup &&
-      r.usageType === selectedUsageType &&
+      r.roomType === selectedRoomType &&
       r.dayType === dayType &&
       r.seasonType === seasonType &&
       r.isLeader === isLeader &&
@@ -122,7 +120,7 @@ export function PersonalPricingMatrix() {
     setRates(rates.map(rate => {
       if (
         rate.ageGroup === ageGroup &&
-        rate.usageType === selectedUsageType &&
+        rate.roomType === selectedRoomType &&
         rate.dayType === dayType &&
         rate.seasonType === seasonType &&
         rate.isLeader === isLeader
@@ -195,102 +193,77 @@ export function PersonalPricingMatrix() {
         </div>
       </CardHeader>
       <CardContent>
-        <Tabs value={selectedUsageType} onValueChange={(value) => setSelectedUsageType(value as "shared" | "private")}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="shared">大部屋・中部屋（共同利用）</TabsTrigger>
-            <TabsTrigger value="private">個室</TabsTrigger>
-          </TabsList>
+        <div className="space-y-6">
+          {/* 部屋タイプ選択 */}
+          <div className="space-y-2">
+            <Label htmlFor="roomType">部屋タイプ</Label>
+            <Select value={selectedRoomType} onValueChange={(value) => setSelectedRoomType(value as any)}>
+              <SelectTrigger>
+                <SelectValue placeholder="部屋タイプを選択" />
+              </SelectTrigger>
+              <SelectContent>
+                <optgroup label="大部屋・中部屋（共同利用）">
+                  {roomTypeGroups.shared.map((roomType) => (
+                    <SelectItem key={roomType} value={roomType}>
+                      {roomTypeLabels[roomType as keyof typeof roomTypeLabels]}
+                    </SelectItem>
+                  ))}
+                </optgroup>
+                <optgroup label="個室">
+                  {roomTypeGroups.private.map((roomType) => (
+                    <SelectItem key={roomType} value={roomType}>
+                      {roomTypeLabels[roomType as keyof typeof roomTypeLabels]}
+                    </SelectItem>
+                  ))}
+                </optgroup>
+              </SelectContent>
+            </Select>
+          </div>
 
-          <TabsContent value="shared" className="space-y-6">
-            <div className="space-y-4">
-              <div className="text-sm text-muted-foreground">
-                大部屋・中部屋を利用する場合の個人料金です。
-              </div>
-              
-              {seasonTypes.map((seasonType) => (
-                <div key={seasonType} className="space-y-2">
-                  <h4 className="font-semibold flex items-center">
-                    {seasonTypeLabels[seasonType]}
-                    <Badge variant={seasonType === "on_season" ? "default" : "secondary"} className="ml-2">
-                      {seasonType === "on_season" ? "ハイシーズン" : "通常シーズン"}
-                    </Badge>
-                  </h4>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>年齢区分</TableHead>
-                        {dayTypes.map((dayType) => (
-                          <TableHead key={dayType} className="text-center">
-                            {dayTypeLabels[dayType]}
-                          </TableHead>
-                        ))}
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {ageGroups.map((ageGroup) => (
-                        <TableRow key={ageGroup}>
-                          <TableCell className="font-medium">
-                            {ageGroupLabels[ageGroup as keyof typeof ageGroupLabels]}
-                          </TableCell>
-                          {dayTypes.map((dayType) => (
-                            <TableCell key={dayType} className="text-center">
-                              <div className="flex items-center justify-center space-x-1">
-                                <span className="text-sm">¥</span>
-                                {renderPriceInput(ageGroup, dayType, seasonType)}
-                              </div>
-                            </TableCell>
-                          ))}
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              ))}
+          {/* 料金マトリクス */}
+          <div className="space-y-4">
+            <div className="text-sm text-muted-foreground">
+              {roomTypeLabels[selectedRoomType]}での個人料金設定です。
+              {roomTypeGroups.private.includes(selectedRoomType) && " 大人は通常料金と付添料金があります。"}
             </div>
-          </TabsContent>
-
-          <TabsContent value="private" className="space-y-6">
-            <div className="space-y-4">
-              <div className="text-sm text-muted-foreground">
-                個室を利用する場合の個人料金です。大人は通常料金と付添料金があります。
-              </div>
-              
-              {seasonTypes.map((seasonType) => (
-                <div key={seasonType} className="space-y-2">
-                  <h4 className="font-semibold flex items-center">
-                    {seasonTypeLabels[seasonType]}
-                    <Badge variant={seasonType === "on_season" ? "default" : "secondary"} className="ml-2">
-                      {seasonType === "on_season" ? "ハイシーズン" : "通常シーズン"}
-                    </Badge>
-                  </h4>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>年齢区分</TableHead>
-                        {dayTypes.map((dayType) => (
-                          <TableHead key={dayType} className="text-center">
-                            {dayTypeLabels[dayType]}
-                          </TableHead>
-                        ))}
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {/* 大人（通常） */}
-                      <TableRow>
-                        <TableCell className="font-medium">
-                          {ageGroupLabels.adult}
+            
+            {seasonTypes.map((seasonType) => (
+              <div key={seasonType} className="space-y-2">
+                <h4 className="font-semibold flex items-center">
+                  {seasonTypeLabels[seasonType]}
+                  <Badge variant={seasonType === "on_season" ? "default" : "secondary"} className="ml-2">
+                    {seasonType === "on_season" ? "ハイシーズン" : "通常シーズン"}
+                  </Badge>
+                </h4>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>年齢区分</TableHead>
+                      {dayTypes.map((dayType) => (
+                        <TableHead key={dayType} className="text-center">
+                          {dayTypeLabels[dayType]}
+                        </TableHead>
+                      ))}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {/* 大人（通常） */}
+                    <TableRow>
+                      <TableCell className="font-medium">
+                        {ageGroupLabels.adult}
+                      </TableCell>
+                      {dayTypes.map((dayType) => (
+                        <TableCell key={dayType} className="text-center">
+                          <div className="flex items-center justify-center space-x-1">
+                            <span className="text-sm">¥</span>
+                            {renderPriceInput("adult", dayType, seasonType, false)}
+                          </div>
                         </TableCell>
-                        {dayTypes.map((dayType) => (
-                          <TableCell key={dayType} className="text-center">
-                            <div className="flex items-center justify-center space-x-1">
-                              <span className="text-sm">¥</span>
-                              {renderPriceInput("adult", dayType, seasonType, false)}
-                            </div>
-                          </TableCell>
-                        ))}
-                      </TableRow>
-                      
-                      {/* 大人（付添） */}
+                      ))}
+                    </TableRow>
+                    
+                    {/* 大人（付添） - 個室のみ */}
+                    {roomTypeGroups.private.includes(selectedRoomType) && (
                       <TableRow>
                         <TableCell className="font-medium">
                           {ageGroupLabels.adult}（付添）
@@ -304,30 +277,30 @@ export function PersonalPricingMatrix() {
                           </TableCell>
                         ))}
                       </TableRow>
+                    )}
 
-                      {/* その他の年齢区分 */}
-                      {ageGroups.filter(age => age !== "adult").map((ageGroup) => (
-                        <TableRow key={ageGroup}>
-                          <TableCell className="font-medium">
-                            {ageGroupLabels[ageGroup as keyof typeof ageGroupLabels]}
+                    {/* その他の年齢区分 */}
+                    {ageGroups.filter(age => age !== "adult").map((ageGroup) => (
+                      <TableRow key={ageGroup}>
+                        <TableCell className="font-medium">
+                          {ageGroupLabels[ageGroup as keyof typeof ageGroupLabels]}
+                        </TableCell>
+                        {dayTypes.map((dayType) => (
+                          <TableCell key={dayType} className="text-center">
+                            <div className="flex items-center justify-center space-x-1">
+                              <span className="text-sm">¥</span>
+                              {renderPriceInput(ageGroup, dayType, seasonType)}
+                            </div>
                           </TableCell>
-                          {dayTypes.map((dayType) => (
-                            <TableCell key={dayType} className="text-center">
-                              <div className="flex items-center justify-center space-x-1">
-                                <span className="text-sm">¥</span>
-                                {renderPriceInput(ageGroup, dayType, seasonType)}
-                              </div>
-                            </TableCell>
-                          ))}
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              ))}
-            </div>
-          </TabsContent>
-        </Tabs>
+                        ))}
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            ))}
+          </div>
+        </div>
 
         {hasChanges && (
           <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
