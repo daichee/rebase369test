@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { createContext, useContext, useEffect, useState } from "react"
+import { createContext, useContext, useEffect, useState, useCallback } from "react"
 import { createClient } from "@/lib/supabase/client"
 import type { User } from "@supabase/auth-helpers-nextjs"
 
@@ -13,6 +13,8 @@ interface AuthContextType {
   signOut: () => Promise<void>
   signUp: (email: string, password: string, name?: string) => Promise<any>
   isAdmin: boolean
+  lastActivity: number | null
+  resetActivityTimer: () => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -21,7 +23,85 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [lastActivity, setLastActivity] = useState<number | null>(null)
   const supabase = createClient()
+
+  // Session timeout configuration (30 minutes)
+  const SESSION_TIMEOUT = 30 * 60 * 1000 // 30 minutes in milliseconds
+  
+  // Reset activity timer
+  const resetActivityTimer = useCallback(() => {
+    setLastActivity(Date.now())
+  }, [])
+
+  // Auto-logout functionality
+  useEffect(() => {
+    if (!user || !lastActivity) return
+
+    const checkSession = () => {
+      const now = Date.now()
+      const timeSinceLastActivity = now - lastActivity
+      
+      if (timeSinceLastActivity >= SESSION_TIMEOUT) {
+        signOut()
+        alert("セッションの有効期限が切れました。再度ログインしてください。")
+      }
+    }
+
+    // Check session every minute
+    const interval = setInterval(checkSession, 60 * 1000)
+    
+    return () => clearInterval(interval)
+  }, [user, lastActivity])
+
+  // Track user activity
+  useEffect(() => {
+    if (!user) return
+
+    const handleActivity = () => {
+      resetActivityTimer()
+    }
+
+    // Track various user activities
+    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click']
+    
+    events.forEach(event => {
+      document.addEventListener(event, handleActivity, true)
+    })
+
+    // Initialize activity timer
+    resetActivityTimer()
+
+    return () => {
+      events.forEach(event => {
+        document.removeEventListener(event, handleActivity, true)
+      })
+    }
+  }, [user, resetActivityTimer])
+
+  // Session refresh functionality
+  useEffect(() => {
+    if (!user) return
+
+    const refreshSession = async () => {
+      try {
+        const { data, error } = await supabase.auth.refreshSession()
+        if (error) {
+          console.error("Session refresh error:", error)
+          // If refresh fails, sign out user
+          signOut()
+        }
+      } catch (error) {
+        console.error("Session refresh error:", error)
+        signOut()
+      }
+    }
+
+    // Refresh session every 25 minutes (before 30-minute timeout)
+    const refreshInterval = setInterval(refreshSession, 25 * 60 * 1000)
+    
+    return () => clearInterval(refreshInterval)
+  }, [user])
 
   useEffect(() => {
     const getUser = async () => {
@@ -111,7 +191,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return data
   }
 
-  return <AuthContext.Provider value={{ user, loading, signIn, signOut, signUp, isAdmin }}>{children}</AuthContext.Provider>
+  return <AuthContext.Provider value={{ user, loading, signIn, signOut, signUp, isAdmin, lastActivity, resetActivityTimer }}>{children}</AuthContext.Provider>
 }
 
 export const useAuth = () => {
