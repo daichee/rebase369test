@@ -66,63 +66,175 @@ export class IndividualPriceCalculator {
 
   // デフォルト個人料金マトリクス（実際の料金表に基づく）
   private static readonly DEFAULT_GUEST_RATES: GuestRateMatrix[] = [
-    // 大部屋・中部屋（共同利用）
-    { matrixId: "shared_adult_weekday_off", ageGroup: "adult", usageType: "shared", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 4800, effectiveFrom: "2024-01-01", isActive: true },
-    { matrixId: "shared_adult_weekday_on", ageGroup: "adult", usageType: "shared", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 5800, effectiveFrom: "2024-01-01", isActive: true },
-    { matrixId: "shared_adult_weekend_off", ageGroup: "adult", usageType: "shared", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 5800, effectiveFrom: "2024-01-01", isActive: true },
-    { matrixId: "shared_adult_weekend_on", ageGroup: "adult", usageType: "shared", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 7000, effectiveFrom: "2024-01-01", isActive: true },
+    // 大部屋（large）
+    { matrixId: "large_adult_weekday_off", ageGroup: "adult", roomType: "large", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 4800, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "large_adult_weekday_on", ageGroup: "adult", roomType: "large", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 5800, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "large_adult_weekend_off", ageGroup: "adult", roomType: "large", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 5800, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "large_adult_weekend_on", ageGroup: "adult", roomType: "large", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 7000, effectiveFrom: "2024-01-01", isActive: true },
     
-    { matrixId: "shared_student_weekday_off", ageGroup: "student", usageType: "shared", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 4000, effectiveFrom: "2024-01-01", isActive: true },
-    { matrixId: "shared_student_weekday_on", ageGroup: "student", usageType: "shared", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 4800, effectiveFrom: "2024-01-01", isActive: true },
-    { matrixId: "shared_student_weekend_off", ageGroup: "student", usageType: "shared", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 4800, effectiveFrom: "2024-01-01", isActive: true },
-    { matrixId: "shared_student_weekend_on", ageGroup: "student", usageType: "shared", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 5800, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "large_student_weekday_off", ageGroup: "student", roomType: "large", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 4000, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "large_student_weekday_on", ageGroup: "student", roomType: "large", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 4800, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "large_student_weekend_off", ageGroup: "student", roomType: "large", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 4800, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "large_student_weekend_on", ageGroup: "student", roomType: "large", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 5800, effectiveFrom: "2024-01-01", isActive: true },
 
-    { matrixId: "shared_child_weekday_off", ageGroup: "child", usageType: "shared", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 3200, effectiveFrom: "2024-01-01", isActive: true },
-    { matrixId: "shared_child_weekday_on", ageGroup: "child", usageType: "shared", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 3800, effectiveFrom: "2024-01-01", isActive: true },
-    { matrixId: "shared_child_weekend_off", ageGroup: "child", usageType: "shared", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 3800, effectiveFrom: "2024-01-01", isActive: true },
-    { matrixId: "shared_child_weekend_on", ageGroup: "child", usageType: "shared", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 4600, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "large_child_weekday_off", ageGroup: "child", roomType: "large", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 3200, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "large_child_weekday_on", ageGroup: "child", roomType: "large", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 3800, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "large_child_weekend_off", ageGroup: "child", roomType: "large", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 3800, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "large_child_weekend_on", ageGroup: "child", roomType: "large", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 4600, effectiveFrom: "2024-01-01", isActive: true },
 
-    { matrixId: "shared_infant_weekday_off", ageGroup: "infant", usageType: "shared", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 2500, effectiveFrom: "2024-01-01", isActive: true },
-    { matrixId: "shared_infant_weekday_on", ageGroup: "infant", usageType: "shared", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 3000, effectiveFrom: "2024-01-01", isActive: true },
-    { matrixId: "shared_infant_weekend_off", ageGroup: "infant", usageType: "shared", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 3000, effectiveFrom: "2024-01-01", isActive: true },
-    { matrixId: "shared_infant_weekend_on", ageGroup: "infant", usageType: "shared", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 3600, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "large_infant_weekday_off", ageGroup: "infant", roomType: "large", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 2500, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "large_infant_weekday_on", ageGroup: "infant", roomType: "large", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 3000, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "large_infant_weekend_off", ageGroup: "infant", roomType: "large", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 3000, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "large_infant_weekend_on", ageGroup: "infant", roomType: "large", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 3600, effectiveFrom: "2024-01-01", isActive: true },
 
-    // 個室利用
-    { matrixId: "private_adult_weekday_off", ageGroup: "adult", usageType: "private", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 8500, effectiveFrom: "2024-01-01", isActive: true },
-    { matrixId: "private_adult_weekday_on", ageGroup: "adult", usageType: "private", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 10200, effectiveFrom: "2024-01-01", isActive: true },
-    { matrixId: "private_adult_weekend_off", ageGroup: "adult", usageType: "private", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 10200, effectiveFrom: "2024-01-01", isActive: true },
-    { matrixId: "private_adult_weekend_on", ageGroup: "adult", usageType: "private", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 12200, effectiveFrom: "2024-01-01", isActive: true },
+    // 中部屋A（medium_a）
+    { matrixId: "medium_a_adult_weekday_off", ageGroup: "adult", roomType: "medium_a", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 4800, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "medium_a_adult_weekday_on", ageGroup: "adult", roomType: "medium_a", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 5800, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "medium_a_adult_weekend_off", ageGroup: "adult", roomType: "medium_a", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 5800, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "medium_a_adult_weekend_on", ageGroup: "adult", roomType: "medium_a", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 7000, effectiveFrom: "2024-01-01", isActive: true },
+    
+    { matrixId: "medium_a_student_weekday_off", ageGroup: "student", roomType: "medium_a", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 4000, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "medium_a_student_weekday_on", ageGroup: "student", roomType: "medium_a", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 4800, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "medium_a_student_weekend_off", ageGroup: "student", roomType: "medium_a", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 4800, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "medium_a_student_weekend_on", ageGroup: "student", roomType: "medium_a", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 5800, effectiveFrom: "2024-01-01", isActive: true },
 
-    // 個室利用（付添）
-    { matrixId: "private_adult_leader_weekday_off", ageGroup: "adult", usageType: "private", dayType: "weekday", seasonType: "off_season", isLeader: true, price: 6800, effectiveFrom: "2024-01-01", isActive: true },
-    { matrixId: "private_adult_leader_weekday_on", ageGroup: "adult", usageType: "private", dayType: "weekday", seasonType: "on_season", isLeader: true, price: 8200, effectiveFrom: "2024-01-01", isActive: true },
-    { matrixId: "private_adult_leader_weekend_off", ageGroup: "adult", usageType: "private", dayType: "weekend", seasonType: "off_season", isLeader: true, price: 8200, effectiveFrom: "2024-01-01", isActive: true },
-    { matrixId: "private_adult_leader_weekend_on", ageGroup: "adult", usageType: "private", dayType: "weekend", seasonType: "on_season", isLeader: true, price: 9800, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "medium_a_child_weekday_off", ageGroup: "child", roomType: "medium_a", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 3200, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "medium_a_child_weekday_on", ageGroup: "child", roomType: "medium_a", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 3800, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "medium_a_child_weekend_off", ageGroup: "child", roomType: "medium_a", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 3800, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "medium_a_child_weekend_on", ageGroup: "child", roomType: "medium_a", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 4600, effectiveFrom: "2024-01-01", isActive: true },
 
-    { matrixId: "private_student_weekday_off", ageGroup: "student", usageType: "private", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 5900, effectiveFrom: "2024-01-01", isActive: true },
-    { matrixId: "private_student_weekday_on", ageGroup: "student", usageType: "private", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 7100, effectiveFrom: "2024-01-01", isActive: true },
-    { matrixId: "private_student_weekend_off", ageGroup: "student", usageType: "private", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 7100, effectiveFrom: "2024-01-01", isActive: true },
-    { matrixId: "private_student_weekend_on", ageGroup: "student", usageType: "private", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 8500, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "medium_a_infant_weekday_off", ageGroup: "infant", roomType: "medium_a", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 2500, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "medium_a_infant_weekday_on", ageGroup: "infant", roomType: "medium_a", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 3000, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "medium_a_infant_weekend_off", ageGroup: "infant", roomType: "medium_a", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 3000, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "medium_a_infant_weekend_on", ageGroup: "infant", roomType: "medium_a", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 3600, effectiveFrom: "2024-01-01", isActive: true },
 
-    { matrixId: "private_child_weekday_off", ageGroup: "child", usageType: "private", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 5000, effectiveFrom: "2024-01-01", isActive: true },
-    { matrixId: "private_child_weekday_on", ageGroup: "child", usageType: "private", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 6000, effectiveFrom: "2024-01-01", isActive: true },
-    { matrixId: "private_child_weekend_off", ageGroup: "child", usageType: "private", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 6000, effectiveFrom: "2024-01-01", isActive: true },
-    { matrixId: "private_child_weekend_on", ageGroup: "child", usageType: "private", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 7200, effectiveFrom: "2024-01-01", isActive: true },
+    // 中部屋B（medium_b）
+    { matrixId: "medium_b_adult_weekday_off", ageGroup: "adult", roomType: "medium_b", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 4800, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "medium_b_adult_weekday_on", ageGroup: "adult", roomType: "medium_b", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 5800, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "medium_b_adult_weekend_off", ageGroup: "adult", roomType: "medium_b", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 5800, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "medium_b_adult_weekend_on", ageGroup: "adult", roomType: "medium_b", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 7000, effectiveFrom: "2024-01-01", isActive: true },
+    
+    { matrixId: "medium_b_student_weekday_off", ageGroup: "student", roomType: "medium_b", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 4000, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "medium_b_student_weekday_on", ageGroup: "student", roomType: "medium_b", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 4800, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "medium_b_student_weekend_off", ageGroup: "student", roomType: "medium_b", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 4800, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "medium_b_student_weekend_on", ageGroup: "student", roomType: "medium_b", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 5800, effectiveFrom: "2024-01-01", isActive: true },
 
-    { matrixId: "private_infant_weekday_off", ageGroup: "infant", usageType: "private", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 4200, effectiveFrom: "2024-01-01", isActive: true },
-    { matrixId: "private_infant_weekday_on", ageGroup: "infant", usageType: "private", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 5000, effectiveFrom: "2024-01-01", isActive: true },
-    { matrixId: "private_infant_weekend_off", ageGroup: "infant", usageType: "private", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 5000, effectiveFrom: "2024-01-01", isActive: true },
-    { matrixId: "private_infant_weekend_on", ageGroup: "infant", usageType: "private", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 6000, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "medium_b_child_weekday_off", ageGroup: "child", roomType: "medium_b", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 3200, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "medium_b_child_weekday_on", ageGroup: "child", roomType: "medium_b", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 3800, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "medium_b_child_weekend_off", ageGroup: "child", roomType: "medium_b", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 3800, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "medium_b_child_weekend_on", ageGroup: "child", roomType: "medium_b", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 4600, effectiveFrom: "2024-01-01", isActive: true },
 
-    // 乳児は常に0円
-    { matrixId: "shared_baby_weekday_off", ageGroup: "baby", usageType: "shared", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 0, effectiveFrom: "2024-01-01", isActive: true },
-    { matrixId: "shared_baby_weekday_on", ageGroup: "baby", usageType: "shared", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 0, effectiveFrom: "2024-01-01", isActive: true },
-    { matrixId: "shared_baby_weekend_off", ageGroup: "baby", usageType: "shared", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 0, effectiveFrom: "2024-01-01", isActive: true },
-    { matrixId: "shared_baby_weekend_on", ageGroup: "baby", usageType: "shared", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 0, effectiveFrom: "2024-01-01", isActive: true },
-    { matrixId: "private_baby_weekday_off", ageGroup: "baby", usageType: "private", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 0, effectiveFrom: "2024-01-01", isActive: true },
-    { matrixId: "private_baby_weekday_on", ageGroup: "baby", usageType: "private", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 0, effectiveFrom: "2024-01-01", isActive: true },
-    { matrixId: "private_baby_weekend_off", ageGroup: "baby", usageType: "private", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 0, effectiveFrom: "2024-01-01", isActive: true },
-    { matrixId: "private_baby_weekend_on", ageGroup: "baby", usageType: "private", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 0, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "medium_b_infant_weekday_off", ageGroup: "infant", roomType: "medium_b", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 2500, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "medium_b_infant_weekday_on", ageGroup: "infant", roomType: "medium_b", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 3000, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "medium_b_infant_weekend_off", ageGroup: "infant", roomType: "medium_b", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 3000, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "medium_b_infant_weekend_on", ageGroup: "infant", roomType: "medium_b", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 3600, effectiveFrom: "2024-01-01", isActive: true },
+
+    // 個室A（small_a）
+    { matrixId: "small_a_adult_weekday_off", ageGroup: "adult", roomType: "small_a", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 8500, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_a_adult_weekday_on", ageGroup: "adult", roomType: "small_a", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 10200, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_a_adult_weekend_off", ageGroup: "adult", roomType: "small_a", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 10200, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_a_adult_weekend_on", ageGroup: "adult", roomType: "small_a", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 12200, effectiveFrom: "2024-01-01", isActive: true },
+
+    // 個室A（付添）
+    { matrixId: "small_a_adult_leader_weekday_off", ageGroup: "adult", roomType: "small_a", dayType: "weekday", seasonType: "off_season", isLeader: true, price: 6800, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_a_adult_leader_weekday_on", ageGroup: "adult", roomType: "small_a", dayType: "weekday", seasonType: "on_season", isLeader: true, price: 8200, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_a_adult_leader_weekend_off", ageGroup: "adult", roomType: "small_a", dayType: "weekend", seasonType: "off_season", isLeader: true, price: 8200, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_a_adult_leader_weekend_on", ageGroup: "adult", roomType: "small_a", dayType: "weekend", seasonType: "on_season", isLeader: true, price: 9800, effectiveFrom: "2024-01-01", isActive: true },
+
+    { matrixId: "small_a_student_weekday_off", ageGroup: "student", roomType: "small_a", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 5900, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_a_student_weekday_on", ageGroup: "student", roomType: "small_a", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 7100, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_a_student_weekend_off", ageGroup: "student", roomType: "small_a", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 7100, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_a_student_weekend_on", ageGroup: "student", roomType: "small_a", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 8500, effectiveFrom: "2024-01-01", isActive: true },
+
+    { matrixId: "small_a_child_weekday_off", ageGroup: "child", roomType: "small_a", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 5000, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_a_child_weekday_on", ageGroup: "child", roomType: "small_a", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 6000, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_a_child_weekend_off", ageGroup: "child", roomType: "small_a", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 6000, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_a_child_weekend_on", ageGroup: "child", roomType: "small_a", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 7200, effectiveFrom: "2024-01-01", isActive: true },
+
+    { matrixId: "small_a_infant_weekday_off", ageGroup: "infant", roomType: "small_a", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 4200, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_a_infant_weekday_on", ageGroup: "infant", roomType: "small_a", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 5000, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_a_infant_weekend_off", ageGroup: "infant", roomType: "small_a", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 5000, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_a_infant_weekend_on", ageGroup: "infant", roomType: "small_a", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 6000, effectiveFrom: "2024-01-01", isActive: true },
+
+    // 個室B（small_b）
+    { matrixId: "small_b_adult_weekday_off", ageGroup: "adult", roomType: "small_b", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 8500, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_b_adult_weekday_on", ageGroup: "adult", roomType: "small_b", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 10200, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_b_adult_weekend_off", ageGroup: "adult", roomType: "small_b", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 10200, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_b_adult_weekend_on", ageGroup: "adult", roomType: "small_b", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 12200, effectiveFrom: "2024-01-01", isActive: true },
+
+    // 個室B（付添）
+    { matrixId: "small_b_adult_leader_weekday_off", ageGroup: "adult", roomType: "small_b", dayType: "weekday", seasonType: "off_season", isLeader: true, price: 6800, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_b_adult_leader_weekday_on", ageGroup: "adult", roomType: "small_b", dayType: "weekday", seasonType: "on_season", isLeader: true, price: 8200, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_b_adult_leader_weekend_off", ageGroup: "adult", roomType: "small_b", dayType: "weekend", seasonType: "off_season", isLeader: true, price: 8200, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_b_adult_leader_weekend_on", ageGroup: "adult", roomType: "small_b", dayType: "weekend", seasonType: "on_season", isLeader: true, price: 9800, effectiveFrom: "2024-01-01", isActive: true },
+
+    { matrixId: "small_b_student_weekday_off", ageGroup: "student", roomType: "small_b", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 5900, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_b_student_weekday_on", ageGroup: "student", roomType: "small_b", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 7100, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_b_student_weekend_off", ageGroup: "student", roomType: "small_b", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 7100, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_b_student_weekend_on", ageGroup: "student", roomType: "small_b", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 8500, effectiveFrom: "2024-01-01", isActive: true },
+
+    { matrixId: "small_b_child_weekday_off", ageGroup: "child", roomType: "small_b", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 5000, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_b_child_weekday_on", ageGroup: "child", roomType: "small_b", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 6000, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_b_child_weekend_off", ageGroup: "child", roomType: "small_b", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 6000, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_b_child_weekend_on", ageGroup: "child", roomType: "small_b", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 7200, effectiveFrom: "2024-01-01", isActive: true },
+
+    { matrixId: "small_b_infant_weekday_off", ageGroup: "infant", roomType: "small_b", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 4200, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_b_infant_weekday_on", ageGroup: "infant", roomType: "small_b", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 5000, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_b_infant_weekend_off", ageGroup: "infant", roomType: "small_b", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 5000, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_b_infant_weekend_on", ageGroup: "infant", roomType: "small_b", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 6000, effectiveFrom: "2024-01-01", isActive: true },
+
+    // 個室C（small_c）
+    { matrixId: "small_c_adult_weekday_off", ageGroup: "adult", roomType: "small_c", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 8500, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_c_adult_weekday_on", ageGroup: "adult", roomType: "small_c", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 10200, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_c_adult_weekend_off", ageGroup: "adult", roomType: "small_c", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 10200, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_c_adult_weekend_on", ageGroup: "adult", roomType: "small_c", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 12200, effectiveFrom: "2024-01-01", isActive: true },
+
+    // 個室C（付添）
+    { matrixId: "small_c_adult_leader_weekday_off", ageGroup: "adult", roomType: "small_c", dayType: "weekday", seasonType: "off_season", isLeader: true, price: 6800, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_c_adult_leader_weekday_on", ageGroup: "adult", roomType: "small_c", dayType: "weekday", seasonType: "on_season", isLeader: true, price: 8200, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_c_adult_leader_weekend_off", ageGroup: "adult", roomType: "small_c", dayType: "weekend", seasonType: "off_season", isLeader: true, price: 8200, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_c_adult_leader_weekend_on", ageGroup: "adult", roomType: "small_c", dayType: "weekend", seasonType: "on_season", isLeader: true, price: 9800, effectiveFrom: "2024-01-01", isActive: true },
+
+    { matrixId: "small_c_student_weekday_off", ageGroup: "student", roomType: "small_c", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 5900, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_c_student_weekday_on", ageGroup: "student", roomType: "small_c", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 7100, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_c_student_weekend_off", ageGroup: "student", roomType: "small_c", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 7100, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_c_student_weekend_on", ageGroup: "student", roomType: "small_c", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 8500, effectiveFrom: "2024-01-01", isActive: true },
+
+    { matrixId: "small_c_child_weekday_off", ageGroup: "child", roomType: "small_c", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 5000, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_c_child_weekday_on", ageGroup: "child", roomType: "small_c", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 6000, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_c_child_weekend_off", ageGroup: "child", roomType: "small_c", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 6000, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_c_child_weekend_on", ageGroup: "child", roomType: "small_c", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 7200, effectiveFrom: "2024-01-01", isActive: true },
+
+    { matrixId: "small_c_infant_weekday_off", ageGroup: "infant", roomType: "small_c", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 4200, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_c_infant_weekday_on", ageGroup: "infant", roomType: "small_c", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 5000, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_c_infant_weekend_off", ageGroup: "infant", roomType: "small_c", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 5000, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_c_infant_weekend_on", ageGroup: "infant", roomType: "small_c", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 6000, effectiveFrom: "2024-01-01", isActive: true },
+
+    // 乳児は全ての部屋タイプで0円
+    { matrixId: "large_baby_weekday_off", ageGroup: "baby", roomType: "large", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 0, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "large_baby_weekday_on", ageGroup: "baby", roomType: "large", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 0, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "large_baby_weekend_off", ageGroup: "baby", roomType: "large", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 0, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "large_baby_weekend_on", ageGroup: "baby", roomType: "large", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 0, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "medium_a_baby_weekday_off", ageGroup: "baby", roomType: "medium_a", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 0, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "medium_a_baby_weekday_on", ageGroup: "baby", roomType: "medium_a", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 0, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "medium_a_baby_weekend_off", ageGroup: "baby", roomType: "medium_a", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 0, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "medium_a_baby_weekend_on", ageGroup: "baby", roomType: "medium_a", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 0, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "medium_b_baby_weekday_off", ageGroup: "baby", roomType: "medium_b", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 0, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "medium_b_baby_weekday_on", ageGroup: "baby", roomType: "medium_b", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 0, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "medium_b_baby_weekend_off", ageGroup: "baby", roomType: "medium_b", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 0, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "medium_b_baby_weekend_on", ageGroup: "baby", roomType: "medium_b", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 0, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_a_baby_weekday_off", ageGroup: "baby", roomType: "small_a", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 0, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_a_baby_weekday_on", ageGroup: "baby", roomType: "small_a", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 0, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_a_baby_weekend_off", ageGroup: "baby", roomType: "small_a", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 0, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_a_baby_weekend_on", ageGroup: "baby", roomType: "small_a", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 0, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_b_baby_weekday_off", ageGroup: "baby", roomType: "small_b", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 0, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_b_baby_weekday_on", ageGroup: "baby", roomType: "small_b", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 0, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_b_baby_weekend_off", ageGroup: "baby", roomType: "small_b", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 0, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_b_baby_weekend_on", ageGroup: "baby", roomType: "small_b", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 0, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_c_baby_weekday_off", ageGroup: "baby", roomType: "small_c", dayType: "weekday", seasonType: "off_season", isLeader: false, price: 0, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_c_baby_weekday_on", ageGroup: "baby", roomType: "small_c", dayType: "weekday", seasonType: "on_season", isLeader: false, price: 0, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_c_baby_weekend_off", ageGroup: "baby", roomType: "small_c", dayType: "weekend", seasonType: "off_season", isLeader: false, price: 0, effectiveFrom: "2024-01-01", isActive: true },
+    { matrixId: "small_c_baby_weekend_on", ageGroup: "baby", roomType: "small_c", dayType: "weekend", seasonType: "on_season", isLeader: false, price: 0, effectiveFrom: "2024-01-01", isActive: true },
   ]
 
   // デフォルト季節期間設定
@@ -241,7 +353,7 @@ export class IndividualPriceCalculator {
   }
 
   /**
-   * 個人料金計算（絶対値方式）
+   * 個人料金計算（部屋タイプ別絶対値方式）
    */
   static calculateGuestPrice(
     guests: GuestCount, 
@@ -250,7 +362,6 @@ export class IndividualPriceCalculator {
     guestRates: GuestRateMatrix[],
     seasonPeriods: SeasonPeriod[]
   ): { guestAmount: number; guestLineItems: PriceLineItem[] } {
-    const usageType = this.determineUsageType(rooms)
     const dates = this.generateDateRange(dateRange)
     const lineItems: PriceLineItem[] = []
 
@@ -260,42 +371,49 @@ export class IndividualPriceCalculator {
       const dayType = this.getDayType(date)
       const seasonType = this.getSeasonType(date, seasonPeriods)
 
-      Object.entries(guests).forEach(([ageGroup, count]) => {
-        if (count > 0 && ageGroup !== "adult_leader") {
-          const isLeader = ageGroup === "adult" && guests.adult_leader && guests.adult_leader > 0
-          const actualCount = isLeader ? (guests.adult_leader || 0) : count
-          
-          if (actualCount > 0) {
-            const rate = this.findGuestRate(
-              ageGroup as any,
-              usageType,
-              dayType,
-              seasonType,
-              isLeader,
-              guestRates
-            )
+      // 各部屋タイプ別に個人料金を計算
+      for (const room of rooms) {
+        Object.entries(guests).forEach(([ageGroup, count]) => {
+          if (count > 0 && ageGroup !== "adult_leader") {
+            const isLeader = ageGroup === "adult" && guests.adult_leader && guests.adult_leader > 0
+            const actualCount = isLeader ? (guests.adult_leader || 0) : count
             
-            if (rate) {
-              const dailyAmount = rate.price * actualCount
-              total += dailyAmount
+            // 部屋にアサインされた人数分のみ計算
+            const roomGuestCount = Math.min(actualCount, room.assignedGuests)
+            
+            if (roomGuestCount > 0) {
+              const rate = this.findGuestRateByRoomType(
+                ageGroup as any,
+                room.roomType,
+                dayType,
+                seasonType,
+                isLeader,
+                guestRates
+              )
+              
+              if (rate) {
+                const dailyAmount = rate.price * roomGuestCount
+                total += dailyAmount
 
-              // 見積書項目を作成
-              const description = this.createGuestDescription(ageGroup as any, dayType, seasonType, isLeader)
-              lineItems.push({
-                itemId: `guest_${date.toISOString().split("T")[0]}_${ageGroup}`,
-                category: "guest",
-                description,
-                unitPrice: rate.price,
-                quantity: actualCount,
-                unit: "人泊",
-                subtotal: dailyAmount,
-                date: date.toISOString().split("T")[0],
-                ageGroup
-              })
+                // 見積書項目を作成（部屋タイプ別）
+                const description = this.createGuestDescriptionWithRoom(ageGroup as any, room.roomType, dayType, seasonType, isLeader)
+                lineItems.push({
+                  itemId: `guest_${date.toISOString().split("T")[0]}_${ageGroup}_${room.roomType}`,
+                  category: "guest",
+                  description,
+                  unitPrice: rate.price,
+                  quantity: roomGuestCount,
+                  unit: "人泊",
+                  subtotal: dailyAmount,
+                  date: date.toISOString().split("T")[0],
+                  ageGroup,
+                  roomType: room.roomType
+                })
+              }
             }
           }
-        }
-      })
+        })
+      }
     }
 
     return { 
@@ -328,11 +446,11 @@ export class IndividualPriceCalculator {
   }
 
   /**
-   * 料金マトリクスから該当料金を検索
+   * 料金マトリクスから該当料金を検索（部屋タイプ別）
    */
-  private static findGuestRate(
+  private static findGuestRateByRoomType(
     ageGroup: "adult" | "student" | "child" | "infant" | "baby",
-    usageType: "shared" | "private",
+    roomType: "large" | "medium_a" | "medium_b" | "small_a" | "small_b" | "small_c",
     dayType: "weekday" | "weekend",
     seasonType: "off_season" | "on_season",
     isLeader: boolean,
@@ -340,7 +458,7 @@ export class IndividualPriceCalculator {
   ): GuestRateMatrix | null {
     return guestRates.find(rate => 
       rate.ageGroup === ageGroup &&
-      rate.usageType === usageType &&
+      rate.roomType === roomType &&
       rate.dayType === dayType &&
       rate.seasonType === seasonType &&
       rate.isLeader === isLeader &&
@@ -376,12 +494,6 @@ export class IndividualPriceCalculator {
     return day === 0 || day === 6 ? "weekend" : "weekday"
   }
 
-  /**
-   * 利用タイプ判定
-   */
-  private static determineUsageType(rooms: RoomUsage[]): "shared" | "private" {
-    return rooms.some((room) => room.usageType === "private") ? "private" : "shared"
-  }
 
   /**
    * 日付範囲生成
@@ -420,6 +532,40 @@ export class IndividualPriceCalculator {
     const leaderSuffix = isLeader ? "（付添）" : ""
 
     return `${ageLabels[ageGroup]}${leaderSuffix} ${dayLabel}・${seasonLabel}`
+  }
+
+  /**
+   * 個人料金説明文作成（部屋タイプ含む）
+   */
+  private static createGuestDescriptionWithRoom(
+    ageGroup: "adult" | "student" | "child" | "infant" | "baby",
+    roomType: "large" | "medium_a" | "medium_b" | "small_a" | "small_b" | "small_c",
+    dayType: "weekday" | "weekend", 
+    seasonType: "off_season" | "on_season",
+    isLeader: boolean
+  ): string {
+    const ageLabels = {
+      adult: "大人",
+      student: "学生", 
+      child: "小学生",
+      infant: "幼児",
+      baby: "乳児"
+    }
+
+    const roomLabels = {
+      large: "大部屋",
+      medium_a: "中部屋A", 
+      medium_b: "中部屋B",
+      small_a: "個室A",
+      small_b: "個室B",
+      small_c: "個室C"
+    }
+
+    const dayLabel = dayType === "weekday" ? "平日" : "週末・祝日"
+    const seasonLabel = seasonType === "off_season" ? "オフシーズン" : "オンシーズン"
+    const leaderSuffix = isLeader ? "（付添）" : ""
+
+    return `${ageLabels[ageGroup]}${leaderSuffix} ${roomLabels[roomType]} ${dayLabel}・${seasonLabel}`
   }
 
   /**
@@ -464,7 +610,6 @@ export class IndividualPriceCalculator {
     seasonPeriods: SeasonPeriod[]
   ): DailyPrice[] {
     const dates = this.generateDateRange(dateRange)
-    const usageType = this.determineUsageType(rooms)
 
     return dates.map((date) => {
       const dayType = this.getDayType(date)
@@ -473,29 +618,34 @@ export class IndividualPriceCalculator {
       // 室料（日割り）
       const roomAmount = this.calculateRoomPrice(rooms, 1, roomRates)
 
-      // 個人料金（その日の分）
+      // 個人料金（その日の分・部屋タイプ別）
       let guestAmount = 0
-      Object.entries(guests).forEach(([ageGroup, count]) => {
-        if (count > 0 && ageGroup !== "adult_leader") {
-          const isLeader = ageGroup === "adult" && guests.adult_leader && guests.adult_leader > 0
-          const actualCount = isLeader ? (guests.adult_leader || 0) : count
-          
-          if (actualCount > 0) {
-            const rate = this.findGuestRate(
-              ageGroup as any,
-              usageType,
-              dayType,
-              season,
-              isLeader,
-              guestRates
-            )
+      for (const room of rooms) {
+        Object.entries(guests).forEach(([ageGroup, count]) => {
+          if (count > 0 && ageGroup !== "adult_leader") {
+            const isLeader = ageGroup === "adult" && guests.adult_leader && guests.adult_leader > 0
+            const actualCount = isLeader ? (guests.adult_leader || 0) : count
             
-            if (rate) {
-              guestAmount += rate.price * actualCount
+            // 部屋にアサインされた人数分のみ計算
+            const roomGuestCount = Math.min(actualCount, room.assignedGuests)
+            
+            if (roomGuestCount > 0) {
+              const rate = this.findGuestRateByRoomType(
+                ageGroup as any,
+                room.roomType,
+                dayType,
+                season,
+                isLeader,
+                guestRates
+              )
+              
+              if (rate) {
+                guestAmount += rate.price * roomGuestCount
+              }
             }
           }
-        }
-      })
+        })
+      }
 
       // オプション料金（日割り）
       const addonAmount = this.calculateAddonPrice(addons, { ...dateRange, nights: 1 }, guests)
