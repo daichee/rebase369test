@@ -73,6 +73,13 @@ export default function DashboardLayout({
                   <User className="mr-2 h-4 w-4 text-gray-400" />
                   <span className="text-sm text-gray-300 truncate">{user?.email}</span>
                 </div>
+                <Link
+                  href="/profile"
+                  className="w-full flex items-center justify-start text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-2 py-2 text-sm mb-2"
+                >
+                  <User className="mr-3 h-5 w-5" />
+                  プロフィール
+                </Link>
                 <Button
                   variant="ghost"
                   className="w-full justify-start text-gray-300 hover:bg-gray-700 hover:text-white"

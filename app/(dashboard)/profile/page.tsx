@@ -15,7 +15,7 @@ import { Loader2, User, Mail, Calendar, Shield, Save } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 
 export default function ProfilePage() {
-  const { user, isAdmin } = useAuth()
+  const { user } = useAuth()
   const [profileData, setProfileData] = useState({
     name: "",
     email: "",
@@ -235,10 +235,7 @@ export default function ProfilePage() {
               </div>
               <div className="flex items-center space-x-2">
                 <Shield className="h-4 w-4 text-muted-foreground" />
-                <span>権限: </span>
-                <Badge variant={isAdmin ? "default" : "secondary"}>
-                  {isAdmin ? "管理者" : "一般ユーザー"}
-                </Badge>
+                <span>アカウント種別: 管理者</span>
               </div>
             </div>
           </div>
