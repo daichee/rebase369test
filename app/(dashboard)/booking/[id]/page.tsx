@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Edit, Save, X, Calendar, User, CreditCard, Trash2 } from "lucide-react"
 import { useBookingStore } from "@/store/booking-store"
 import { useRoomStore } from "@/store/room-store"
-import { EstimateSyncButton } from "@/components/board/estimate-sync-button"
+import { EstimateDisplay } from "@/components/booking/estimate-display"
 
 export default function BookingDetailPage() {
   const params = useParams()
@@ -125,8 +125,8 @@ export default function BookingDetailPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
+      <div className="space-y-6">
+        <div className="space-y-6">
           <Tabs defaultValue="booking" className="w-full">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="booking">
@@ -137,9 +137,9 @@ export default function BookingDetailPage() {
                 <User className="mr-2 h-4 w-4" />
                 顧客情報
               </TabsTrigger>
-              <TabsTrigger value="payment">
+              <TabsTrigger value="estimate">
                 <CreditCard className="mr-2 h-4 w-4" />
-                支払い
+                見積書
               </TabsTrigger>
             </TabsList>
 
@@ -243,6 +243,38 @@ export default function BookingDetailPage() {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* 予約履歴・金額情報 */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>予約履歴・金額情報</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>作成日時</Label>
+                      <p className="text-sm">{new Date(booking.createdAt).toLocaleString("ja-JP")}</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>更新日時</Label>
+                      <p className="text-sm">{new Date(booking.updatedAt).toLocaleString("ja-JP")}</p>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>合計金額</Label>
+                    <p className="text-2xl font-bold text-primary">¥{booking.totalAmount.toLocaleString()}</p>
+                  </div>
+                  {booking.boardEstimateId && (
+                    <div className="space-y-2">
+                      <Label>Board連携状況</Label>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline">{booking.boardEstimateId}</Badge>
+                        <span className="text-sm text-muted-foreground">見積もりが同期済みです</span>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </TabsContent>
 
             <TabsContent value="customer" className="space-y-4">
@@ -275,61 +307,10 @@ export default function BookingDetailPage() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="payment" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>支払い情報</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span>合計金額:</span>
-                      <span className="font-bold">¥{booking.totalAmount.toLocaleString()}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+            <TabsContent value="estimate" className="space-y-4">
+              <EstimateDisplay booking={booking} customer={customer} room={room} />
             </TabsContent>
           </Tabs>
-        </div>
-
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Board連携</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {booking.boardEstimateId ? (
-                <div className="space-y-2">
-                  <Badge variant="outline">{booking.boardEstimateId}</Badge>
-                  <p className="text-sm text-muted-foreground">見積もりが同期済みです</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <EstimateSyncButton bookingId={booking.id} />
-                  <p className="text-sm text-muted-foreground">Boardと同期してください</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>予約履歴</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span>作成日時:</span>
-                  <span>{new Date(booking.createdAt).toLocaleString("ja-JP")}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>更新日時:</span>
-                  <span>{new Date(booking.updatedAt).toLocaleString("ja-JP")}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </div>
     </div>
