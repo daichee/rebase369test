@@ -21,12 +21,13 @@ export interface PriceBreakdown {
   subtotal: number // 小計
   total: number // 総額（税込み）
   dailyBreakdown: DailyPrice[] // 日別明細
+  lineItems: PriceLineItem[] // 見積書項目
 }
 
 export interface DailyPrice {
   date: string
   dayType: "weekday" | "weekend"
-  season: "regular" | "peak"
+  season: "off_season" | "on_season"
   roomAmount: number
   guestAmount: number
   addonAmount: number
@@ -63,17 +64,61 @@ export interface AddonItem {
   totalPrice: number
 }
 
-export interface SeasonInfo {
-  seasonId: string
-  name: string
-  type: "regular" | "peak"
-  multiplier: number
+// 新しい季節期間設定
+export interface SeasonPeriod {
+  periodId: string
+  name: string // "春シーズン(GW含む)"
+  type: "off_season" | "on_season"
+  startDate: string // "03-01"
+  endDate: string // "05-10"
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+// 個人料金マトリクス（絶対値設定）
+export interface GuestRateMatrix {
+  matrixId: string
+  ageGroup: "adult" | "student" | "child" | "infant" | "baby"
+  usageType: "shared" | "private"
+  dayType: "weekday" | "weekend"
+  seasonType: "off_season" | "on_season"
+  isLeader: boolean // 付添割引フラグ
+  price: number // 絶対値（係数計算なし）
+  effectiveFrom: string
+  effectiveTo?: string
+  isActive: boolean
+}
+
+// 部屋料金設定
+export interface RoomRate {
+  rateId: string
+  roomType: "large" | "medium_a" | "medium_b" | "small_a" | "small_b" | "small_c"
+  roomName: string
+  baseRate: number // 固定値
+  effectiveFrom: string
+  effectiveTo?: string
+  isActive: boolean
+}
+
+// 見積書項目
+export interface PriceLineItem {
+  itemId: string
+  category: "room" | "guest" | "addon"
+  description: string // "大人 平日・オフシーズン"
+  unitPrice: number
+  quantity: number
+  unit: string // "人泊", "泊", "個"
+  subtotal: number
+  date?: string // 日別明細の場合
+  ageGroup?: string
+  roomType?: string
 }
 
 export interface RateInfo {
   ageGroup: keyof GuestCount
   basePrice: number
-  dayMultiplier: number
-  seasonMultiplier: number
+  dayType: "weekday" | "weekend"
+  seasonType: "off_season" | "on_season"
   finalPrice: number
 }

@@ -8,16 +8,17 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Edit, Trash2, Save, X, Calculator } from "lucide-react"
+import { Plus, Edit, Trash2, Save, X, Calculator, Settings2 } from "lucide-react"
 import { usePricingStore } from "@/store/pricing-store"
 import { PricingMatrix } from "@/components/admin/pricing-matrix"
+import { EnhancedPricingMatrix } from "@/components/admin/enhanced-pricing-matrix"
 
 export default function PricingAdminPage() {
   const { rules, addRule, updateRule, deleteRule } = usePricingStore()
   const [isEditing, setIsEditing] = useState<string | null>(null)
   const [isAdding, setIsAdding] = useState(false)
   const [editForm, setEditForm] = useState<any>({})
-  const [activeTab, setActiveTab] = useState<string>("rules")
+  const [activeTab, setActiveTab] = useState<string>("enhanced")
   const [newRuleForm, setNewRuleForm] = useState({
     name: "",
     type: "seasonal" as const,
@@ -127,14 +128,21 @@ export default function PricingAdminPage() {
             variant={activeTab === "rules" ? "default" : "outline"} 
             onClick={() => setActiveTab("rules")}
           >
-            料金ルール
+            料金ルール（旧）
           </Button>
           <Button 
             variant={activeTab === "matrix" ? "default" : "outline"} 
             onClick={() => setActiveTab("matrix")}
           >
             <Calculator className="mr-2 h-4 w-4" />
-            料金マトリクス
+            料金マトリクス（旧）
+          </Button>
+          <Button 
+            variant={activeTab === "enhanced" ? "default" : "outline"} 
+            onClick={() => setActiveTab("enhanced")}
+          >
+            <Settings2 className="mr-2 h-4 w-4" />
+            新料金システム
           </Button>
           <Button onClick={() => setIsAdding(true)} disabled={isAdding}>
             <Plus className="mr-2 h-4 w-4" />
@@ -261,6 +269,11 @@ export default function PricingAdminPage() {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* 新料金システム */}
+      {activeTab === "enhanced" && (
+        <EnhancedPricingMatrix />
       )}
 
       {/* 料金マトリクス表示 */}
