@@ -152,6 +152,174 @@ export type Database = {
           nights?: number
         }
       }
+      project_items: {
+        Row: {
+          id: string
+          project_id: string
+          item_type: string
+          item_code: string
+          item_name: string
+          category: string | null
+          quantity: number
+          unit: string
+          unit_price: number
+          amount: number
+          target_date: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          item_type: string
+          item_code: string
+          item_name: string
+          category?: string | null
+          quantity: number
+          unit: string
+          unit_price: number
+          target_date?: string | null
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          item_type?: string
+          item_code?: string
+          item_name?: string
+          category?: string | null
+          quantity?: number
+          unit?: string
+          unit_price?: number
+          target_date?: string | null
+        }
+      }
+      seasons: {
+        Row: {
+          season_id: string
+          name: string
+          season_type: "regular" | "peak"
+          start_date: string
+          end_date: string
+          room_rate_multiplier: number
+          pax_rate_multiplier: number
+          is_active: boolean
+          created_at: string
+        }
+        Insert: {
+          season_id: string
+          name: string
+          season_type: "regular" | "peak"
+          start_date: string
+          end_date: string
+          room_rate_multiplier?: number
+          pax_rate_multiplier?: number
+          is_active?: boolean
+        }
+        Update: {
+          season_id?: string
+          name?: string
+          season_type?: "regular" | "peak"
+          start_date?: string
+          end_date?: string
+          room_rate_multiplier?: number
+          pax_rate_multiplier?: number
+          is_active?: boolean
+        }
+      }
+      rates: {
+        Row: {
+          rate_id: number
+          season_id: string | null
+          day_type: "weekday" | "weekend"
+          room_usage: "shared" | "private"
+          age_group: string
+          base_price: number
+          is_active: boolean
+          created_at: string
+        }
+        Insert: {
+          season_id?: string | null
+          day_type: "weekday" | "weekend"
+          room_usage: "shared" | "private"
+          age_group: string
+          base_price: number
+          is_active?: boolean
+        }
+        Update: {
+          rate_id?: number
+          season_id?: string | null
+          day_type?: "weekday" | "weekend"
+          room_usage?: "shared" | "private"
+          age_group?: string
+          base_price?: number
+          is_active?: boolean
+        }
+      }
+      add_ons: {
+        Row: {
+          add_on_id: string
+          category: "meal" | "facility" | "equipment"
+          name: string
+          unit: string
+          adult_fee: number
+          student_fee: number
+          child_fee: number
+          infant_fee: number
+          personal_fee_5h: number
+          personal_fee_10h: number
+          personal_fee_over: number
+          room_fee_weekday_guest: number
+          room_fee_weekday_other: number
+          room_fee_weekend_guest: number
+          room_fee_weekend_other: number
+          aircon_fee_per_hour: number
+          min_quantity: number
+          max_quantity: number | null
+          is_active: boolean
+          created_at: string
+        }
+        Insert: {
+          add_on_id: string
+          category: "meal" | "facility" | "equipment"
+          name: string
+          unit: string
+          adult_fee?: number
+          student_fee?: number
+          child_fee?: number
+          infant_fee?: number
+          personal_fee_5h?: number
+          personal_fee_10h?: number
+          personal_fee_over?: number
+          room_fee_weekday_guest?: number
+          room_fee_weekday_other?: number
+          room_fee_weekend_guest?: number
+          room_fee_weekend_other?: number
+          aircon_fee_per_hour?: number
+          min_quantity?: number
+          max_quantity?: number | null
+          is_active?: boolean
+        }
+        Update: {
+          add_on_id?: string
+          category?: "meal" | "facility" | "equipment"
+          name?: string
+          unit?: string
+          adult_fee?: number
+          student_fee?: number
+          child_fee?: number
+          infant_fee?: number
+          personal_fee_5h?: number
+          personal_fee_10h?: number
+          personal_fee_over?: number
+          room_fee_weekday_guest?: number
+          room_fee_weekday_other?: number
+          room_fee_weekend_guest?: number
+          room_fee_weekend_other?: number
+          aircon_fee_per_hour?: number
+          min_quantity?: number
+          max_quantity?: number | null
+          is_active?: boolean
+        }
+      }
       board_projects: {
         Row: {
           board_project_id: number
@@ -181,6 +349,42 @@ export type Database = {
           status?: string
           last_synced_at?: string
           is_active?: boolean
+        }
+      }
+      board_sync_log: {
+        Row: {
+          id: string
+          project_id: string | null
+          board_project_id: number | null
+          sync_type: string
+          sync_status: "pending" | "success" | "error"
+          request_data: any | null
+          response_data: any | null
+          error_message: string | null
+          sync_started_at: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          project_id?: string | null
+          board_project_id?: number | null
+          sync_type: string
+          sync_status: "pending" | "success" | "error"
+          request_data?: any | null
+          response_data?: any | null
+          error_message?: string | null
+          sync_started_at?: string
+        }
+        Update: {
+          id?: string
+          project_id?: string | null
+          board_project_id?: number | null
+          sync_type?: string
+          sync_status?: "pending" | "success" | "error"
+          request_data?: any | null
+          response_data?: any | null
+          error_message?: string | null
+          sync_started_at?: string
         }
       }
     }
