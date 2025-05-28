@@ -23,7 +23,7 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname()
   const router = useRouter()
-  const { user, signOut } = useAuth()
+  const { user, signOut, isAdmin } = useAuth()
 
   const handleSignOut = async () => {
     try {
@@ -45,6 +45,11 @@ export default function DashboardLayout({
             </div>
             <nav className="flex-1 space-y-1 px-2 py-4">
               {navigation.map((item) => {
+                // 管理画面は管理者のみアクセス可能
+                if (item.href === "/admin" && !isAdmin) {
+                  return null
+                }
+                
                 const isActive = pathname === item.href
                 return (
                   <Link
