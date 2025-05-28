@@ -29,6 +29,8 @@ export default function LoginPage() {
     const message = searchParams.get("message")
     if (message === "signup_success") {
       setSuccessMessage("アカウントが作成されました。ログインしてください。")
+    } else if (message === "password_updated") {
+      setSuccessMessage("パスワードが更新されました。新しいパスワードでログインしてください。")
     }
   }, [searchParams])
 
