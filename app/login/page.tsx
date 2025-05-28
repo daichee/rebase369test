@@ -141,8 +141,8 @@ export default function LoginPage() {
 
         <div className="text-center text-sm text-muted-foreground">
           <p>デモ用アカウント</p>
-          <p>Email: admin@rebase369.com</p>
-          <p>Password: demo123</p>
+          <p>Email: d.kondo2618@gmail.com</p>
+          <p>Password: 3LqzBfE3JC6VkgD</p>
         </div>
       </div>
     </div>
