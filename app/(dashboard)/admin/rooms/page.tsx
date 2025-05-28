@@ -16,6 +16,7 @@ export default function RoomsAdminPage() {
   const [isEditing, setIsEditing] = useState<string | null>(null)
   const [isAdding, setIsAdding] = useState(false)
   const [editForm, setEditForm] = useState<any>({})
+  const [floorFilter, setFloorFilter] = useState<string>("all")
   const [newRoomForm, setNewRoomForm] = useState({
     name: "",
     type: "double" as const,
@@ -108,6 +109,11 @@ export default function RoomsAdminPage() {
     }
   }
 
+  const filteredRooms = rooms.filter((room) => {
+    if (floorFilter === "all") return true
+    return room.type === floorFilter || room.name.includes(floorFilter)
+  })
+
   return (
     <div className="p-8">
       <div className="flex justify-between items-center mb-8">
@@ -115,10 +121,25 @@ export default function RoomsAdminPage() {
           <h1 className="text-3xl font-bold">部屋管理</h1>
           <p className="text-muted-foreground">部屋の追加、編集、削除を行います</p>
         </div>
-        <Button onClick={() => setIsAdding(true)} disabled={isAdding}>
-          <Plus className="mr-2 h-4 w-4" />
-          新規部屋追加
-        </Button>
+        <div className="flex gap-4 items-center">
+          <div className="space-y-2">
+            <Label>フロア別表示</Label>
+            <Select value={floorFilter} onValueChange={setFloorFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">全フロア</SelectItem>
+                <SelectItem value="2F">2F</SelectItem>
+                <SelectItem value="3F">3F</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <Button onClick={() => setIsAdding(true)} disabled={isAdding}>
+            <Plus className="mr-2 h-4 w-4" />
+            新規部屋追加
+          </Button>
+        </div>
       </div>
 
       {/* 新規部屋追加フォーム */}
@@ -245,7 +266,7 @@ export default function RoomsAdminPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rooms.map((room) => (
+              {filteredRooms.map((room) => (
                 <TableRow key={room.id}>
                   <TableCell>
                     {isEditing === room.id ? (
