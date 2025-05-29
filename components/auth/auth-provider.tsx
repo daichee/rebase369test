@@ -41,8 +41,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const timeSinceLastActivity = now - lastActivity
       
       if (timeSinceLastActivity >= SESSION_TIMEOUT) {
-        signOut()
-        alert("セッションの有効期限が切れました。再度ログインしてください。")
+        // Use setTimeout to avoid state updates during render phase
+        setTimeout(() => {
+          signOut()
+          alert("セッションの有効期限が切れました。再度ログインしてください。")
+        }, 0)
       }
     }
 
@@ -86,12 +89,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const { data, error } = await supabase.auth.refreshSession()
         if (error) {
           console.error("Session refresh error:", error)
-          // If refresh fails, sign out user
-          signOut()
+          // If refresh fails, sign out user - use setTimeout to avoid state updates during render phase
+          setTimeout(() => {
+            signOut()
+          }, 0)
         }
       } catch (error) {
         console.error("Session refresh error:", error)
-        signOut()
+        // Use setTimeout to avoid state updates during render phase
+        setTimeout(() => {
+          signOut()
+        }, 0)
       }
     }
 
