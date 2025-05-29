@@ -81,21 +81,21 @@ INSERT INTO add_ons (add_on_id, category, name, unit, adult_fee, student_fee, ch
 -- 顧客1社目：関西大学サークル（学生中心）
 INSERT INTO projects (
   id, status, start_date, end_date, 
-  pax_total, pax_adults, pax_adult_leaders, pax_students, 
+  pax_total, pax_adults, pax_adult_leaders, pax_students, pax_children, pax_infants, pax_babies,
   guest_name, guest_email, guest_phone, guest_org, purpose,
   room_amount, pax_amount, addon_amount, subtotal_amount, total_amount,
   notes, created_at, updated_at
 ) VALUES 
 (
   uuid_generate_v4(), 'confirmed', '2025-06-15', '2025-06-17',
-  18, 2, 2, 16,
+  18, 2, 2, 14, 0, 0, 0,
   '田中 健太', 'tanaka@kansai-u.ac.jp', '090-1234-5678', '関西大学 テニスサークル', '合宿',
   40000, 172800, 54000, 266800, 266800,
   'Board未同期のサンプルデータ', '2025-05-28 10:00:00+09', '2025-05-28 10:00:00+09'
 ),
 (
   uuid_generate_v4(), 'confirmed', '2025-06-28', '2025-06-30',
-  25, 3, 3, 22,
+  25, 3, 3, 19, 0, 0, 0,
   '佐藤 美咲', 'sato@kansai-u.ac.jp', '090-2345-6789', '関西大学 吹奏楽部', '夏合宿',
   40000, 240000, 75000, 355000, 355000,
   'Board未同期のサンプルデータ', '2025-05-28 11:00:00+09', '2025-05-28 11:00:00+09'
@@ -104,28 +104,28 @@ INSERT INTO projects (
 -- 顧客2社目：株式会社テックソリューション（企業研修）
 INSERT INTO projects (
   id, status, start_date, end_date, 
-  pax_total, pax_adults, pax_adult_leaders, pax_students, 
+  pax_total, pax_adults, pax_adult_leaders, pax_students, pax_children, pax_infants, pax_babies,
   guest_name, guest_email, guest_phone, guest_org, purpose,
   room_amount, pax_amount, addon_amount, subtotal_amount, total_amount,
   notes, created_at, updated_at
 ) VALUES 
 (
   uuid_generate_v4(), 'confirmed', '2025-07-03', '2025-07-05',
-  12, 12, 0, 0,
+  12, 12, 0, 0, 0, 0, 0,
   '山田 一郎', 'yamada@techsol.co.jp', '06-1234-5678', '株式会社テックソリューション', '新人研修',
   30000, 144000, 36000, 210000, 210000,
   'Board未同期のサンプルデータ', '2025-05-28 12:00:00+09', '2025-05-28 12:00:00+09'
 ),
 (
   uuid_generate_v4(), 'confirmed', '2025-07-18', '2025-07-20',
-  8, 8, 0, 0,
+  8, 8, 0, 0, 0, 0, 0,
   '鈴木 花子', 'suzuki@techsol.co.jp', '06-2345-6789', '株式会社テックソリューション', 'チームビルディング研修',
   20000, 96000, 24000, 140000, 140000,
   'Board未同期のサンプルデータ', '2025-05-28 13:00:00+09', '2025-05-28 13:00:00+09'
 ),
 (
   uuid_generate_v4(), 'draft', '2025-07-25', '2025-07-27',
-  15, 15, 0, 0,
+  15, 15, 0, 0, 0, 0, 0,
   '高橋 次郎', 'takahashi@techsol.co.jp', '06-3456-7890', '株式会社テックソリューション', '幹部合宿',
   35000, 180000, 45000, 260000, 260000,
   'Board未同期のサンプルデータ（未確定）', '2025-05-28 14:00:00+09', '2025-05-28 14:00:00+09'
