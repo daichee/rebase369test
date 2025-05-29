@@ -125,24 +125,18 @@ export default function PricingAdminPage() {
         </div>
         <div className="flex gap-2">
           <Button 
-            variant={activeTab === "rules" ? "default" : "outline"} 
-            onClick={() => setActiveTab("rules")}
-          >
-            料金ルール（旧）
-          </Button>
-          <Button 
-            variant={activeTab === "matrix" ? "default" : "outline"} 
-            onClick={() => setActiveTab("matrix")}
-          >
-            <Calculator className="mr-2 h-4 w-4" />
-            料金マトリクス（旧）
-          </Button>
-          <Button 
             variant={activeTab === "enhanced" ? "default" : "outline"} 
             onClick={() => setActiveTab("enhanced")}
           >
             <Settings2 className="mr-2 h-4 w-4" />
-            新料金システム
+            料金マトリクス
+          </Button>
+          <Button 
+            variant={activeTab === "rules" ? "default" : "outline"} 
+            onClick={() => setActiveTab("rules")}
+          >
+            <Calculator className="mr-2 h-4 w-4" />
+            料金ルール管理
           </Button>
           <Button onClick={() => setIsAdding(true)} disabled={isAdding}>
             <Plus className="mr-2 h-4 w-4" />
@@ -271,14 +265,9 @@ export default function PricingAdminPage() {
         </Card>
       )}
 
-      {/* 新料金システム */}
+      {/* 料金マトリクス */}
       {activeTab === "enhanced" && (
         <EnhancedPricingMatrix />
-      )}
-
-      {/* 料金マトリクス表示 */}
-      {activeTab === "matrix" && (
-        <PricingMatrix />
       )}
 
       {/* 料金ルール一覧 */}

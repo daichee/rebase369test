@@ -4,7 +4,18 @@ import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Settings, Users, Home, DollarSign, Calendar, BarChart3 } from "lucide-react"
+import { Separator } from "@/components/ui/separator"
+import { 
+  Settings, 
+  Users, 
+  Home, 
+  DollarSign, 
+  Calendar, 
+  BarChart3, 
+  Database,
+  Sync,
+  Settings2
+} from "lucide-react"
 import { useBookingStore } from "@/store/booking-store"
 import { useRoomStore } from "@/store/room-store"
 import { usePricingStore } from "@/store/pricing-store"
@@ -21,13 +32,15 @@ export default function AdminPage() {
     activePricingRules: rules.filter((r) => r.isActive).length,
     pendingBookings: bookings.filter((b) => b.status === "pending").length,
     confirmedBookings: bookings.filter((b) => b.status === "confirmed").length,
+    syncedBookings: bookings.filter((b) => b.boardEstimateId).length,
+    totalRevenue: bookings.reduce((sum, b) => sum + b.totalAmount, 0),
   }
 
   return (
     <div className="p-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold">管理画面</h1>
-        <p className="text-muted-foreground">システムの設定と管理</p>
+        <p className="text-muted-foreground">システムの管理とデータの概要</p>
       </div>
 
       {/* 統計概要 */}
@@ -40,201 +53,221 @@ export default function AdminPage() {
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalBookings}</div>
             <div className="flex gap-2 mt-2">
-              <Badge variant="secondary">{stats.pendingBookings} 保留</Badge>
-              <Badge variant="default">{stats.confirmedBookings} 確定</Badge>
+              <Badge variant="secondary" className="text-xs">{stats.pendingBookings} 保留</Badge>
+              <Badge variant="default" className="text-xs">{stats.confirmedBookings} 確定</Badge>
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">顧客数</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalCustomers}</div>
-            <p className="text-xs text-muted-foreground">登録済み顧客</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">部屋数</CardTitle>
-            <Home className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalRooms}</div>
-            <p className="text-xs text-muted-foreground">利用可能な部屋</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">料金ルール</CardTitle>
+            <CardTitle className="text-sm font-medium">総売上</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.activePricingRules}</div>
-            <p className="text-xs text-muted-foreground">アクティブなルール</p>
+            <div className="text-2xl font-bold">¥{stats.totalRevenue.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">全期間合計</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">顧客・部屋</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalCustomers}・{stats.totalRooms}</div>
+            <p className="text-xs text-muted-foreground">顧客数・部屋数</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Board連携</CardTitle>
+            <Sync className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.syncedBookings}/{stats.totalBookings}</div>
+            <p className="text-xs text-muted-foreground">同期済み予約</p>
           </CardContent>
         </Card>
       </div>
 
       {/* 管理メニュー */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Home className="mr-2 h-5 w-5" />
-              部屋管理
-            </CardTitle>
-            <CardDescription>部屋の追加、編集、削除を行います</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2 mb-4">
-              <p className="text-sm">登録部屋数: {rooms.length}</p>
-              <p className="text-sm">アクティブ: {rooms.filter((r) => r.isActive).length}</p>
-            </div>
-            <Button asChild className="w-full">
-              <Link href="/admin/rooms">部屋管理を開く</Link>
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="space-y-8">
+        {/* 主要機能 */}
+        <div>
+          <h2 className="text-xl font-semibold mb-4">主要機能</h2>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <Card className="hover:shadow-md transition-shadow">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Home className="mr-2 h-5 w-5" />
+                  部屋管理
+                </CardTitle>
+                <CardDescription>部屋の追加、編集、削除</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex justify-between items-center mb-4">
+                  <span className="text-sm">登録部屋数</span>
+                  <Badge variant="outline">{rooms.length}件</Badge>
+                </div>
+                <Button asChild className="w-full">
+                  <Link href="/admin/rooms">管理画面を開く</Link>
+                </Button>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <DollarSign className="mr-2 h-5 w-5" />
-              料金設定
-            </CardTitle>
-            <CardDescription>料金ルールとシーズン料金の設定</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2 mb-4">
-              <p className="text-sm">料金ルール: {rules.length}</p>
-              <p className="text-sm">アクティブ: {rules.filter((r) => r.isActive).length}</p>
-            </div>
-            <Button asChild className="w-full">
-              <Link href="/admin/pricing">料金設定を開く</Link>
-            </Button>
-          </CardContent>
-        </Card>
+            <Card className="hover:shadow-md transition-shadow">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <DollarSign className="mr-2 h-5 w-5" />
+                  料金設定
+                </CardTitle>
+                <CardDescription>料金ルールとシーズン料金</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex justify-between items-center mb-4">
+                  <span className="text-sm">アクティブルール</span>
+                  <Badge variant="outline">{stats.activePricingRules}件</Badge>
+                </div>
+                <Button asChild className="w-full">
+                  <Link href="/admin/pricing">管理画面を開く</Link>
+                </Button>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Users className="mr-2 h-5 w-5" />
-              顧客管理
-            </CardTitle>
-            <CardDescription>顧客情報の管理と履歴確認</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2 mb-4">
-              <p className="text-sm">登録顧客: {customers.length}</p>
-              <p className="text-sm">今月新規: 0</p>
-            </div>
-            <Button asChild className="w-full">
-              <Link href="/admin/customers">顧客管理を開く</Link>
-            </Button>
-          </CardContent>
-        </Card>
+            <Card className="hover:shadow-md transition-shadow">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Users className="mr-2 h-5 w-5" />
+                  顧客管理
+                </CardTitle>
+                <CardDescription>顧客情報と予約履歴</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex justify-between items-center mb-4">
+                  <span className="text-sm">登録顧客数</span>
+                  <Badge variant="outline">{customers.length}件</Badge>
+                </div>
+                <Button asChild className="w-full">
+                  <Link href="/admin/customers">管理画面を開く</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <BarChart3 className="mr-2 h-5 w-5" />
-              レポート
-            </CardTitle>
-            <CardDescription>売上レポートと分析データ</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2 mb-4">
-              <p className="text-sm">
-                今月売上: ¥{bookings.reduce((sum, b) => sum + b.totalAmount, 0).toLocaleString()}
-              </p>
-              <p className="text-sm">稼働率: 85%</p>
-            </div>
-            <Button asChild className="w-full">
-              <Link href="/admin/reports">レポートを開く</Link>
-            </Button>
-          </CardContent>
-        </Card>
+        <Separator />
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Settings className="mr-2 h-5 w-5" />
-              システム設定
-            </CardTitle>
-            <CardDescription>システム全般の設定と環境変数</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2 mb-4">
-              <p className="text-sm">Board API: 接続済み</p>
-              <p className="text-sm">Supabase: 接続済み</p>
-            </div>
-            <Button asChild className="w-full">
-              <Link href="/admin/settings">システム設定を開く</Link>
-            </Button>
-          </CardContent>
-        </Card>
+        {/* 分析・レポート */}
+        <div>
+          <h2 className="text-xl font-semibold mb-4">分析・レポート</h2>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card className="hover:shadow-md transition-shadow">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <BarChart3 className="mr-2 h-5 w-5" />
+                  売上レポート
+                </CardTitle>
+                <CardDescription>売上分析と稼働率レポート</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button asChild className="w-full">
+                  <Link href="/admin/reports">レポートを開く</Link>
+                </Button>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Calendar className="mr-2 h-5 w-5" />
-              Board連携
-            </CardTitle>
-            <CardDescription>Board APIとの連携状況と同期管理</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2 mb-4">
-              <p className="text-sm">同期済み見積もり: {bookings.filter((b) => b.boardEstimateId).length}</p>
-              <p className="text-sm">未同期: {bookings.filter((b) => !b.boardEstimateId).length}</p>
-            </div>
-            <Button asChild className="w-full">
-              <Link href="/admin/board-sync">Board連携を開く</Link>
-            </Button>
-          </CardContent>
-        </Card>
+            <Card className="hover:shadow-md transition-shadow">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Database className="mr-2 h-5 w-5" />
+                  データ管理
+                </CardTitle>
+                <CardDescription>エクスポート・インポート・バックアップ</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button asChild className="w-full">
+                  <Link href="/admin/data">管理画面を開く</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Settings className="mr-2 h-5 w-5" />
-              オプション管理
-            </CardTitle>
-            <CardDescription>食事・施設・備品オプションの管理</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2 mb-4">
-              <p className="text-sm">食事オプション: 3件</p>
-              <p className="text-sm">施設・備品: 3件</p>
-            </div>
-            <Button asChild className="w-full">
-              <Link href="/admin/options">オプション管理を開く</Link>
-            </Button>
-          </CardContent>
-        </Card>
+        <Separator />
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Settings className="mr-2 h-5 w-5" />
-              データ管理
-            </CardTitle>
-            <CardDescription>インポート・エクスポート・バックアップ</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2 mb-4">
-              <p className="text-sm">部屋データ: {rooms.length}件</p>
-              <p className="text-sm">予約データ: {bookings.length}件</p>
-            </div>
-            <Button asChild className="w-full">
-              <Link href="/admin/data">データ管理を開く</Link>
-            </Button>
-          </CardContent>
-        </Card>
+        {/* システム・連携 */}
+        <div>
+          <h2 className="text-xl font-semibold mb-4">システム・連携</h2>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <Card className="hover:shadow-md transition-shadow">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Sync className="mr-2 h-5 w-5" />
+                  Board連携
+                </CardTitle>
+                <CardDescription>見積もりシステムとの同期</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex justify-between items-center mb-4">
+                  <span className="text-sm">未同期予約</span>
+                  <Badge variant={stats.totalBookings - stats.syncedBookings > 0 ? "destructive" : "default"}>
+                    {stats.totalBookings - stats.syncedBookings}件
+                  </Badge>
+                </div>
+                <Button asChild className="w-full">
+                  <Link href="/admin/board-sync">同期管理を開く</Link>
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-md transition-shadow">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Settings2 className="mr-2 h-5 w-5" />
+                  オプション管理
+                </CardTitle>
+                <CardDescription>食事・施設・備品オプション</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex justify-between items-center mb-4">
+                  <span className="text-sm">登録オプション</span>
+                  <Badge variant="outline">6件</Badge>
+                </div>
+                <Button asChild className="w-full">
+                  <Link href="/admin/options">管理画面を開く</Link>
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-md transition-shadow">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Settings className="mr-2 h-5 w-5" />
+                  システム設定
+                </CardTitle>
+                <CardDescription>基本設定と外部連携</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2 mb-4">
+                  <div className="flex justify-between text-sm">
+                    <span>Board API</span>
+                    <Badge variant="default" className="text-xs">接続済み</Badge>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Supabase</span>
+                    <Badge variant="default" className="text-xs">接続済み</Badge>
+                  </div>
+                </div>
+                <Button asChild className="w-full">
+                  <Link href="/admin/settings">設定を開く</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     </div>
   )
