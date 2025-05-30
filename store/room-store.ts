@@ -144,17 +144,19 @@ export const useRoomStore = create<RoomState>()(
 
       getAvailableRooms: (checkIn, checkOut) => {
         const { rooms, availability } = get()
+        const safeRooms = Array.isArray(rooms) ? rooms : []
+        const safeAvailability = Array.isArray(availability) ? availability : []
         const checkInDate = new Date(checkIn)
         const checkOutDate = new Date(checkOut)
 
-        return rooms.filter((room) => {
+        return safeRooms.filter((room) => {
           if (!room.isActive) return false
 
           // チェック期間中の全ての日付で空室かどうか確認
           const currentDate = new Date(checkInDate)
           while (currentDate < checkOutDate) {
             const dateStr = currentDate.toISOString().split("T")[0]
-            const roomAvailability = availability.find((a) => a.roomId === room.id && a.date === dateStr)
+            const roomAvailability = safeAvailability.find((a) => a?.roomId === room?.id && a?.date === dateStr)
 
             if (roomAvailability && !roomAvailability.isAvailable) {
               return false
@@ -169,17 +171,20 @@ export const useRoomStore = create<RoomState>()(
 
       getRoomsByType: (type) => {
         const { rooms } = get()
-        return rooms.filter((room) => room.type === type && room.isActive)
+        const safeRooms = Array.isArray(rooms) ? rooms : []
+        return safeRooms.filter((room) => room?.type === type && room?.isActive)
       },
 
       getActiveRooms: () => {
         const { rooms } = get()
-        return rooms.filter((room) => room.isActive)
+        const safeRooms = Array.isArray(rooms) ? rooms : []
+        return safeRooms.filter((room) => room?.isActive)
       },
 
       getRoomAvailability: (roomId, date) => {
         const { availability } = get()
-        return availability.find((a) => a.roomId === roomId && a.date === date) || null
+        const safeAvailability = Array.isArray(availability) ? availability : []
+        return safeAvailability.find((a) => a?.roomId === roomId && a?.date === date) || null
       },
     }),
     {

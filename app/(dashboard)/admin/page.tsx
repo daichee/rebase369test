@@ -19,29 +19,37 @@ import {
 import { useBookingStore } from "@/store/booking-store"
 import { useRoomStore } from "@/store/room-store"
 import { usePricingStore } from "@/store/pricing-store"
+import { ErrorBoundary } from "@/components/common/error-boundary"
 
 export default function AdminPage() {
-  const { bookings, customers } = useBookingStore()
-  const { rooms } = useRoomStore()
-  const { rules } = usePricingStore()
+  const { bookings = [], customers = [] } = useBookingStore()
+  const { rooms = [] } = useRoomStore()
+  const { rules = [] } = usePricingStore()
+
+  // Defensive programming: ensure all arrays are valid before operations
+  const safeBookings = Array.isArray(bookings) ? bookings : []
+  const safeCustomers = Array.isArray(customers) ? customers : []
+  const safeRooms = Array.isArray(rooms) ? rooms : []
+  const safeRules = Array.isArray(rules) ? rules : []
 
   const stats = {
-    totalBookings: bookings.length,
-    totalCustomers: customers.length,
-    totalRooms: rooms.length,
-    activePricingRules: rules.filter((r) => r.isActive).length,
-    pendingBookings: bookings.filter((b) => b.status === "pending").length,
-    confirmedBookings: bookings.filter((b) => b.status === "confirmed").length,
-    syncedBookings: bookings.filter((b) => b.boardEstimateId).length,
-    totalRevenue: bookings.reduce((sum, b) => sum + b.totalAmount, 0),
+    totalBookings: safeBookings.length,
+    totalCustomers: safeCustomers.length,
+    totalRooms: safeRooms.length,
+    activePricingRules: safeRules.filter((r) => r?.isActive).length,
+    pendingBookings: safeBookings.filter((b) => b?.status === "pending").length,
+    confirmedBookings: safeBookings.filter((b) => b?.status === "confirmed").length,
+    syncedBookings: safeBookings.filter((b) => b?.boardEstimateId).length,
+    totalRevenue: safeBookings.reduce((sum, b) => sum + (b?.totalAmount || 0), 0),
   }
 
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">管理画面</h1>
-        <p className="text-muted-foreground">システムの管理とデータの概要</p>
-      </div>
+    <ErrorBoundary>
+      <div className="p-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold">管理画面</h1>
+          <p className="text-muted-foreground">システムの管理とデータの概要</p>
+        </div>
 
       {/* 統計概要 */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
@@ -110,7 +118,7 @@ export default function AdminPage() {
               <CardContent>
                 <div className="flex justify-between items-center mb-4">
                   <span className="text-sm">登録部屋数</span>
-                  <Badge variant="outline">{rooms.length}件</Badge>
+                  <Badge variant="outline">{safeRooms.length}件</Badge>
                 </div>
                 <Button asChild className="w-full">
                   <Link href="/admin/rooms">管理画面を開く</Link>
@@ -148,7 +156,7 @@ export default function AdminPage() {
               <CardContent>
                 <div className="flex justify-between items-center mb-4">
                   <span className="text-sm">登録顧客数</span>
-                  <Badge variant="outline">{customers.length}件</Badge>
+                  <Badge variant="outline">{safeCustomers.length}件</Badge>
                 </div>
                 <Button asChild className="w-full">
                   <Link href="/admin/customers">管理画面を開く</Link>
@@ -213,8 +221,8 @@ export default function AdminPage() {
               <CardContent>
                 <div className="flex justify-between items-center mb-4">
                   <span className="text-sm">未同期予約</span>
-                  <Badge variant={stats.totalBookings - stats.syncedBookings > 0 ? "destructive" : "default"}>
-                    {stats.totalBookings - stats.syncedBookings}件
+                  <Badge variant={(stats.totalBookings - stats.syncedBookings) > 0 ? "destructive" : "default"}>
+                    {Math.max(0, stats.totalBookings - stats.syncedBookings)}件
                   </Badge>
                 </div>
                 <Button asChild className="w-full">
@@ -269,6 +277,7 @@ export default function AdminPage() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </ErrorBoundary>
   )
 }
