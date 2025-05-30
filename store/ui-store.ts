@@ -63,7 +63,7 @@ export const useUIStore = create<UIState>()(
       notifications: [],
 
       calendarView: "month",
-      selectedDate: new Date().toISOString().split("T")[0],
+      selectedDate: "2025-05-30",
 
       setCurrentPage: (page) => set({ currentPage: page }),
       setSidebarOpen: (open) => set({ sidebarOpen: open }),
@@ -79,16 +79,21 @@ export const useUIStore = create<UIState>()(
         })),
 
       addNotification: (notification) => {
-        const id = Math.random().toString(36).substr(2, 9)
+        // Use crypto.randomUUID() if available, or fallback to a more deterministic ID
+        const id = typeof crypto !== 'undefined' && crypto.randomUUID ? 
+          crypto.randomUUID() : 
+          `notif-${Date.now()}-${Math.floor(Math.random() * 1000)}`
         const timestamp = Date.now()
         set((state) => ({
           notifications: [...state.notifications, { ...notification, id, timestamp }],
         }))
 
-        // 5秒後に自動削除
-        setTimeout(() => {
-          get().removeNotification(id)
-        }, 5000)
+        // Use Promise.resolve to avoid hydration issues with setTimeout
+        Promise.resolve().then(() => {
+          setTimeout(() => {
+            get().removeNotification(id)
+          }, 5000)
+        })
       },
 
       removeNotification: (id) =>
