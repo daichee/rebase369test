@@ -95,7 +95,7 @@ export default function DashboardLayout({
 
         {/* メインコンテンツ */}
         <div className="flex flex-1 flex-col">
-          <main className="flex-1 overflow-y-auto bg-gray-50">{children}</main>
+          <main className="flex-1 overflow-y-auto bg-gray-50">{children || null}</main>
         </div>
       </div>
     </AuthGuard>

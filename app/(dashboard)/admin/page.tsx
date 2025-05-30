@@ -20,11 +20,26 @@ import { useBookingStore } from "@/store/booking-store"
 import { useRoomStore } from "@/store/room-store"
 import { usePricingStore } from "@/store/pricing-store"
 import { ErrorBoundary } from "@/components/common/error-boundary"
+import { ClientWrapper } from "@/components/common/client-wrapper"
+import { useHydration } from "@/hooks/use-hydration"
 
 export default function AdminPage() {
+  const isHydrated = useHydration()
   const { bookings = [], customers = [] } = useBookingStore()
   const { rooms = [] } = useRoomStore()
   const { rules = [] } = usePricingStore()
+
+  // Prevent rendering until hydration is complete to avoid React error #130
+  if (!isHydrated) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    )
+  }
 
   // Defensive programming: ensure all arrays are valid before operations
   const safeBookings = Array.isArray(bookings) ? bookings : []
@@ -44,8 +59,9 @@ export default function AdminPage() {
   }
 
   return (
-    <ErrorBoundary>
-      <div className="p-8">
+    <ClientWrapper>
+      <ErrorBoundary>
+        <div className="p-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold">管理画面</h1>
           <p className="text-muted-foreground">システムの管理とデータの概要</p>
@@ -276,8 +292,9 @@ export default function AdminPage() {
             </Card>
           </div>
         </div>
-      </div>
-      </div>
-    </ErrorBoundary>
+        </div>
+        </div>
+      </ErrorBoundary>
+    </ClientWrapper>
   )
 }

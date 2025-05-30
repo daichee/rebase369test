@@ -13,6 +13,10 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  // Improve error handling for React hydration issues
+  compiler: {
+    removeConsole: false,
+  },
 }
 
 export default nextConfig

@@ -41,11 +41,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const timeSinceLastActivity = now - lastActivity
       
       if (timeSinceLastActivity >= SESSION_TIMEOUT) {
-        // Use setTimeout to avoid state updates during render phase
-        setTimeout(() => {
-          signOut()
+        // Use Promise to avoid state updates during render phase
+        Promise.resolve().then(() => {
+          signOut().catch(console.error)
           alert("セッションの有効期限が切れました。再度ログインしてください。")
-        }, 0)
+        })
       }
     }
 
@@ -89,17 +89,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const { data, error } = await supabase.auth.refreshSession()
         if (error) {
           console.error("Session refresh error:", error)
-          // If refresh fails, sign out user - use setTimeout to avoid state updates during render phase
-          setTimeout(() => {
-            signOut()
-          }, 0)
+          // If refresh fails, sign out user - use Promise to avoid state updates during render phase
+          Promise.resolve().then(() => {
+            signOut().catch(console.error)
+          })
         }
       } catch (error) {
         console.error("Session refresh error:", error)
-        // Use setTimeout to avoid state updates during render phase
-        setTimeout(() => {
-          signOut()
-        }, 0)
+        // Use Promise to avoid state updates during render phase
+        Promise.resolve().then(() => {
+          signOut().catch(console.error)
+        })
       }
     }
 
@@ -177,7 +177,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return data
   }
 
-  return <AuthContext.Provider value={{ user, loading, signIn, signOut, signUp, lastActivity, resetActivityTimer }}>{children}</AuthContext.Provider>
+  return (
+    <AuthContext.Provider value={{ user, loading, signIn, signOut, signUp, lastActivity, resetActivityTimer }}>
+      {children || null}
+    </AuthContext.Provider>
+  )
 }
 
 export const useAuth = () => {
