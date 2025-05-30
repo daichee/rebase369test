@@ -5,29 +5,48 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { 
-  Settings, 
-  Users, 
-  Home, 
-  DollarSign, 
-  Calendar, 
-  BarChart3, 
-  Database,
-  Sync,
-  Settings2
-} from "lucide-react"
-import { useBookingStore } from "@/store/booking-store"
-import { useRoomStore } from "@/store/room-store"
-import { usePricingStore } from "@/store/pricing-store"
 import { ErrorBoundary } from "@/components/common/error-boundary"
 import { ClientWrapper } from "@/components/common/client-wrapper"
 import { useHydration } from "@/hooks/use-hydration"
+import { useBookingStore } from "@/store/booking-store"
+import { useRoomStore } from "@/store/room-store"
+import { usePricingStore } from "@/store/pricing-store"
+import dynamic from "next/dynamic"
+
+// Dynamic imports for lucide-react icons to prevent SSR issues
+const Settings = dynamic(() => import("lucide-react").then(mod => ({ default: mod.Settings })), { ssr: false })
+const Users = dynamic(() => import("lucide-react").then(mod => ({ default: mod.Users })), { ssr: false })
+const Home = dynamic(() => import("lucide-react").then(mod => ({ default: mod.Home })), { ssr: false })
+const DollarSign = dynamic(() => import("lucide-react").then(mod => ({ default: mod.DollarSign })), { ssr: false })
+const Calendar = dynamic(() => import("lucide-react").then(mod => ({ default: mod.Calendar })), { ssr: false })
+const BarChart3 = dynamic(() => import("lucide-react").then(mod => ({ default: mod.BarChart3 })), { ssr: false })
+const Database = dynamic(() => import("lucide-react").then(mod => ({ default: mod.Database })), { ssr: false })
+const Sync = dynamic(() => import("lucide-react").then(mod => ({ default: mod.Sync })), { ssr: false })
+const Settings2 = dynamic(() => import("lucide-react").then(mod => ({ default: mod.Settings2 })), { ssr: false })
 
 export default function AdminPage() {
   const isHydrated = useHydration()
-  const { bookings = [], customers = [] } = useBookingStore()
-  const { rooms = [] } = useRoomStore()
-  const { rules = [] } = usePricingStore()
+  
+  // Safely get store data with error handling
+  let bookingStore, roomStore, pricingStore
+  try {
+    bookingStore = useBookingStore()
+    roomStore = useRoomStore()
+    pricingStore = usePricingStore()
+  } catch (error) {
+    console.error("Store initialization error:", error)
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600">Store initialization failed. Please refresh the page.</p>
+        </div>
+      </div>
+    )
+  }
+
+  const { bookings = [], customers = [] } = bookingStore || {}
+  const { rooms = [] } = roomStore || {}
+  const { rules = [] } = pricingStore || {}
 
   // Prevent rendering until hydration is complete to avoid React error #130
   if (!isHydrated) {
@@ -47,16 +66,36 @@ export default function AdminPage() {
   const safeRooms = Array.isArray(rooms) ? rooms : []
   const safeRules = Array.isArray(rules) ? rules : []
 
-  const stats = {
-    totalBookings: safeBookings.length,
-    totalCustomers: safeCustomers.length,
-    totalRooms: safeRooms.length,
-    activePricingRules: safeRules.filter((r) => r?.isActive).length,
-    pendingBookings: safeBookings.filter((b) => b?.status === "pending").length,
-    confirmedBookings: safeBookings.filter((b) => b?.status === "confirmed").length,
-    syncedBookings: safeBookings.filter((b) => b?.boardEstimateId).length,
-    totalRevenue: safeBookings.reduce((sum, b) => sum + (b?.totalAmount || 0), 0),
-  }
+  // Calculate stats with error handling
+  const stats = (() => {
+    try {
+      return {
+        totalBookings: safeBookings.length,
+        totalCustomers: safeCustomers.length,
+        totalRooms: safeRooms.length,
+        activePricingRules: safeRules.filter((r) => r && typeof r === 'object' && r.isActive === true).length,
+        pendingBookings: safeBookings.filter((b) => b && typeof b === 'object' && b.status === "pending").length,
+        confirmedBookings: safeBookings.filter((b) => b && typeof b === 'object' && b.status === "confirmed").length,
+        syncedBookings: safeBookings.filter((b) => b && typeof b === 'object' && b.boardEstimateId).length,
+        totalRevenue: safeBookings.reduce((sum, b) => {
+          const amount = (b && typeof b === 'object' && typeof b.totalAmount === 'number') ? b.totalAmount : 0
+          return sum + amount
+        }, 0),
+      }
+    } catch (error) {
+      console.error("Stats calculation error:", error)
+      return {
+        totalBookings: 0,
+        totalCustomers: 0,
+        totalRooms: 0,
+        activePricingRules: 0,
+        pendingBookings: 0,
+        confirmedBookings: 0,
+        syncedBookings: 0,
+        totalRevenue: 0,
+      }
+    }
+  })()
 
   return (
     <ClientWrapper>
