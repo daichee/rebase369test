@@ -139,11 +139,12 @@ export const usePricingStore = create<PricingState>()(
 
       getApplicableRules: (roomType, date, dayOfWeek) => {
         const { rules } = get()
+        const safeRules = Array.isArray(rules) ? rules : []
         const targetDate = new Date(date)
 
-        return rules
+        return safeRules
           .filter((rule) => {
-            if (!rule.isActive) return false
+            if (!rule?.isActive) return false
 
             switch (rule.type) {
               case "seasonal":
@@ -235,7 +236,8 @@ export const usePricingStore = create<PricingState>()(
         }
 
         // アドオン料金を追加
-        const addonRules = get().rules.filter((rule) => rule.type === "addon" && rule.isActive)
+        const allRules = get().rules || []
+        const addonRules = allRules.filter((rule) => rule?.type === "addon" && rule?.isActive)
         for (const rule of addonRules) {
           if (rule.fixedAmount) {
             const addonAmount = rule.fixedAmount * guestCount * nights

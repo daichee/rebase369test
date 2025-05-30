@@ -99,7 +99,8 @@ export const useBookingStore = create<BookingState>()(
 
         getBookingsByDateRange: (startDate, endDate) => {
           const { bookings } = get()
-          return bookings.filter((booking) => {
+          const safeBookings = Array.isArray(bookings) ? bookings : []
+          return safeBookings.filter((booking) => {
             const checkIn = new Date(booking.checkIn)
             const checkOut = new Date(booking.checkOut)
             const start = new Date(startDate)
@@ -115,20 +116,24 @@ export const useBookingStore = create<BookingState>()(
 
         getBookingsByStatus: (status) => {
           const { bookings } = get()
-          return bookings.filter((booking) => booking.status === status)
+          const safeBookings = Array.isArray(bookings) ? bookings : []
+          return safeBookings.filter((booking) => booking?.status === status)
         },
 
         getTotalRevenue: () => {
           const { bookings } = get()
-          return bookings
-            .filter((booking) => booking.status === "completed")
-            .reduce((total, booking) => total + booking.totalAmount, 0)
+          const safeBookings = Array.isArray(bookings) ? bookings : []
+          return safeBookings
+            .filter((booking) => booking?.status === "completed")
+            .reduce((total, booking) => total + (booking?.totalAmount || 0), 0)
         },
 
         getOccupancyRate: (date) => {
           const { bookings } = get()
+          const safeBookings = Array.isArray(bookings) ? bookings : []
           const targetDate = new Date(date)
-          const occupiedRooms = bookings.filter((booking) => {
+          const occupiedRooms = safeBookings.filter((booking) => {
+            if (!booking?.checkIn || !booking?.checkOut || !booking?.status) return false
             const checkIn = new Date(booking.checkIn)
             const checkOut = new Date(booking.checkOut)
             return targetDate >= checkIn && targetDate < checkOut && booking.status === "confirmed"
