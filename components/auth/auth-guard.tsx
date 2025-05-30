@@ -47,5 +47,5 @@ export function AuthGuard({ children, requireAuth = true }: AuthGuardProps) {
     return null
   }
 
-  return <>{children}</>
+  return <>{children || null}</>
 }

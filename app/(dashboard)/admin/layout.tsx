@@ -31,7 +31,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <ErrorBoundary>
-      {children}
+      {children || null}
     </ErrorBoundary>
   )
 }
