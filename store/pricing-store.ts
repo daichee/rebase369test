@@ -75,8 +75,8 @@ export const usePricingStore = create<PricingState>()(
           multiplier: 1.3,
           isActive: true,
           priority: 1,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+          createdAt: "2024-01-01T00:00:00.000Z",
+          updatedAt: "2024-01-01T00:00:00.000Z",
         },
         {
           id: "2",
@@ -86,8 +86,8 @@ export const usePricingStore = create<PricingState>()(
           multiplier: 1.2,
           isActive: true,
           priority: 2,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+          createdAt: "2024-01-01T00:00:00.000Z",
+          updatedAt: "2024-01-01T00:00:00.000Z",
         },
         {
           id: "3",
@@ -98,8 +98,8 @@ export const usePricingStore = create<PricingState>()(
           multiplier: 1.5,
           isActive: true,
           priority: 0,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+          createdAt: "2024-01-01T00:00:00.000Z",
+          updatedAt: "2024-01-01T00:00:00.000Z",
         },
         {
           id: "4",
@@ -108,8 +108,8 @@ export const usePricingStore = create<PricingState>()(
           fixedAmount: 1500,
           isActive: true,
           priority: 10,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+          createdAt: "2024-01-01T00:00:00.000Z",
+          updatedAt: "2024-01-01T00:00:00.000Z",
         },
       ],
       isLoading: false,
@@ -140,7 +140,13 @@ export const usePricingStore = create<PricingState>()(
       getApplicableRules: (roomType, date, dayOfWeek) => {
         const { rules } = get()
         const safeRules = Array.isArray(rules) ? rules : []
-        const targetDate = new Date(date)
+        const targetDate = (() => {
+          try {
+            return new Date(date)
+          } catch {
+            return new Date()
+          }
+        })()
 
         return safeRules
           .filter((rule) => {
@@ -178,9 +184,21 @@ export const usePricingStore = create<PricingState>()(
 
       calculatePrice: (roomId, roomType, basePrice, checkIn, checkOut, guestCount) => {
         const { getApplicableRules } = get()
-        const checkInDate = new Date(checkIn)
-        const checkOutDate = new Date(checkOut)
-        const nights = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24))
+        const checkInDate = (() => {
+          try {
+            return new Date(checkIn)
+          } catch {
+            return new Date()
+          }
+        })()
+        const checkOutDate = (() => {
+          try {
+            return new Date(checkOut)
+          } catch {
+            return new Date()
+          }
+        })()
+        const nights = Math.max(1, Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)))
 
         let totalPrice = 0
         const appliedRules: PricingCalculation["appliedRules"] = []
@@ -200,7 +218,13 @@ export const usePricingStore = create<PricingState>()(
           const dateStr = currentDate.toISOString().split("T")[0]
 
           let nightPrice = basePrice
-          const applicableRules = getApplicableRules(roomType, dateStr, dayOfWeek)
+          const applicableRules = (() => {
+            try {
+              return getApplicableRules(roomType, dateStr, dayOfWeek) || []
+            } catch {
+              return []
+            }
+          })()
 
           // 乗数ルールを適用
           for (const rule of applicableRules) {

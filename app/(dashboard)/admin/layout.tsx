@@ -1,6 +1,7 @@
 "use client"
 
 import { useAuth } from "@/components/auth/auth-provider"
+import { ErrorBoundary } from "@/components/common/error-boundary"
 import { Loader2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
@@ -28,5 +29,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return null
   }
 
-  return <>{children}</>
+  return (
+    <ErrorBoundary>
+      {children}
+    </ErrorBoundary>
+  )
 }
