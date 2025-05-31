@@ -12,9 +12,9 @@ export class DatabasePriceCalculator {
     addons: AddonItem[] = [],
   ): Promise<PriceBreakdown> {
     const roomAmount = await this.calculateRoomPrice(rooms, dateRange.nights)
-    const guestAmount = await this.calculateGuestPrice(guests, dateRange, rooms)
-    const addonAmount = await this.calculateAddonPrice(addons, dateRange, guests)
-    const dailyBreakdown = await this.calculateDailyBreakdown(rooms, guests, dateRange, addons)
+    const guestAmount = await this.calculateGuestPriceSimplified(guests, dateRange, rooms)
+    const addonAmount = await this.calculateAddonPriceSimplified(addons, dateRange)
+    const dailyBreakdown = await this.calculateDailyBreakdownSimplified(rooms, guests, dateRange, addons)
 
     const subtotal = roomAmount + guestAmount + addonAmount
     const total = Math.round(subtotal)
@@ -309,5 +309,22 @@ export class DatabasePriceCalculator {
     ])
 
     return { seasons, rates, addOns }
+  }
+
+  // Simplified methods - delegate to PriceCalculator for Phase 3 optimization
+  static async calculateGuestPriceSimplified(guests: GuestCount, dateRange: DateRange, rooms: RoomUsage[]): Promise<number> {
+    // Import PriceCalculator to use the simplified logic
+    const { PriceCalculator } = await import('./calculator')
+    return PriceCalculator.calculateGuestPriceSimplified(guests, dateRange, rooms)
+  }
+
+  static async calculateAddonPriceSimplified(addons: AddonItem[], dateRange: DateRange): Promise<number> {
+    const { PriceCalculator } = await import('./calculator')
+    return PriceCalculator.calculateAddonPriceSimplified(addons, dateRange)
+  }
+
+  static async calculateDailyBreakdownSimplified(rooms: RoomUsage[], guests: GuestCount, dateRange: DateRange, addons: AddonItem[]): Promise<DailyPrice[]> {
+    const { PriceCalculator } = await import('./calculator')
+    return PriceCalculator.calculateDailyBreakdownSimplified(rooms, guests, dateRange, addons)
   }
 }

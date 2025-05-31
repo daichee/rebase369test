@@ -318,9 +318,9 @@ export class IndividualPriceCalculator {
     const seasonPeriods = customSeasons || this.DEFAULT_SEASON_PERIODS
 
     const roomAmount = this.calculateRoomPrice(rooms, dateRange.nights, roomRates)
-    const { guestAmount, guestLineItems } = this.calculateGuestPrice(guests, dateRange, rooms, guestRates, seasonPeriods)
-    const addonAmount = this.calculateAddonPrice(addons, dateRange, guests)
-    const dailyBreakdown = this.calculateDailyBreakdown(rooms, guests, dateRange, addons, guestRates, roomRates, seasonPeriods)
+    const { guestAmount, guestLineItems } = this.calculateGuestPriceSimplified(guests, dateRange, rooms, guestRates, seasonPeriods)
+    const addonAmount = this.calculateAddonPriceSimplified(addons, dateRange)
+    const dailyBreakdown = this.calculateDailyBreakdownSimplified(rooms, guests, dateRange, addons, guestRates, roomRates, seasonPeriods)
 
     const subtotal = roomAmount + guestAmount + addonAmount
     const total = Math.round(subtotal)
@@ -732,5 +732,23 @@ export class IndividualPriceCalculator {
   // 既存の備品料金計算（変更なし）
   private static calculateEquipmentPrice(addon: AddonItem, dateRange: DateRange): number {
     return addon.unitPrice * addon.quantity * dateRange.nights
+  }
+
+  // Simplified methods for Phase 3 optimization - delegate to PriceCalculator
+  static calculateGuestPriceSimplified(guests: GuestCount, dateRange: DateRange, rooms: RoomUsage[], guestRates?: any, seasonPeriods?: any): { guestAmount: number, guestLineItems: any[] } {
+    // Delegate to main PriceCalculator for simplified logic
+    const PriceCalculator = require('./calculator').PriceCalculator
+    const guestAmount = PriceCalculator.calculateGuestPriceSimplified(guests, dateRange, rooms)
+    return { guestAmount, guestLineItems: [] } // Simplified, no line items
+  }
+
+  static calculateAddonPriceSimplified(addons: AddonItem[], dateRange: DateRange): number {
+    const PriceCalculator = require('./calculator').PriceCalculator
+    return PriceCalculator.calculateAddonPriceSimplified(addons, dateRange)
+  }
+
+  static calculateDailyBreakdownSimplified(rooms: RoomUsage[], guests: GuestCount, dateRange: DateRange, addons: AddonItem[], guestRates?: any, roomRates?: any, seasonPeriods?: any): DailyPrice[] {
+    const PriceCalculator = require('./calculator').PriceCalculator
+    return PriceCalculator.calculateDailyBreakdownSimplified(rooms, guests, dateRange, addons)
   }
 }
