@@ -3,7 +3,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
-import { BoardSyncDropdown } from "./board-sync-dropdown"
 
 interface EstimateDisplayProps {
   booking: any
@@ -140,26 +139,6 @@ export function EstimateDisplay({ booking, customer, room }: EstimateDisplayProp
             </div>
           </div>
 
-          <Separator className="my-6" />
-
-          {/* Board同期ボタン */}
-          <div className="flex justify-center">
-            <BoardSyncDropdown booking={booking} customer={customer} room={room} />
-          </div>
-
-          {/* 同期ステータス表示 */}
-          {booking.boardEstimateId && (
-            <div className="mt-4 p-4 bg-green-50 rounded-lg border border-green-200">
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className="bg-green-100 text-green-800">
-                  Board同期済み
-                </Badge>
-                <span className="text-sm text-green-700">
-                  見積ID: {booking.boardEstimateId}
-                </span>
-              </div>
-            </div>
-          )}
         </CardContent>
       </Card>
     </div>

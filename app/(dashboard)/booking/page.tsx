@@ -10,7 +10,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Plus, Search, Filter, Calendar, Users, DollarSign } from "lucide-react"
 import { useBookingStore } from "@/store/booking-store"
-import { EstimateSyncButton } from "@/components/board/estimate-sync-button"
 
 export default function BookingPage() {
   const { bookings, customers, setBookings, setCustomers } = useBookingStore()
@@ -252,7 +251,6 @@ export default function BookingPage() {
                 <TableHead>人数</TableHead>
                 <TableHead>金額</TableHead>
                 <TableHead>ステータス</TableHead>
-                <TableHead>Board連携</TableHead>
                 <TableHead>操作</TableHead>
               </TableRow>
             </TableHeader>
@@ -266,13 +264,6 @@ export default function BookingPage() {
                   <TableCell>{booking.guestCount}名</TableCell>
                   <TableCell>¥{booking.totalAmount.toLocaleString()}</TableCell>
                   <TableCell>{getStatusBadge(booking.status)}</TableCell>
-                  <TableCell>
-                    {booking.boardEstimateId ? (
-                      <Badge variant="outline">{booking.boardEstimateId}</Badge>
-                    ) : (
-                      <EstimateSyncButton bookingId={booking.id} />
-                    )}
-                  </TableCell>
                   <TableCell>
                     <Button variant="outline" size="sm" asChild>
                       <Link href={`/booking/${booking.id}`}>詳細</Link>
