@@ -94,7 +94,6 @@ function mapSupabaseToBooking(row: BookingRow) {
     status: row.status as "pending" | "confirmed" | "cancelled" | "completed",
     createdAt: row.created_at,
     updatedAt: row.updated_at,
-    boardEstimateId: row.board_project_id?.toString(),
     notes: row.notes || undefined,
     guestName: row.guest_name,
     guestEmail: row.guest_email,

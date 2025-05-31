@@ -1,21 +1,25 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase/server"
+import { ApiErrorHandler, ValidationUtils } from "@/lib/utils/api-error-handler"
 
 export async function POST(request: NextRequest) {
   try {
     const { roomIds, startDate, endDate, sessionId } = await request.json()
 
+    // Validate required fields
     if (!roomIds || !Array.isArray(roomIds) || roomIds.length === 0) {
-      return NextResponse.json(
-        { error: "部屋IDが必要です" },
-        { status: 400 }
+      return ApiErrorHandler.validationError(
+        "部屋IDが必要です",
+        "roomIds must be a non-empty array"
       )
     }
 
-    if (!startDate || !endDate) {
-      return NextResponse.json(
-        { error: "開始日と終了日が必要です" },
-        { status: 400 }
+    // Validate date range
+    const dateRange = ValidationUtils.validateDateRange(startDate, endDate)
+    if (!dateRange) {
+      return ApiErrorHandler.validationError(
+        "有効な開始日と終了日が必要です",
+        "Both startDate and endDate must be valid dates with startDate < endDate"
       )
     }
 
@@ -33,11 +37,8 @@ export async function POST(request: NextRequest) {
     )
 
     if (conflictError) {
-      console.error("競合データ取得エラー:", conflictError)
-      return NextResponse.json(
-        { error: "競合データの取得に失敗しました" },
-        { status: 500 }
-      )
+      console.error("Conflict data fetch error:", conflictError)
+      return ApiErrorHandler.serverError("競合データの取得に失敗しました")
     }
 
     // ロック状態を取得（sessionIdが提供されている場合）
@@ -77,40 +78,48 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error("競合ステータス取得エラー:", error)
-    return NextResponse.json(
-      { error: "サーバーエラーが発生しました" },
-      { status: 500 }
-    )
+    console.error("Conflict status fetch error:", error)
+    return ApiErrorHandler.handleUnknownError(error)
   }
 }
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const roomIds = searchParams.get('roomIds')?.split(',') || []
+    const roomIds = searchParams.get('roomIds')?.split(',').filter(id => id.trim()) || []
     const startDate = searchParams.get('startDate')
     const endDate = searchParams.get('endDate')
     const sessionId = searchParams.get('sessionId')
 
-    if (roomIds.length === 0 || !startDate || !endDate) {
-      return NextResponse.json(
-        { error: "roomIds, startDate, endDateが必要です" },
-        { status: 400 }
+    // Validate required parameters
+    if (roomIds.length === 0) {
+      return ApiErrorHandler.validationError(
+        "部屋IDが必要です",
+        "roomIds parameter is required and must contain at least one room ID"
       )
     }
 
-    // POSTと同じロジックを実行
-    return await POST(new NextRequest(request.url, {
+    // Validate date range
+    const dateRange = ValidationUtils.validateDateRange(startDate || "", endDate || "")
+    if (!dateRange) {
+      return ApiErrorHandler.validationError(
+        "有効な開始日と終了日が必要です",
+        "Both startDate and endDate parameters are required and must be valid dates"
+      )
+    }
+
+    // Create a proper request body and delegate to POST handler
+    const requestBody = { roomIds, startDate, endDate, sessionId }
+    const postRequest = new NextRequest(request.url, {
       method: 'POST',
-      body: JSON.stringify({ roomIds, startDate, endDate, sessionId })
-    }))
+      body: JSON.stringify(requestBody),
+      headers: { 'Content-Type': 'application/json' }
+    })
+
+    return await POST(postRequest)
 
   } catch (error) {
-    console.error("GET競合ステータス取得エラー:", error)
-    return NextResponse.json(
-      { error: "サーバーエラーが発生しました" },
-      { status: 500 }
-    )
+    console.error("GET conflict status fetch error:", error)
+    return ApiErrorHandler.handleUnknownError(error)
   }
 }

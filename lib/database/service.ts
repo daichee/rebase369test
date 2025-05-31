@@ -11,8 +11,6 @@ type Rooms = Tables["rooms"]["Row"]
 type Seasons = Tables["seasons"]["Row"]
 type Rates = Tables["rates"]["Row"]
 type AddOns = Tables["add_ons"]["Row"]
-type BoardProjects = Tables["board_projects"]["Row"]
-type BoardSyncLog = Tables["board_sync_log"]["Row"]
 
 export class DatabaseService {
   private supabase = createClient()
@@ -383,102 +381,6 @@ export class DatabaseService {
     return data
   }
 
-  // ========================================
-  // 8.3 Board連携データ管理機能
-  // ========================================
-
-  // board_projects テーブル機能
-  async getAllBoardProjects(): Promise<BoardProjects[]> {
-    const { data, error } = await this.supabase
-      .from("board_projects")
-      .select("*")
-      .eq("is_active", true)
-      .order("project_no", { ascending: false })
-
-    if (error) {
-      console.error("Failed to get board projects:", error)
-      return []
-    }
-    return data || []
-  }
-
-  async updateBoardProject(boardProjectId: number, data: Tables["board_projects"]["Update"]): Promise<BoardProjects | null> {
-    const { data: project, error } = await this.supabase
-      .from("board_projects")
-      .update(data)
-      .eq("board_project_id", boardProjectId)
-      .select()
-      .single()
-
-    if (error) {
-      console.error("Failed to update board project:", error)
-      return null
-    }
-    return project
-  }
-
-  async syncBoardProjects(projects: Tables["board_projects"]["Insert"][]): Promise<boolean> {
-    const { error } = await this.supabase
-      .from("board_projects")
-      .upsert(projects, {
-        onConflict: "board_project_id",
-      })
-
-    if (error) {
-      console.error("Failed to sync board projects:", error)
-      return false
-    }
-    return true
-  }
-
-  // board_sync_log テーブル機能
-  async logSyncActivity(data: Tables["board_sync_log"]["Insert"]): Promise<BoardSyncLog | null> {
-    const { data: log, error } = await this.supabase
-      .from("board_sync_log")
-      .insert(data)
-      .select()
-      .single()
-
-    if (error) {
-      console.error("Failed to log sync activity:", error)
-      return null
-    }
-    return log
-  }
-
-  async getSyncHistory(projectId?: string, limit: number = 50): Promise<BoardSyncLog[]> {
-    let query = this.supabase
-      .from("board_sync_log")
-      .select("*")
-      .order("sync_started_at", { ascending: false })
-      .limit(limit)
-
-    if (projectId) {
-      query = query.eq("project_id", projectId)
-    }
-
-    const { data, error } = await query
-
-    if (error) {
-      console.error("Failed to get sync history:", error)
-      return []
-    }
-    return data || []
-  }
-
-  async getSyncLogsByStatus(status: "pending" | "success" | "error"): Promise<BoardSyncLog[]> {
-    const { data, error } = await this.supabase
-      .from("board_sync_log")
-      .select("*")
-      .eq("sync_status", status)
-      .order("sync_started_at", { ascending: false })
-
-    if (error) {
-      console.error("Failed to get sync logs by status:", error)
-      return []
-    }
-    return data || []
-  }
 
   // ========================================
   // 複合操作・統計機能
