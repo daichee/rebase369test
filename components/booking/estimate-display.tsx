@@ -45,7 +45,7 @@ export function EstimateDisplay({ booking, customer, room }: EstimateDisplayProp
         </CardHeader>
         <CardContent className="pt-6">
           {/* 宛先情報 */}
-          <div className="grid grid-cols-2 gap-8 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
               <h4 className="font-medium mb-2">宛先</h4>
               <div className="space-y-1 text-sm">

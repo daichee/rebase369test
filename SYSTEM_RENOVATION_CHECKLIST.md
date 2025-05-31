@@ -144,30 +144,35 @@
 ## 🏠 フェーズ4: レスポンシブ・モダンUI実装
 
 ### 4.1 統一レスポンシブパターン適用
-- [ ] **全コンポーネントのレスポンシブクラス統一**
-  - [ ] `components/booking/room-selector.tsx` 修正
+- [x] **全コンポーネントのレスポンシブクラス統一**
+  - [x] `components/booking/room-selector.tsx` 修正
     ```typescript
     // 修正前: "grid gap-4 sm:grid-cols-2"
     // 修正後: "grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
     ```
-  - [ ] `components/dashboard/room-status-grid.tsx` 修正
-  - [ ] `components/calendar/booking-calendar.tsx` 修正
-  - [ ] 全UIコンポーネントの統一パターン適用
+  - [x] `components/dashboard/room-status-grid.tsx` 修正（gap統一済み）
+  - [x] `components/calendar/booking-calendar.tsx` 修正
+  - [x] 全UIコンポーネントの統一パターン適用
+    - [x] `components/booking/customer-selector-modal.tsx`
+    - [x] `components/booking/addon-selector.tsx`
+    - [x] `components/booking/room-search.tsx`
+    - [x] `components/booking/estimate-display.tsx`
+    - [x] `components/admin/room-management.tsx`
 
 ### 4.2 ダッシュボード再設計
-- [ ] **カード型レイアウト実装**
-  - [ ] 統計カードの再設計（売上・稼働率・予約数・空室状況）
-  - [ ] チャートの見やすさ向上
-  - [ ] モバイル対応の強化
-- [ ] **情報密度の最適化**
-  - [ ] 重要情報の優先表示
-  - [ ] 不要な情報の除去
+- [x] **カード型レイアウト実装**
+  - [x] 統計カードの再設計（売上・稼働率・予約数・空室状況）
+  - [x] チャートの見やすさ向上
+  - [x] モバイル対応の強化
+- [x] **情報密度の最適化**
+  - [x] 重要情報の優先表示
+  - [x] レスポンシブパディング・テキストサイズ最適化
 
 ### 4.3 カレンダー表示の改善
-- [ ] **13部屋表示の最適化**
-  - [ ] モバイルでの部屋表示改善
-  - [ ] 週次・月次表示の使いやすさ向上
-  - [ ] 予約ブロックの視認性向上
+- [x] **13部屋表示の最適化**
+  - [x] モバイルでの部屋表示改善
+  - [x] 週次・月次表示の使いやすさ向上
+  - [x] 予約ブロックの視認性向上
 
 ---
 

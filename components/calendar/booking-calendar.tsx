@@ -142,9 +142,9 @@ export function BookingCalendar({ onCreateBooking, onViewBooking }: BookingCalen
               </CardDescription>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
               <Select value={floorFilter} onValueChange={(value: "all" | "2F" | "3F") => setFloorFilter(value)}>
-                <SelectTrigger className="w-32">
+                <SelectTrigger className="w-full sm:w-32">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -154,19 +154,24 @@ export function BookingCalendar({ onCreateBooking, onViewBooking }: BookingCalen
                 </SelectContent>
               </Select>
 
-              <div className="flex items-center gap-1">
-                <Button variant="outline" size="sm" onClick={() => navigateMonth("prev")}>
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => navigateMonth("next")}>
-                  <ChevronRight className="h-4 w-4" />
+              <div className="flex items-center justify-between w-full sm:w-auto gap-2">
+                <div className="flex items-center gap-1">
+                  <Button variant="outline" size="sm" onClick={() => navigateMonth("prev")}>
+                    <ChevronLeft className="h-4 w-4" />
+                    <span className="hidden sm:inline ml-1">前月</span>
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => navigateMonth("next")}>
+                    <span className="hidden sm:inline mr-1">次月</span>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                <Button onClick={() => onCreateBooking?.(new Date().toISOString().split("T")[0])} className="flex-shrink-0">
+                  <Plus className="h-4 w-4 mr-2" />
+                  <span className="hidden sm:inline">新規予約</span>
+                  <span className="sm:hidden">予約</span>
                 </Button>
               </div>
-
-              <Button onClick={() => onCreateBooking?.(new Date().toISOString().split("T")[0])}>
-                <Plus className="h-4 w-4 mr-2" />
-                新規予約
-              </Button>
             </div>
           </div>
         </CardHeader>
@@ -176,7 +181,7 @@ export function BookingCalendar({ onCreateBooking, onViewBooking }: BookingCalen
       {occupancyStats && (
         <Card>
           <CardContent className="pt-6">
-            <div className="grid grid-cols-4 gap-4 text-center">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
               <div>
                 <div className="text-2xl font-bold">{occupancyStats.occupiedRooms}</div>
                 <div className="text-sm text-muted-foreground">予約部屋数</div>
@@ -211,10 +216,10 @@ export function BookingCalendar({ onCreateBooking, onViewBooking }: BookingCalen
           <div className="overflow-x-auto">
             <div className="min-w-max">
               {/* ヘッダー行: 曜日 */}
-              <div className="grid grid-cols-[200px_repeat(7,_120px)] border-b">
-                <div className="p-3 bg-muted font-medium">部屋</div>
+              <div className="grid grid-cols-[120px_repeat(7,_minmax(80px,1fr))] md:grid-cols-[200px_repeat(7,_120px)] border-b">
+                <div className="p-2 md:p-3 bg-muted font-medium text-xs md:text-sm">部屋</div>
                 {[0, 1, 2, 3, 4, 5, 6].map((dayIndex) => (
-                  <div key={dayIndex} className="p-3 bg-muted text-center font-medium">
+                  <div key={dayIndex} className="p-2 md:p-3 bg-muted text-center font-medium text-xs md:text-sm">
                     {getDayOfWeek(dayIndex)}
                   </div>
                 ))}
@@ -227,12 +232,12 @@ export function BookingCalendar({ onCreateBooking, onViewBooking }: BookingCalen
                 return (
                   <div key={weekIndex}>
                     {/* 日付行 */}
-                    <div className="grid grid-cols-[200px_repeat(7,_120px)] border-b bg-muted/50">
-                      <div className="p-2"></div>
+                    <div className="grid grid-cols-[120px_repeat(7,_minmax(80px,1fr))] md:grid-cols-[200px_repeat(7,_120px)] border-b bg-muted/50">
+                      <div className="p-1 md:p-2"></div>
                       {weekDates.map((date, dateIndex) => (
                         <div 
                           key={dateIndex} 
-                          className={`p-2 text-center text-sm ${
+                          className={`p-1 md:p-2 text-center text-xs md:text-sm ${
                             isToday(date) ? "bg-primary text-primary-foreground" :
                             !isCurrentMonth(date) ? "text-muted-foreground" : ""
                           }`}
@@ -244,11 +249,11 @@ export function BookingCalendar({ onCreateBooking, onViewBooking }: BookingCalen
 
                     {/* 各部屋の予約状況行 */}
                     {filteredRooms.map((room) => (
-                      <div key={room.roomId} className="grid grid-cols-[200px_repeat(7,_120px)] border-b hover:bg-muted/30">
-                        <div className="p-3 border-r">
-                          <div className="font-medium">{room.name}</div>
+                      <div key={room.roomId} className="grid grid-cols-[120px_repeat(7,_minmax(80px,1fr))] md:grid-cols-[200px_repeat(7,_120px)] border-b hover:bg-muted/30">
+                        <div className="p-2 md:p-3 border-r">
+                          <div className="font-medium text-xs md:text-sm truncate">{room.name}</div>
                           <div className="text-xs text-muted-foreground">
-                            {room.roomId} • {room.capacity}名
+                            <span className="hidden md:inline">{room.roomId} • </span>{room.capacity}名
                           </div>
                         </div>
 
@@ -259,7 +264,7 @@ export function BookingCalendar({ onCreateBooking, onViewBooking }: BookingCalen
                           return (
                             <div 
                               key={dateIndex}
-                              className={`p-1 border-r min-h-[60px] cursor-pointer hover:bg-muted/50 ${
+                              className={`p-1 border-r min-h-[50px] md:min-h-[60px] cursor-pointer hover:bg-muted/50 ${
                                 !isCurrentMonth(date) ? "bg-muted/20" : ""
                               }`}
                               onClick={() => onCreateBooking?.(dateString, room.roomId)}
@@ -273,11 +278,11 @@ export function BookingCalendar({ onCreateBooking, onViewBooking }: BookingCalen
                                   }}
                                 >
                                   <div className="font-medium truncate">{booking.guestName}</div>
-                                  <div className="text-muted-foreground">{booking.guestCount}名</div>
+                                  <div className="text-muted-foreground hidden md:block">{booking.guestCount}名</div>
                                 </div>
                               ) : (
                                 <div className="h-full w-full flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                                  <Plus className="h-4 w-4 text-muted-foreground" />
+                                  <Plus className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
                                 </div>
                               )}
                             </div>

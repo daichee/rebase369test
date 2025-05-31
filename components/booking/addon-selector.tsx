@@ -275,7 +275,7 @@ export function AddonSelector({ selectedAddons, onChange, guests, dateRange }: A
                             {isSelected && addonConfig.category === "meal" && addonConfig.rates && (
                               <div className="ml-6 space-y-2">
                                 <p className="text-sm font-medium">年齢区分別人数</p>
-                                <div className="grid grid-cols-2 gap-3">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                   {Object.entries(addonConfig.rates).map(([ageGroup, rate]) => (
                                     <div key={ageGroup} className="flex items-center justify-between">
                                       <span className="text-sm">

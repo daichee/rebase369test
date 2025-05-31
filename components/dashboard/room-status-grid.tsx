@@ -105,7 +105,7 @@ export function RoomStatusGrid() {
           <CardTitle>部屋状況</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-2 md:grid-cols-3 lg:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4">
             {Array.from({ length: 13 }).map((_, i) => (
               <div key={i} className="h-20 bg-gray-100 rounded animate-pulse" />
             ))}
@@ -131,7 +131,7 @@ export function RoomStatusGrid() {
         {Object.entries(floorGroups).map(([floor, rooms]) => (
           <div key={floor}>
             <h3 className="font-medium text-sm text-muted-foreground mb-3">{floor}</h3>
-            <div className="grid gap-2 md:grid-cols-3 lg:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4">
               {rooms.map((room) => (
                 <div
                   key={room.roomId}

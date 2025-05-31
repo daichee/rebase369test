@@ -156,7 +156,7 @@ export function RoomSelector({
                 {floor} ({floorRooms.length}室)
               </h3>
 
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                 {floorRooms.map((room) => {
                   const availability = getRoomAvailability(room.roomId)
                   const isSelected = selectedRooms.includes(room.roomId)

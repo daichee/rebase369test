@@ -34,14 +34,14 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="p-8 space-y-8">
+    <div className="p-4 md:p-8 space-y-6 md:space-y-8">
       <div>
-        <h1 className="text-3xl font-bold">ダッシュボード</h1>
+        <h1 className="text-2xl md:text-3xl font-bold">ダッシュボード</h1>
         <p className="text-muted-foreground">予約状況と売上の概要</p>
       </div>
 
       {/* 統計カード */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">本日の稼働率</CardTitle>
@@ -155,7 +155,7 @@ export default function DashboardPage() {
               <CardDescription>よく使用する機能へのショートカット</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-3">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
                 <Button asChild className="w-full justify-start">
                   <Link href="/booking/new">
                     <Calendar className="h-4 w-4 mr-2" />
@@ -169,9 +169,9 @@ export default function DashboardPage() {
                   </Link>
                 </Button>
                 <Button asChild variant="outline" className="w-full justify-start">
-                  <Link href="/admin">
+                  <Link href="/settings">
                     <Users className="h-4 w-4 mr-2" />
-                    管理画面
+                    設定
                   </Link>
                 </Button>
               </div>
