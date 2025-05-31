@@ -1,10 +1,11 @@
 import type { GuestCount, DateRange, PriceBreakdown, DailyPrice, RoomUsage, AddonItem, RateInfo } from "./types"
+import { PriceConfigService, type RateConfig } from "./config-service"
 
 /**
- * Simplified Price Calculator
+ * Unified Price Calculator
  * 
- * Optimized pricing engine with fixed rate table instead of complex multipliers.
- * Reduced from 340 lines to ~100 lines for better performance and maintainability.
+ * Enhanced pricing engine with database integration and dynamic configuration.
+ * Supports both fixed rate fallback and database-driven pricing configuration.
  */
 export class PriceCalculator {
   // 部屋タイプ別室料（固定）
@@ -35,6 +36,9 @@ export class PriceCalculator {
     }
   } as const
 
+  // Peak season months (3,4,5,7,8,9,12月)
+  private static readonly PEAK_MONTHS = [3, 4, 5, 7, 8, 9, 12]
+
   // Fixed addon rates for simplified calculation
   private static readonly ADDON_RATES = {
     meal: {
@@ -56,7 +60,120 @@ export class PriceCalculator {
   } as const
 
   /**
-   * 総合料金計算 (Simplified from complex multiplier system)
+   * 動的設定を読み込み（キャッシュ優先、フォールバック対応）
+   */
+  private static async loadRateConfig(): Promise<RateConfig> {
+    // まずキャッシュを確認
+    const cached = PriceConfigService.getCachedConfig()
+    if (cached) {
+      return cached
+    }
+
+    try {
+      // データベースから読み込み
+      return await PriceConfigService.loadConfigFromDB()
+    } catch (error) {
+      console.warn('Failed to load dynamic config, using static fallback:', error)
+      // フォールバック：固定設定を使用
+      return this.getStaticConfig()
+    }
+  }
+
+  /**
+   * 静的設定を取得（フォールバック用）
+   */
+  private static getStaticConfig(): RateConfig {
+    return {
+      personalRates: this.FIXED_RATE_TABLE,
+      roomRates: this.ROOM_RATES,
+      addonRates: this.ADDON_RATES,
+      peakMonths: this.PEAK_MONTHS,
+      configName: 'static_fallback',
+      version: 'v1.0.0',
+      lastUpdated: new Date().toISOString()
+    }
+  }
+
+  /**
+   * 計算結果をデータベースに保存
+   */
+  static async savePriceDetails(bookingId: string, breakdown: PriceBreakdown, params: {
+    rooms: RoomUsage[]
+    guests: GuestCount
+    dateRange: DateRange
+    addons: AddonItem[]
+  }): Promise<void> {
+    try {
+      const { createClient } = await import('@/lib/supabase/client')
+      const supabase = createClient()
+
+      const { error } = await supabase
+        .from('booking_price_details')
+        .insert({
+          booking_id: bookingId,
+          rooms_used: params.rooms,
+          guest_breakdown: params.guests,
+          date_range: params.dateRange,
+          addons_selected: params.addons,
+          season_config: await this.loadRateConfig(),
+          room_amount: breakdown.roomAmount,
+          guest_amount: breakdown.guestAmount,
+          addon_amount: breakdown.addonAmount,
+          subtotal: breakdown.subtotal,
+          total_amount: breakdown.total,
+          daily_breakdown: breakdown.dailyBreakdown,
+          calculation_method: 'unified_calculator'
+        })
+
+      if (error) {
+        console.error('Failed to save price details:', error)
+        throw error
+      }
+    } catch (error) {
+      console.error('Error saving price details to database:', error)
+      // 非致命的エラーとして処理（計算は続行）
+    }
+  }
+
+  /**
+   * 設定変更時のキャッシュ更新
+   */
+  static async refreshRateConfig(): Promise<void> {
+    PriceConfigService.clearCache()
+    await this.loadRateConfig()
+  }
+
+  /**
+   * 総合料金計算 (Enhanced with database integration) - ASYNC VERSION
+   */
+  static async calculateTotalPriceAsync(
+    rooms: RoomUsage[],
+    guests: GuestCount,
+    dateRange: DateRange,
+    addons: AddonItem[] = [],
+  ): Promise<PriceBreakdown> {
+    const config = await this.loadRateConfig()
+    
+    const roomAmount = this.calculateRoomPriceWithConfig(rooms, dateRange.nights, config)
+    const guestAmount = await this.calculateGuestPriceWithConfig(guests, dateRange, rooms, config)
+    const addonAmount = this.calculateAddonPriceWithConfig(addons, dateRange, config)
+    const dailyBreakdown = await this.calculateDailyBreakdownWithConfig(rooms, guests, dateRange, addons, config)
+
+    const subtotal = roomAmount + guestAmount + addonAmount
+    const total = Math.round(subtotal)
+
+    return {
+      roomAmount,
+      guestAmount,
+      addonAmount,
+      subtotal,
+      total,
+      dailyBreakdown,
+    }
+  }
+
+  /**
+   * 総合料金計算 (Backward compatibility - uses static rates)
    */
   static calculateTotalPrice(
     rooms: RoomUsage[],
@@ -80,6 +197,135 @@ export class PriceCalculator {
       total,
       dailyBreakdown,
     }
+  }
+
+  /**
+   * 室料計算（設定値対応版）
+   */
+  private static calculateRoomPriceWithConfig(rooms: RoomUsage[], nights: number, config: RateConfig): number {
+    return rooms.reduce((total, room) => {
+      const rate = config.roomRates[room.roomType] || 0
+      return total + rate * nights
+    }, 0)
+  }
+
+  /**
+   * 個人料金計算（設定値対応版）
+   */
+  private static async calculateGuestPriceWithConfig(
+    guests: GuestCount, 
+    dateRange: DateRange, 
+    rooms: RoomUsage[], 
+    config: RateConfig
+  ): Promise<number> {
+    const usageType = this.determineUsageType(rooms)
+    const rates = config.personalRates[usageType]
+    
+    let total = 0
+    const dates = this.generateDateRange(dateRange)
+
+    for (const date of dates) {
+      const dayType = this.getDayType(date)
+      const season = this.getSeasonWithConfig(date, config)
+      
+      const rateKey = season === 'peak' 
+        ? (dayType === 'weekend' ? 'peak_weekend' : 'peak_weekday')
+        : (dayType === 'weekend' ? 'weekend' : 'weekday')
+
+      Object.entries(guests).forEach(([ageGroup, count]) => {
+        if (count > 0 && ageGroup in rates) {
+          const dailyRate = rates[ageGroup as keyof typeof rates][rateKey] || 0
+          total += dailyRate * count
+        }
+      })
+    }
+
+    return Math.round(total)
+  }
+
+  /**
+   * オプション料金計算（設定値対応版）
+   */
+  private static calculateAddonPriceWithConfig(addons: AddonItem[], dateRange: DateRange, config: RateConfig): number {
+    let total = 0
+
+    addons.forEach((addon) => {
+      const rate = this.getAddonRateWithConfig(addon.category, addon.addonId, config)
+      const quantity = addon.quantity || 1
+      
+      const isDailyAddon = ['breakfast', 'lunch', 'dinner'].includes(addon.addonId)
+      const multiplier = isDailyAddon ? dateRange.nights : 1
+      
+      total += rate * quantity * multiplier
+    })
+
+    return Math.round(total)
+  }
+
+  /**
+   * 日別料金明細計算（設定値対応版）
+   */
+  private static async calculateDailyBreakdownWithConfig(
+    rooms: RoomUsage[],
+    guests: GuestCount,
+    dateRange: DateRange,
+    addons: AddonItem[],
+    config: RateConfig
+  ): Promise<DailyPrice[]> {
+    const dates = this.generateDateRange(dateRange)
+    const usageType = this.determineUsageType(rooms)
+    const rates = config.personalRates[usageType]
+
+    return dates.map((date) => {
+      const dayType = this.getDayType(date)
+      const season = this.getSeasonWithConfig(date, config)
+
+      const roomAmount = this.calculateRoomPriceWithConfig(rooms, 1, config)
+
+      const rateKey = season === 'peak' 
+        ? (dayType === 'weekend' ? 'peak_weekend' : 'peak_weekday')
+        : (dayType === 'weekend' ? 'weekend' : 'weekday')
+
+      let guestAmount = 0
+      Object.entries(guests).forEach(([ageGroup, count]) => {
+        if (count > 0 && ageGroup in rates) {
+          const dailyRate = rates[ageGroup as keyof typeof rates][rateKey] || 0
+          guestAmount += dailyRate * count
+        }
+      })
+
+      const addonAmount = this.calculateAddonPriceWithConfig(addons, { ...dateRange, nights: 1 }, config)
+
+      const total = roomAmount + guestAmount + addonAmount
+
+      return {
+        date: date.toISOString().split("T")[0],
+        dayType,
+        season,
+        roomAmount: Math.round(roomAmount),
+        guestAmount: Math.round(guestAmount),
+        addonAmount: Math.round(addonAmount),
+        total: Math.round(total),
+      }
+    })
+  }
+
+  /**
+   * シーズン判定（設定値対応版）
+   */
+  private static getSeasonWithConfig(date: Date, config: RateConfig): "regular" | "peak" {
+    const month = date.getMonth() + 1
+    return config.peakMonths.includes(month) ? "peak" : "regular"
+  }
+
+  /**
+   * オプション料金取得（設定値対応版）
+   */
+  private static getAddonRateWithConfig(category: string, addonId: string, config: RateConfig): number {
+    const categoryRates = config.addonRates[category as keyof typeof config.addonRates]
+    if (!categoryRates) return 0
+    
+    return categoryRates[addonId as keyof typeof categoryRates] || 0
   }
 
   /**
