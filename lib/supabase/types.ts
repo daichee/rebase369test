@@ -4,7 +4,6 @@ export type Database = {
       projects: {
         Row: {
           id: string
-          board_project_id: number | null
           status: "draft" | "confirmed" | "cancelled" | "completed"
           start_date: string
           end_date: string
@@ -33,7 +32,6 @@ export type Database = {
         }
         Insert: {
           id?: string
-          board_project_id?: number | null
           status?: "draft" | "confirmed" | "cancelled" | "completed"
           start_date: string
           end_date: string
@@ -59,7 +57,6 @@ export type Database = {
         }
         Update: {
           id?: string
-          board_project_id?: number | null
           status?: "draft" | "confirmed" | "cancelled" | "completed"
           start_date?: string
           end_date?: string
@@ -320,76 +317,34 @@ export type Database = {
           is_active?: boolean
         }
       }
-      board_projects: {
-        Row: {
-          board_project_id: number
-          project_no: number
-          client_name: string
-          title: string | null
-          status: string
-          last_synced_at: string
-          is_active: boolean
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          board_project_id: number
-          project_no: number
-          client_name: string
-          title?: string | null
-          status: string
-          last_synced_at?: string
-          is_active?: boolean
-        }
-        Update: {
-          board_project_id?: number
-          project_no?: number
-          client_name?: string
-          title?: string | null
-          status?: string
-          last_synced_at?: string
-          is_active?: boolean
-        }
-      }
-      board_sync_log: {
-        Row: {
-          id: string
-          project_id: string | null
-          board_project_id: number | null
-          sync_type: string
-          sync_status: "pending" | "success" | "error"
-          request_data: any | null
-          response_data: any | null
-          error_message: string | null
-          sync_started_at: string
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          project_id?: string | null
-          board_project_id?: number | null
-          sync_type: string
-          sync_status: "pending" | "success" | "error"
-          request_data?: any | null
-          response_data?: any | null
-          error_message?: string | null
-          sync_started_at?: string
-        }
-        Update: {
-          id?: string
-          project_id?: string | null
-          board_project_id?: number | null
-          sync_type?: string
-          sync_status?: "pending" | "success" | "error"
-          request_data?: any | null
-          response_data?: any | null
-          error_message?: string | null
-          sync_started_at?: string
-        }
-      }
     }
     Views: {
-      [_ in never]: never
+      calculated_rates: {
+        Row: {
+          season_id: string | null
+          day_type: "weekday" | "weekend"
+          room_usage: "shared" | "private"
+          age_group: string
+          final_price: number
+          season_name: string | null
+          season_type: "regular" | "peak" | null
+          season_start: string | null
+          season_end: string | null
+          is_active: boolean | null
+        }
+      }
+      room_availability: {
+        Row: {
+          room_id: string
+          name: string
+          floor: string
+          capacity: number
+          room_type: "large" | "medium_a" | "medium_b" | "small_a" | "small_b" | "small_c"
+          usage_type: "shared" | "private"
+          room_rate: number
+          active_bookings: number
+        }
+      }
     }
     Functions: {
       [_ in never]: never
@@ -401,7 +356,6 @@ export type Database = {
       season_type: "regular" | "peak"
       day_type: "weekday" | "weekend"
       addon_category: "meal" | "facility" | "equipment"
-      sync_status: "pending" | "success" | "error"
     }
   }
 }
