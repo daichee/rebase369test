@@ -475,7 +475,7 @@ export function RoomSearch({ onRoomSelect, onSearchResults, initialData }: RoomS
         </CardHeader>
         <CardContent className="space-y-6">
           {/* 期間選択 */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>チェックイン日</Label>
               <Popover>
@@ -597,7 +597,7 @@ export function RoomSearch({ onRoomSelect, onSearchResults, initialData }: RoomS
           </div>
 
           {/* フィルター */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             <div className="space-y-2">
               <Label>部屋タイプ</Label>
               <Select
@@ -688,7 +688,7 @@ export function RoomSearch({ onRoomSelect, onSearchResults, initialData }: RoomS
             {/* 設備・アメニティフィルター */}
             <div className="space-y-2">
               <Label>必要な設備・アメニティ</Label>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 {AMENITY_OPTIONS.map(amenity => (
                   <div key={amenity.value} className="flex items-center space-x-2">
                     <input

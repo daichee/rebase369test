@@ -114,31 +114,31 @@ export function SalesChart() {
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <CardTitle>売上・予約チャート</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-lg md:text-xl">売上・予約チャート</CardTitle>
+            <CardDescription className="text-sm">
               {chartType === "sales" ? "売上" : "予約数"}の推移 ({timeRange === "daily" ? "日別" : timeRange === "weekly" ? "週別" : "月別"})
             </CardDescription>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <div className="flex rounded-md border">
               <Button
                 variant={chartType === "sales" ? "default" : "ghost"}
                 size="sm"
                 onClick={() => setChartType("sales")}
-                className="rounded-r-none"
+                className="rounded-r-none text-xs sm:text-sm"
               >
-                <TrendingUp className="h-4 w-4 mr-1" />
+                <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                 売上
               </Button>
               <Button
                 variant={chartType === "bookings" ? "default" : "ghost"}
                 size="sm"
                 onClick={() => setChartType("bookings")}
-                className="rounded-l-none"
+                className="rounded-l-none text-xs sm:text-sm"
               >
-                <BarChart3 className="h-4 w-4 mr-1" />
+                <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                 予約
               </Button>
             </div>
@@ -147,7 +147,7 @@ export function SalesChart() {
                 variant={timeRange === "daily" ? "default" : "ghost"}
                 size="sm"
                 onClick={() => setTimeRange("daily")}
-                className="rounded-r-none rounded-l-md"
+                className="rounded-r-none rounded-l-md text-xs sm:text-sm"
               >
                 日
               </Button>
@@ -155,7 +155,7 @@ export function SalesChart() {
                 variant={timeRange === "weekly" ? "default" : "ghost"}
                 size="sm"
                 onClick={() => setTimeRange("weekly")}
-                className="rounded-none"
+                className="rounded-none text-xs sm:text-sm"
               >
                 週
               </Button>
@@ -163,7 +163,7 @@ export function SalesChart() {
                 variant={timeRange === "monthly" ? "default" : "ghost"}
                 size="sm"
                 onClick={() => setTimeRange("monthly")}
-                className="rounded-l-none rounded-r-md"
+                className="rounded-l-none rounded-r-md text-xs sm:text-sm"
               >
                 月
               </Button>
@@ -172,7 +172,7 @@ export function SalesChart() {
         </div>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={chartConfig} className="h-[300px]">
+        <ChartContainer config={chartConfig} className="h-[250px] sm:h-[300px]">
           {chartType === "sales" ? (
             <AreaChart data={chartData}>
               <XAxis dataKey="displayDate" />

@@ -169,7 +169,7 @@ export function CustomerSelectorModal({
               <div className="flex items-center gap-2 mb-2">
                 <Badge variant="secondary">現在の予約者</Badge>
               </div>
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <div>
                   <Label className="text-xs text-muted-foreground">氏名</Label>
                   <p className="font-medium">{customer.name}</p>
@@ -205,7 +205,7 @@ export function CustomerSelectorModal({
                   onClick={() => handleCustomerSelect(boardCustomer)}
                 >
                   <CardContent className="pt-4">
-                    <div className="grid grid-cols-3 gap-4 text-sm">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                       <div>
                         <Label className="text-xs text-muted-foreground">氏名</Label>
                         <p className="font-medium">{boardCustomer.name}</p>
