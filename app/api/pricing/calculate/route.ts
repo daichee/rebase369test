@@ -75,15 +75,14 @@ export async function POST(request: NextRequest) {
 
     // 個別計算結果も提供
     const roomAmount = PriceCalculator.calculateRoomPrice(rooms as RoomUsage[], nights)
-    const guestAmount = PriceCalculator.calculateGuestPrice(
+    const guestAmount = PriceCalculator.calculateGuestPriceSimplified(
       guests as GuestCount,
       dateRangeWithNights,
       rooms as RoomUsage[]
     )
-    const addonAmount = PriceCalculator.calculateAddonPrice(
+    const addonAmount = PriceCalculator.calculateAddonPriceSimplified(
       addons as AddonItem[],
-      dateRangeWithNights,
-      guests as GuestCount
+      dateRangeWithNights
     )
 
     return NextResponse.json({
