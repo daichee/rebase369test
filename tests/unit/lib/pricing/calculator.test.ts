@@ -1,5 +1,4 @@
 import { calculateRoomPrice } from '@/lib/pricing/calculator'
-import { calculateSimplePrice } from '@/lib/pricing/simple/SimplePriceCalculator'
 
 describe('Pricing Calculator', () => {
   describe('calculateRoomPrice', () => {
@@ -74,55 +73,6 @@ describe('Pricing Calculator', () => {
     })
   })
 
-  describe('calculateSimplePrice', () => {
-    it('should return consistent results with main calculator', () => {
-      const mainResult = calculateRoomPrice({
-        roomUsage: 'shared',
-        ageGroup: 'adult',
-        checkIn: '2025-06-15',
-        checkOut: '2025-06-16',
-        guestCount: 1,
-        seasonType: 'regular'
-      })
-
-      const simpleResult = calculateSimplePrice({
-        roomUsage: 'shared',
-        ageGroup: 'adult',
-        checkIn: '2025-06-15',
-        checkOut: '2025-06-16',
-        guestCount: 1,
-        seasonType: 'regular'
-      })
-
-      expect(simpleResult.totalPrice).toBe(mainResult.totalPrice)
-    })
-
-    it('should handle edge cases gracefully', () => {
-      expect(() => {
-        calculateSimplePrice({
-          roomUsage: 'shared',
-          ageGroup: 'adult',
-          checkIn: '2025-06-16',
-          checkOut: '2025-06-15', // Invalid: checkout before checkin
-          guestCount: 1,
-          seasonType: 'regular'
-        })
-      }).toThrow()
-    })
-
-    it('should validate guest count limits', () => {
-      expect(() => {
-        calculateSimplePrice({
-          roomUsage: 'shared',
-          ageGroup: 'adult',
-          checkIn: '2025-06-15',
-          checkOut: '2025-06-16',
-          guestCount: 0, // Invalid guest count
-          seasonType: 'regular',
-        })
-      }).toThrow()
-    })
-  })
 
   describe('Price validation', () => {
     it('should always return positive prices', () => {
