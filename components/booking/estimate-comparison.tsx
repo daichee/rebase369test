@@ -14,7 +14,6 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { ArrowRight, AlertTriangle, CheckCircle, RefreshCw } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { SyncConfirmationDialog } from "./sync-confirmation-dialog"
 
 interface EstimateComparisonProps {
   isOpen: boolean
@@ -117,20 +116,9 @@ export function EstimateComparison({
   }
 
   if (showConfirmation) {
-    return (
-      <SyncConfirmationDialog
-        isOpen={true}
-        onClose={() => setShowConfirmation(false)}
-        onConfirm={handleConfirmationComplete}
-        type="update"
-        booking={booking}
-        customer={customer}
-        room={room}
-        selectedProject={project}
-        existingEstimate={existingEstimate}
-        newEstimate={newEstimate}
-      />
-    )
+    // Direct confirmation - no Board sync needed
+    handleConfirmationComplete()
+    return null
   }
 
   return (

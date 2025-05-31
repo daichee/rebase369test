@@ -15,7 +15,6 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Search, Plus, User } from "lucide-react"
 import { CustomerRegistrationForm } from "./customer-registration-form"
-import { SyncConfirmationDialog } from "./sync-confirmation-dialog"
 
 interface CustomerSelectorModalProps {
   isOpen: boolean
@@ -117,18 +116,9 @@ export function CustomerSelectorModal({
   }
 
   if (showConfirmation) {
-    return (
-      <SyncConfirmationDialog
-        isOpen={true}
-        onClose={() => setShowConfirmation(false)}
-        onConfirm={handleConfirmationComplete}
-        type="new"
-        booking={booking}
-        customer={customer}
-        room={room}
-        selectedCustomer={selectedCustomer}
-      />
-    )
+    // Direct confirmation - no Board sync needed
+    handleConfirmationComplete()
+    return null
   }
 
   return (

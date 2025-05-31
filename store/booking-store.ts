@@ -13,6 +13,9 @@ export interface Booking {
   createdAt: string
   updatedAt: string
   notes?: string
+  guestName?: string
+  guestEmail?: string
+  guestPhone?: string
 }
 
 export interface Customer {

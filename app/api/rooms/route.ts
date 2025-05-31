@@ -1,18 +1,69 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { ApiErrorHandler, ValidationUtils } from "@/lib/utils/api-error-handler"
 
 export async function GET(request: NextRequest) {
   try {
     const supabase = createClient()
     const { searchParams } = new URL(request.url)
     
-    // クエリパラメータ
+    // クエリパラメータの取得と検証
     const floor = searchParams.get("floor")
     const roomType = searchParams.get("room_type")
     const usageType = searchParams.get("usage_type")
     const isActive = searchParams.get("is_active")
-    const minCapacity = searchParams.get("min_capacity")
-    const maxCapacity = searchParams.get("max_capacity")
+    const minCapacityParam = searchParams.get("min_capacity")
+    const maxCapacityParam = searchParams.get("max_capacity")
+
+    // 数値パラメータの検証
+    let minCapacity: number | null = null
+    let maxCapacity: number | null = null
+
+    if (minCapacityParam) {
+      minCapacity = ValidationUtils.validatePositiveInteger(minCapacityParam)
+      if (minCapacity === null) {
+        return ApiErrorHandler.validationError(
+          "最小定員は正の整数である必要があります",
+          `Invalid min_capacity: ${minCapacityParam}`
+        )
+      }
+    }
+
+    if (maxCapacityParam) {
+      maxCapacity = ValidationUtils.validatePositiveInteger(maxCapacityParam)
+      if (maxCapacity === null) {
+        return ApiErrorHandler.validationError(
+          "最大定員は正の整数である必要があります",
+          `Invalid max_capacity: ${maxCapacityParam}`
+        )
+      }
+    }
+
+    // 最小定員と最大定員の関係チェック
+    if (minCapacity !== null && maxCapacity !== null && minCapacity > maxCapacity) {
+      return ApiErrorHandler.validationError(
+        "最小定員は最大定員以下である必要があります",
+        `min_capacity (${minCapacity}) cannot be greater than max_capacity (${maxCapacity})`
+      )
+    }
+
+    // 有効な値の検証
+    const validRoomTypes = ["large", "medium_a", "medium_b", "small_a", "small_b", "small_c"]
+    const validUsageTypes = ["shared", "private"]
+
+    if (roomType && !validRoomTypes.includes(roomType)) {
+      return ApiErrorHandler.validationError(
+        "無効な部屋タイプです",
+        `Valid room types: ${validRoomTypes.join(", ")}`
+      )
+    }
+
+    if (usageType && !validUsageTypes.includes(usageType)) {
+      return ApiErrorHandler.validationError(
+        "無効な利用タイプです",
+        `Valid usage types: ${validUsageTypes.join(", ")}`
+      )
+    }
 
     let query = supabase
       .from("rooms")
@@ -33,21 +84,18 @@ export async function GET(request: NextRequest) {
     if (isActive !== null) {
       query = query.eq("is_active", isActive === "true")
     }
-    if (minCapacity) {
-      query = query.gte("capacity", parseInt(minCapacity))
+    if (minCapacity !== null) {
+      query = query.gte("capacity", minCapacity)
     }
-    if (maxCapacity) {
-      query = query.lte("capacity", parseInt(maxCapacity))
+    if (maxCapacity !== null) {
+      query = query.lte("capacity", maxCapacity)
     }
 
     const { data: rooms, error } = await query
 
     if (error) {
       console.error("Error fetching rooms:", error)
-      return NextResponse.json(
-        { error: "Failed to fetch rooms" },
-        { status: 500 }
-      )
+      return ApiErrorHandler.serverError("部屋データの取得に失敗しました")
     }
 
     // フロア別にグループ化
@@ -67,9 +115,6 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error("Error in rooms GET:", error)
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    )
+    return ApiErrorHandler.handleUnknownError(error)
   }
 }
