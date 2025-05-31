@@ -174,28 +174,28 @@
 ## 🔧 フェーズ5: データベース最適化
 
 ### 5.1 Board関連テーブル削除
-- [ ] **不要テーブルの完全削除**
+- [x] **不要テーブルの完全削除**
   ```sql
   -- Board関連テーブル・カラム完全削除
   DROP TABLE IF EXISTS board_sync_log;
   DROP TABLE IF EXISTS board_projects;
   ALTER TABLE projects DROP COLUMN IF EXISTS board_project_id;
   ```
-- [ ] **データ整合性確保**
-  - [ ] 既存予約データの保護
-  - [ ] 外部キー制約の整理
+- [x] **データ整合性確保**
+  - [x] 既存予約データの保護
+  - [x] 外部キー制約の整理
 
 ### 5.2 パフォーマンス最適化
-- [ ] **事前計算料金ビューの作成**
+- [x] **事前計算料金ビューの作成**
   ```sql
   CREATE MATERIALIZED VIEW calculated_rates AS
   SELECT room_usage, age_group, day_type, season_type,
          (固定料金計算) as final_price
   FROM (料金パターン組み合わせ);
   ```
-- [ ] **空室チェック最適化**
-  - [ ] インデックス追加
-  - [ ] クエリパフォーマンス改善
+- [x] **空室チェック最適化**
+  - [x] インデックス追加
+  - [x] クエリパフォーマンス改善
 
 ---
 
