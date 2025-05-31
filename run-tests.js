@@ -4,6 +4,43 @@ import path from 'path';
 
 console.log('🧪 ReBASE 369 テストスイート実行\n');
 
+// Check if Jest is configured
+const jestConfigExists = fs.existsSync(path.join(process.cwd(), 'jest.config.js'));
+const jestSetupExists = fs.existsSync(path.join(process.cwd(), 'jest.setup.js'));
+
+console.log('🔧 テスト環境確認:');
+console.log(`  Jest設定ファイル: ${jestConfigExists ? '✅ 存在' : '❌ 未設定'}`);
+console.log(`  Jest初期化ファイル: ${jestSetupExists ? '✅ 存在' : '❌ 未設定'}`);
+
+// Check test files
+const testDirs = ['__tests__', 'src/__tests__', 'tests'];
+let testFilesFound = 0;
+
+testDirs.forEach(dir => {
+  const testDir = path.join(process.cwd(), dir);
+  if (fs.existsSync(testDir)) {
+    const files = execSync(`find ${testDir} -name "*.test.*" -o -name "*.spec.*"`, { encoding: 'utf8' }).trim();
+    if (files) {
+      testFilesFound += files.split('\n').length;
+    }
+  }
+});
+
+console.log(`\n📁 テストファイル数: ${testFilesFound}件`);
+
+if (jestConfigExists && testFilesFound > 0) {
+  console.log('\n🚀 テスト実行中...');
+  try {
+    execSync('npm test -- --passWithNoTests', { stdio: 'inherit' });
+    console.log('\n✅ 全テスト完了');
+  } catch (error) {
+    console.log('\n❌ テスト実行中にエラーが発生しました');
+    process.exit(1);
+  }
+} else {
+  console.log('\n⚠️ テスト環境が未設定です。セットアップを実行してください。');
+}
+
 // プロジェクト構造の確認
 console.log('📁 プロジェクト構造確認:');
 const projectStructure = {
