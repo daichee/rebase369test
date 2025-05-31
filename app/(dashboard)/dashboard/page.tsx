@@ -8,7 +8,6 @@ import { useDashboardStats } from "@/lib/hooks/use-dashboard-stats"
 import { SalesChart } from "@/components/dashboard/sales-chart"
 import { RoomStatusGrid } from "@/components/dashboard/room-status-grid"
 import { TodaysBookings } from "@/components/dashboard/todays-bookings"
-import { BoardSyncStatus } from "@/components/dashboard/board-sync-status"
 
 export default function DashboardPage() {
   const { stats, loading } = useDashboardStats()
@@ -143,7 +142,6 @@ export default function DashboardPage() {
         {/* 左カラム */}
         <div className="space-y-6">
           <TodaysBookings />
-          <BoardSyncStatus />
         </div>
 
         {/* 右カラム */}
