@@ -13,10 +13,8 @@ import { GuestSelector } from "./guest-selector"
 import { RoomSelector } from "./room-selector"
 import { AddonSelector } from "./addon-selector"
 import { BookingConfirmation } from "./booking-confirmation"
-import { BoardProjectSelector } from "./board-project-selector"
 import { useAvailability } from "@/lib/hooks/use-availability"
 import { usePricing } from "@/lib/hooks/use-pricing"
-import { useBoardProjects } from "@/lib/hooks/use-board-projects"
 import { useDoubleBookingPrevention } from "@/lib/hooks/use-double-booking-prevention"
 import { useToast } from "@/hooks/use-toast"
 import type { GuestCount } from "@/lib/pricing/types"
@@ -43,8 +41,6 @@ export interface BookingFormData {
   // Step 4: オプション選択
   selectedAddons: any[]
   
-  // Step 5: Board案件選択
-  boardProjectId?: number
   
   // 顧客情報
   guestName: string
@@ -87,7 +83,6 @@ export function BookingWizard({ onComplete, initialData }: BookingWizardProps) {
 
   const { checkAvailability, suggestAlternativeRooms } = useAvailability()
   const { calculateBookingPrice, validateGuestCapacity, optimizeRoomSelection } = usePricing()
-  const { syncEstimateToBoard } = useBoardProjects()
   const {
     checkForConflicts,
     validateExclusively,
@@ -383,18 +378,6 @@ export function BookingWizard({ onComplete, initialData }: BookingWizardProps) {
         createdAt: new Date().toISOString(),
       }
 
-      // Board案件が選択されている場合は見積同期
-      if (formData.boardProjectId && priceBreakdown) {
-        const syncResult = await syncEstimateToBoard({
-          boardProjectId: formData.boardProjectId,
-          priceBreakdown,
-          bookingDetails: bookingData,
-        })
-
-        if (!syncResult.success) {
-          console.warn("Board同期に失敗:", syncResult.message)
-        }
-      }
 
       // 競合状態をリセット
       resetConflictState()
@@ -478,7 +461,6 @@ export function BookingWizard({ onComplete, initialData }: BookingWizardProps) {
             formData={formData}
             priceBreakdown={priceBreakdown}
             onChange={updateFormData}
-            onBoardProjectSelect={(boardProjectId) => updateFormData({ boardProjectId })}
           />
         )
 
