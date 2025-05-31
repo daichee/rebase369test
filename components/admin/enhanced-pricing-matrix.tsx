@@ -8,7 +8,7 @@ import { Calculator, Settings } from "lucide-react"
 import { PersonalPricingMatrix } from "./personal-pricing-matrix"
 import { RoomPricingManager } from "./room-pricing-manager"
 import { SeasonPeriodManager } from "./season-period-manager"
-import { IndividualPriceCalculator } from "@/lib/pricing/individual-calculator"
+import { PriceCalculator } from "@/lib/pricing/calculator"
 
 interface PricingSimulation {
   guests: {
@@ -63,10 +63,11 @@ export function EnhancedPricingMatrix() {
         capacity: 20 // デフォルト値
       }))
 
-      const result = IndividualPriceCalculator.calculateTotalPrice(
+      const result = PriceCalculator.calculateTotalPrice(
         roomUsage,
         simulation.guests,
-        simulation.dateRange
+        simulation.dateRange,
+        [] // no addons for simulation
       )
 
       return result

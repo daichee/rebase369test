@@ -40,6 +40,44 @@ export default function NewBookingPage() {
 
       if (projectError) throw projectError
 
+      // 料金計算結果を保存
+      if (project && bookingData.priceBreakdown) {
+        try {
+          const { error: priceError } = await supabase
+            .from("booking_price_details")
+            .insert({
+              booking_id: project.id,
+              rooms_used: bookingData.selectedRooms.map((roomId: string) => ({
+                roomId,
+                roomType: 'unknown', // TODO: 部屋タイプマッピングが必要
+                usageType: 'shared',
+                roomRate: bookingData.priceBreakdown.roomAmount / bookingData.selectedRooms.length || 0,
+                assignedGuests: Object.values(bookingData.guests).reduce((sum, count) => sum + count, 0),
+                capacity: 20
+              })),
+              guest_breakdown: bookingData.guests,
+              date_range: bookingData.dateRange,
+              addons_selected: bookingData.addons || [],
+              season_config: bookingData.priceBreakdown.seasonConfig || {},
+              room_amount: bookingData.priceBreakdown.roomAmount || 0,
+              guest_amount: bookingData.priceBreakdown.guestAmount || 0,
+              addon_amount: bookingData.priceBreakdown.addonAmount || 0,
+              subtotal: bookingData.priceBreakdown.subtotal || 0,
+              total_amount: bookingData.priceBreakdown.total || 0,
+              daily_breakdown: bookingData.priceBreakdown.dailyBreakdown || [],
+              calculation_method: 'unified_calculator'
+            })
+
+          if (priceError) {
+            console.warn("Failed to save price details:", priceError)
+            // 非致命的エラーとして継続
+          }
+        } catch (error) {
+          console.warn("Error saving price details:", error)
+          // 非致命的エラーとして継続
+        }
+      }
+
       // 部屋割り当てを保存
       if (project && bookingData.selectedRooms.length > 0) {
         const roomAssignments = bookingData.selectedRooms.map((roomId: string) => ({
