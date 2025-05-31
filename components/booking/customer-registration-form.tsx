@@ -72,8 +72,8 @@ export function CustomerRegistrationForm({
     setIsSubmitting(true)
 
     try {
-      // ここで実際にBoard APIに顧客を登録
-      // const newCustomer = await boardApi.createCustomer(formData)
+      // ここで実際にAPIに顧客を登録
+      // const newCustomer = await api.createCustomer(formData)
       
       // モックレスポンス
       const newCustomer = {

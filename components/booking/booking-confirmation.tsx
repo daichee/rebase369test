@@ -8,8 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { CheckCircle, User, Mail, Phone, Building2 } from "lucide-react"
-import { BoardProjectSelector } from "./board-project-selector"
+import { CheckCircle, User, Mail, Phone } from "lucide-react"
 import { ConflictNotification } from "./conflict-notification"
 import { RealtimeBookingStatus } from "./realtime-booking-status"
 import { useRooms } from "@/lib/hooks/use-rooms"
@@ -19,17 +18,14 @@ interface BookingConfirmationProps {
   formData: BookingFormData
   priceBreakdown: any
   onChange: (updates: Partial<BookingFormData>) => void
-  onBoardProjectSelect: (boardProjectId?: number) => void
 }
 
 export function BookingConfirmation({
   formData,
   priceBreakdown,
   onChange,
-  onBoardProjectSelect,
 }: BookingConfirmationProps) {
   const { getRoomById } = useRooms()
-  const [showBoardSelector, setShowBoardSelector] = useState(false)
 
   const totalGuests = Object.values(formData.guests).reduce((sum, count) => sum + count, 0)
 
@@ -286,58 +282,6 @@ export function BookingConfirmation({
         </CardContent>
       </Card>
 
-      {/* Board案件選択 */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Building2 className="h-5 w-5" />
-            Board案件連携（任意）
-          </CardTitle>
-          <CardDescription>
-            既存のBoard案件に見積データを同期する場合は選択してください
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {formData.boardProjectId ? (
-            <div className="flex items-center justify-between">
-              <div>
-                <Badge className="mb-2">案件選択済み</Badge>
-                <p className="text-sm text-muted-foreground">
-                  案件ID: {formData.boardProjectId}
-                </p>
-              </div>
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  onBoardProjectSelect(undefined)
-                  setShowBoardSelector(true)
-                }}
-              >
-                変更
-              </Button>
-            </div>
-          ) : (
-            <Button 
-              variant="outline" 
-              onClick={() => setShowBoardSelector(true)}
-            >
-              Board案件を選択
-            </Button>
-          )}
-
-          {showBoardSelector && (
-            <div className="mt-4">
-              <BoardProjectSelector
-                onSelect={(projectId) => {
-                  onBoardProjectSelect(projectId)
-                  setShowBoardSelector(false)
-                }}
-                onCancel={() => setShowBoardSelector(false)}
-              />
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
       {/* 注意事項 */}
       <Alert>
@@ -348,7 +292,6 @@ export function BookingConfirmation({
             <li>予約完了後、確認メールをお送りします</li>
             <li>料金のお支払いは現地決済となります</li>
             <li>キャンセルは3日前まで無料です</li>
-            <li>Board案件を選択した場合、見積データが自動同期されます</li>
           </ul>
         </AlertDescription>
       </Alert>

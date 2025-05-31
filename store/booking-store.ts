@@ -12,7 +12,6 @@ export interface Booking {
   status: "pending" | "confirmed" | "cancelled" | "completed"
   createdAt: string
   updatedAt: string
-  boardEstimateId?: string
   notes?: string
 }
 

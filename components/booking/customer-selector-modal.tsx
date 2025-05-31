@@ -25,8 +25,8 @@ interface CustomerSelectorModalProps {
   room: any
 }
 
-// モック顧客データ（実際にはBoard APIから取得）
-const mockBoardCustomers = [
+// モック顧客データ（実際にはAPIから取得）
+const mockCustomers = [
   {
     id: "cust-001",
     name: "田中太郎",
@@ -64,7 +64,7 @@ export function CustomerSelectorModal({
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null)
   const [showRegistrationForm, setShowRegistrationForm] = useState(false)
   const [showConfirmation, setShowConfirmation] = useState(false)
-  const [boardCustomers, setBoardCustomers] = useState(mockBoardCustomers)
+  const [customers, setCustomers] = useState(mockCustomers)
 
   // 現在の予約者情報と近い顧客を最初に表示するために検索
   useEffect(() => {
@@ -73,14 +73,14 @@ export function CustomerSelectorModal({
     }
   }, [isOpen, customer])
 
-  const filteredCustomers = boardCustomers.filter(boardCustomer =>
-    boardCustomer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    boardCustomer.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    boardCustomer.email.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredCustomers = customers.filter(customer =>
+    customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    customer.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    customer.email.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  const handleCustomerSelect = (boardCustomer: any) => {
-    setSelectedCustomer(boardCustomer)
+  const handleCustomerSelect = (selectedCustomer: any) => {
+    setSelectedCustomer(selectedCustomer)
   }
 
   const handleProceedToConfirmation = () => {
@@ -102,7 +102,7 @@ export function CustomerSelectorModal({
   const handleConfirmationComplete = () => {
     setShowConfirmation(false)
     onClose()
-    // ここで実際にBoard APIに送信する処理を実装
+    // ここで実際にAPIに送信する処理を実装
   }
 
   if (showRegistrationForm) {
@@ -126,7 +126,7 @@ export function CustomerSelectorModal({
         booking={booking}
         customer={customer}
         room={room}
-        selectedBoardCustomer={selectedCustomer}
+        selectedCustomer={selectedCustomer}
       />
     )
   }
@@ -137,7 +137,7 @@ export function CustomerSelectorModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <User className="h-5 w-5" />
-            Board顧客選択
+            顧客選択
           </DialogTitle>
         </DialogHeader>
 

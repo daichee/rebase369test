@@ -14,7 +14,6 @@ export default function NewBookingPage() {
       const { data: project, error: projectError } = await supabase
         .from("projects")
         .insert({
-          board_project_id: bookingData.boardProjectId || null,
           status: "confirmed",
           start_date: bookingData.dateRange.startDate,
           end_date: bookingData.dateRange.endDate,

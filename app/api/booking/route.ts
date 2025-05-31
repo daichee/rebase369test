@@ -115,7 +115,6 @@ export async function POST(request: NextRequest) {
       total_amount: body.total_amount || 0,
       notes: body.notes || null,
       status: body.status || "draft",
-      board_project_id: body.board_project_id || null,
     }
 
     // プロジェクト作成
