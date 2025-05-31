@@ -13,7 +13,7 @@ const navigation = [
   { name: "ダッシュボード", href: "/dashboard", icon: Home },
   { name: "予約管理", href: "/booking", icon: BookOpen },
   { name: "カレンダー", href: "/calendar", icon: Calendar },
-  { name: "管理画面", href: "/admin", icon: Settings },
+  { name: "設定", href: "/settings", icon: Settings },
 ]
 
 export default function DashboardLayout({
