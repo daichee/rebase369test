@@ -11,7 +11,7 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:ci": "jest --ci --coverage --watchAll=false",
-    "test:lighthouse": "node scripts/lighthouse-test.js",
+    "test:lighthouse": "node tests/utils/lighthouse-test.js",
     "test:performance": "npm run test:lighthouse",
     "test:all": "npm run test && npm run test:lighthouse",
     "test:system": "node scripts/test-system.js",

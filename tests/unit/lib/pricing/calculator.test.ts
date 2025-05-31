@@ -118,7 +118,7 @@ describe('Pricing Calculator', () => {
           checkIn: '2025-06-15',
           checkOut: '2025-06-16',
           guestCount: 0, // Invalid guest count
-          seasonType: 'regular'
+          seasonType: 'regular',
         })
       }).toThrow()
     })

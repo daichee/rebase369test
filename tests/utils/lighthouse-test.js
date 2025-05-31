@@ -210,7 +210,7 @@ class LighthouseTest {
     }
     
     // Save detailed JSON report
-    const reportsDir = path.join(__dirname, '..', 'reports')
+    const reportsDir = path.join(__dirname, '..', '..', 'reports')
     if (!fs.existsSync(reportsDir)) {
       fs.mkdirSync(reportsDir, { recursive: true })
     }
