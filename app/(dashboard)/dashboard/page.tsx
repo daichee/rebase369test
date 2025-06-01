@@ -13,7 +13,8 @@ export default function DashboardPage() {
   const { stats, loading } = useDashboardStats()
 
   const formatCurrency = (amount: number) => {
-    return `¥${amount.toLocaleString()}`
+    const safeAmount = amount || 0
+    return `¥${safeAmount.toLocaleString()}`
   }
 
   const getChangeIcon = (change: number) => {

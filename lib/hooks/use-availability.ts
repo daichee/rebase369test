@@ -63,9 +63,8 @@ export function useAvailability() {
         `)
         .in("room_id", roomIds)
         .neq("projects.status", "cancelled")
-        .or(
-          `and(projects.start_date.lte.${dateRange.endDate},projects.end_date.gt.${dateRange.startDate})`
-        )
+        .gte("projects.end_date", dateRange.startDate)
+        .lte("projects.start_date", dateRange.endDate)
 
       if (excludeBookingId) {
         query = query.neq("project_id", excludeBookingId)
@@ -113,9 +112,8 @@ export function useAvailability() {
           )
         `)
         .neq("projects.status", "cancelled")
-        .or(
-          `and(projects.start_date.lte.${dateRange.endDate},projects.end_date.gt.${dateRange.startDate})`
-        )
+        .gte("projects.end_date", dateRange.startDate)
+        .lte("projects.start_date", dateRange.endDate)
 
       if (queryError) throw queryError
 

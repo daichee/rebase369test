@@ -105,10 +105,11 @@ export function SalesChart() {
   const dataKey = chartType === "sales" ? "sales" : "bookings"
   
   const formatValue = (value: number) => {
+    const safeValue = value || 0
     if (chartType === "sales") {
-      return `¥${value.toLocaleString()}`
+      return `¥${safeValue.toLocaleString()}`
     }
-    return `${value}件`
+    return `${safeValue}件`
   }
 
   return (
