@@ -8,7 +8,7 @@ import type { Database } from "@/lib/supabase/types"
 type BookingRow = Database["public"]["Tables"]["projects"]["Row"]
 
 export function useRealtimeBookings() {
-  const { setBookings, addBooking, updateBooking, deleteBooking } = useBookingStore()
+  const { setProjects, addProject, updateProject, deleteProject } = useBookingStore()
   const [isConnected, setIsConnected] = useState(false)
   const supabase = createClient()
 
@@ -16,12 +16,19 @@ export function useRealtimeBookings() {
     // 初期データ取得
     const fetchBookings = async () => {
       try {
-        const { data, error } = await supabase.from("projects").select("*").order("created_at", { ascending: false })
+        const { data, error } = await supabase
+          .from("projects")
+          .select(`
+            *,
+            project_rooms (
+              rooms (*)
+            )
+          `)
+          .order("created_at", { ascending: false })
 
         if (error) throw error
 
-        const bookings = data.map(mapSupabaseToBooking)
-        setBookings(bookings)
+        setProjects(data || [])
         setIsConnected(true)
       } catch (error) {
         console.error("予約データの取得に失敗:", error)
@@ -42,8 +49,7 @@ export function useRealtimeBookings() {
           table: "projects",
         },
         (payload) => {
-          const newBooking = mapSupabaseToBooking(payload.new as BookingRow)
-          addBooking(newBooking)
+          addProject(payload.new as BookingRow)
         },
       )
       .on(
@@ -54,8 +60,8 @@ export function useRealtimeBookings() {
           table: "projects",
         },
         (payload) => {
-          const updatedBooking = mapSupabaseToBooking(payload.new as BookingRow)
-          updateBooking(updatedBooking.id, updatedBooking)
+          const updatedProject = payload.new as BookingRow
+          updateProject(updatedProject.id, updatedProject)
         },
       )
       .on(
@@ -66,7 +72,7 @@ export function useRealtimeBookings() {
           table: "projects",
         },
         (payload) => {
-          deleteBooking((payload.old as BookingRow).id)
+          deleteProject((payload.old as BookingRow).id)
         },
       )
       .subscribe((status) => {
@@ -76,27 +82,8 @@ export function useRealtimeBookings() {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [supabase, setBookings, addBooking, updateBooking, deleteBooking])
+  }, [supabase, setProjects, addProject, updateProject, deleteProject])
 
   return { isConnected }
 }
 
-// Supabaseの行データを予約オブジェクトにマッピング
-function mapSupabaseToBooking(row: BookingRow) {
-  return {
-    id: row.id,
-    customerId: row.created_by || "unknown",
-    roomId: "R201", // 実際の部屋割り当てから取得
-    checkIn: row.start_date,
-    checkOut: row.end_date,
-    guestCount: row.pax_total,
-    totalAmount: row.total_amount,
-    status: row.status as "pending" | "confirmed" | "cancelled" | "completed",
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-    notes: row.notes || undefined,
-    guestName: row.guest_name,
-    guestEmail: row.guest_email,
-    guestPhone: row.guest_phone || undefined,
-  }
-}

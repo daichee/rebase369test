@@ -177,7 +177,7 @@ export class AvailabilityChecker {
   ): Room[] {
     const occupiedRoomIds = new Set(conflictingBookings.map((booking) => booking.roomId))
 
-    return rooms.filter((room) => room.isActive && room.capacity >= guestCount && !occupiedRoomIds.has(room.id))
+    return rooms.filter((room) => room.isActive && room.capacity >= guestCount && !occupiedRoomIds.has(room.roomId))
   }
 
   /**
@@ -436,7 +436,7 @@ export class AvailabilityChecker {
     for (const room of rooms) {
       if (!room.isActive || room.capacity < guestCount) continue
 
-      const roomBookings = bookings.filter(b => b.roomId === room.id)
+      const roomBookings = bookings.filter(b => b.roomId === room.roomId)
       const occupiedDates = new Set<string>()
       
       roomBookings.forEach(booking => {
@@ -451,7 +451,7 @@ export class AvailabilityChecker {
         const suggestionScore = (availableDates.length / requestedDates.length) * 10
         
         result.push({
-          roomId: room.id,
+          roomId: room.roomId,
           room,
           availableDates,
           conflictDates,
