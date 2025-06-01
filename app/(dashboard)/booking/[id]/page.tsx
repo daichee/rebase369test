@@ -271,7 +271,7 @@ export default function BookingDetailPage() {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="pending">保留中</SelectItem>
+                            <SelectItem value="draft">下書き</SelectItem>
                             <SelectItem value="confirmed">確定</SelectItem>
                             <SelectItem value="cancelled">キャンセル</SelectItem>
                             <SelectItem value="completed">完了</SelectItem>

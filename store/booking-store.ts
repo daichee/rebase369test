@@ -236,15 +236,14 @@ export const useBookingStore = create<BookingState>()(
           return (occupiedRooms / totalRooms) * 100
         },
       }),
-    ),
-    {
-      name: "booking-store",
-      partialize: (state) => ({
-        projects: state.projects,
-        bookings: state.bookings,
-        customers: state.customers,
-      }),
-    },
+      {
+        name: "booking-store",
+        partialize: (state) => ({
+          projects: state.projects,
+          bookings: state.bookings,
+          customers: state.customers,
+        }),
+      },
     ),
     {
       name: "booking-store",
