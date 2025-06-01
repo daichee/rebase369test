@@ -89,8 +89,8 @@ export function EstimateDisplay({ booking, customer, room }: EstimateDisplayProp
                     <td className="p-3">{room.name} 宿泊費</td>
                     <td className="text-center p-3">{nights}</td>
                     <td className="text-center p-3">泊</td>
-                    <td className="text-right p-3">¥{room.basePrice.toLocaleString()}</td>
-                    <td className="text-right p-3">¥{baseAmount.toLocaleString()}</td>
+                    <td className="text-right p-3">¥{(room.basePrice || 0).toLocaleString()}</td>
+                    <td className="text-right p-3">¥{(baseAmount || 0).toLocaleString()}</td>
                   </tr>
                   {additionalGuestFee > 0 && (
                     <tr className="border-t">
@@ -98,7 +98,7 @@ export function EstimateDisplay({ booking, customer, room }: EstimateDisplayProp
                       <td className="text-center p-3">{Math.max(0, booking.guestCount - room.baseCapacity)}</td>
                       <td className="text-center p-3">名</td>
                       <td className="text-right p-3">¥{((room.additionalGuestFee || 0) * nights).toLocaleString()}</td>
-                      <td className="text-right p-3">¥{additionalGuestFee.toLocaleString()}</td>
+                      <td className="text-right p-3">¥{(additionalGuestFee || 0).toLocaleString()}</td>
                     </tr>
                   )}
                 </tbody>
@@ -110,16 +110,16 @@ export function EstimateDisplay({ booking, customer, room }: EstimateDisplayProp
               <div className="w-64 space-y-2">
                 <div className="flex justify-between text-sm">
                   <span>小計:</span>
-                  <span>¥{subtotal.toLocaleString()}</span>
+                  <span>¥{(subtotal || 0).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span>消費税 (10%):</span>
-                  <span>¥{taxAmount.toLocaleString()}</span>
+                  <span>¥{(taxAmount || 0).toLocaleString()}</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between font-bold text-lg">
                   <span>合計:</span>
-                  <span>¥{totalAmount.toLocaleString()}</span>
+                  <span>¥{(totalAmount || 0).toLocaleString()}</span>
                 </div>
               </div>
             </div>

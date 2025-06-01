@@ -125,7 +125,7 @@ export function GuestSelector({ value, onChange, priceBreakdown }: GuestSelector
                           </p>
                           {rate !== null && (
                             <Badge variant="outline" className="mt-1">
-                              ¥{rate.toLocaleString()}/泊
+                              ¥{(rate || 0).toLocaleString()}/泊
                             </Badge>
                           )}
                         </div>

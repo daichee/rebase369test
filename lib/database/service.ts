@@ -94,7 +94,8 @@ export class DatabaseService {
     const { data, error } = await this.supabase
       .from("projects")
       .select("*")
-      .or(`start_date.lte.${endDate},end_date.gte.${startDate}`)
+      .lte("start_date", endDate)
+      .gte("end_date", startDate)
       .order("start_date", { ascending: true })
 
     if (error) {

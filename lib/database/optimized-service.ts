@@ -78,7 +78,8 @@ export class OptimizedDatabaseService {
       .from('projects')
       .select('id')
       .eq('status', 'confirmed')
-      .or(`start_date.lte.${endDate},end_date.gte.${startDate}`)
+      .lte('start_date', endDate)
+      .gte('end_date', startDate)
 
     if (excludeProjectId) {
       query = query.neq('id', excludeProjectId)
@@ -130,7 +131,8 @@ export class OptimizedDatabaseService {
         project_rooms!inner(room_id)
       `)
       .eq('status', 'confirmed')
-      .or(`start_date.lte.${endDate},end_date.gte.${startDate}`)
+      .lte('start_date', endDate)
+      .gte('end_date', startDate)
       .in('project_rooms.room_id', roomIds)
 
     if (excludeProjectId) {
