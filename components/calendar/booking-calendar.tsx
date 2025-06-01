@@ -9,6 +9,7 @@ import { Calendar, ChevronLeft, ChevronRight, Plus, Eye } from "lucide-react"
 import { useRooms } from "@/lib/hooks/use-rooms"
 import { useAvailability } from "@/lib/hooks/use-availability"
 import { useRealtimeBookings } from "@/lib/hooks/use-realtime-bookings"
+import { useBookingStore } from "@/store/booking-store"
 
 interface BookingCalendarProps {
   onCreateBooking?: (date: string, roomId?: string) => void
@@ -23,6 +24,7 @@ export function BookingCalendar({ onCreateBooking, onViewBooking }: BookingCalen
   const { rooms, loading: roomsLoading } = useRooms()
   const { getOccupancyStats } = useAvailability()
   const { isConnected } = useRealtimeBookings()
+  const { projects } = useBookingStore()
 
   // 月の最初と最後の日を取得
   const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
@@ -100,9 +102,36 @@ export function BookingCalendar({ onCreateBooking, onViewBooking }: BookingCalen
   }
 
   const getBookingForDateAndRoom = (date: Date, roomId: string) => {
-    // 実装: その日その部屋の予約を取得
-    // useRealtimeBookingsから予約データを取得してマッチング
-    return null // プレースホルダー
+    if (!projects || projects.length === 0) return null
+    
+    const targetDateString = date.toISOString().split("T")[0]
+    
+    // その日その部屋に該当するプロジェクトを検索
+    const matchingProject = projects.find(project => {
+      if (!project.start_date || !project.end_date) return false
+      
+      const startDate = new Date(project.start_date).toISOString().split("T")[0]
+      const endDate = new Date(project.end_date).toISOString().split("T")[0]
+      
+      // 日付範囲をチェック
+      const isInDateRange = targetDateString >= startDate && targetDateString <= endDate
+      
+      // 部屋割り当てをチェック
+      const hasRoomAssignment = project.project_rooms?.some(pr => pr.rooms?.roomId === roomId)
+      
+      return isInDateRange && hasRoomAssignment
+    })
+    
+    if (!matchingProject) return null
+    
+    // カレンダー表示用のフォーマットに変換
+    return {
+      id: matchingProject.id,
+      guestName: matchingProject.guest_name || "ゲスト",
+      guestCount: matchingProject.pax_total || 0,
+      organization: matchingProject.guest_org || "",
+      status: matchingProject.status || "draft"
+    }
   }
 
   const filteredRooms = getFilteredRooms()
@@ -271,14 +300,21 @@ export function BookingCalendar({ onCreateBooking, onViewBooking }: BookingCalen
                             >
                               {booking ? (
                                 <div 
-                                  className="bg-blue-100 border border-blue-300 rounded p-1 text-xs"
+                                  className={`border rounded p-1 text-xs cursor-pointer hover:opacity-80 ${
+                                    booking.status === "confirmed" ? "bg-blue-100 border-blue-300" :
+                                    booking.status === "draft" ? "bg-yellow-100 border-yellow-300" :
+                                    booking.status === "cancelled" ? "bg-red-100 border-red-300" :
+                                    "bg-gray-100 border-gray-300"
+                                  }`}
                                   onClick={(e) => {
                                     e.stopPropagation()
                                     onViewBooking?.(booking.id)
                                   }}
+                                  title={`${booking.guestName} (${booking.organization}) - ${booking.guestCount}名`}
                                 >
                                   <div className="font-medium truncate">{booking.guestName}</div>
-                                  <div className="text-muted-foreground hidden md:block">{booking.guestCount}名</div>
+                                  <div className="text-muted-foreground truncate text-xs">{booking.organization}</div>
+                                  <div className="text-muted-foreground text-xs">{booking.guestCount}名</div>
                                 </div>
                               ) : (
                                 <div className="h-full w-full flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
@@ -301,14 +337,18 @@ export function BookingCalendar({ onCreateBooking, onViewBooking }: BookingCalen
       {/* 凡例 */}
       <Card>
         <CardContent className="pt-6">
-          <div className="flex items-center gap-6 text-sm">
+          <div className="flex flex-wrap items-center gap-4 text-sm">
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 bg-blue-100 border border-blue-300 rounded"></div>
-              <span>予約済み</span>
+              <span>確定済み</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-green-100 border border-green-300 rounded"></div>
-              <span>空室</span>
+              <div className="w-4 h-4 bg-yellow-100 border border-yellow-300 rounded"></div>
+              <span>下書き</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-red-100 border border-red-300 rounded"></div>
+              <span>キャンセル</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 bg-primary rounded"></div>
