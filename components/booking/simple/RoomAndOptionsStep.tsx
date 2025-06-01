@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Home, ShoppingCart, Users, CheckCircle, AlertCircle, Bed, Utensils, Briefcase } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useRooms } from "@/lib/hooks/use-rooms"
 import type { SimpleBookingFormData } from "./SimpleBookingWizard"
 
 interface RoomAndOptionsStepProps {
@@ -18,21 +19,7 @@ interface RoomAndOptionsStepProps {
   priceBreakdown?: any
 }
 
-// モックルームデータ - 実際はAPIから取得
-const ROOMS = [
-  { id: "R201", name: "201号室", floor: "2F", type: "standard", capacity: 4, basePrice: 15000 },
-  { id: "R202", name: "202号室", floor: "2F", type: "standard", capacity: 4, basePrice: 15000 },
-  { id: "R203", name: "203号室", floor: "2F", type: "large", capacity: 6, basePrice: 18000 },
-  { id: "R204", name: "204号室", floor: "2F", type: "standard", capacity: 4, basePrice: 15000 },
-  { id: "R205", name: "205号室", floor: "2F", type: "suite", capacity: 8, basePrice: 22000 },
-  { id: "R301", name: "301号室", floor: "3F", type: "standard", capacity: 4, basePrice: 15000 },
-  { id: "R302", name: "302号室", floor: "3F", type: "standard", capacity: 4, basePrice: 15000 },
-  { id: "R303", name: "303号室", floor: "3F", type: "large", capacity: 6, basePrice: 18000 },
-  { id: "R304", name: "304号室", floor: "3F", type: "standard", capacity: 4, basePrice: 15000 },
-  { id: "R305", name: "305号室", floor: "3F", type: "standard", capacity: 4, basePrice: 15000 },
-  { id: "R306", name: "306号室", floor: "3F", type: "large", capacity: 6, basePrice: 18000 },
-  { id: "R307", name: "307号室", floor: "3F", type: "suite", capacity: 8, basePrice: 22000 },
-]
+// Room data is now fetched from Supabase via useRooms hook
 
 // モックオプションデータ
 const OPTIONS = [
@@ -94,17 +81,22 @@ const OPTIONS = [
 
 export function RoomAndOptionsStep({ formData, onChange, availabilityResults, priceBreakdown }: RoomAndOptionsStepProps) {
   const [selectedFloor, setSelectedFloor] = useState<string>("all")
+  const { rooms, loading: roomsLoading } = useRooms()
 
   const totalGuests = Object.values(formData.guests).reduce((sum, count) => sum + count, 0)
 
   // 利用可能な部屋を計算
   const getAvailableRooms = () => {
-    if (!availabilityResults || availabilityResults.length === 0) {
-      return ROOMS.map(room => ({ ...room, isAvailable: true }))
+    if (roomsLoading || !rooms.length) {
+      return []
     }
 
-    return ROOMS.map(room => {
-      const availability = availabilityResults.find(result => result.roomId === room.id)
+    if (!availabilityResults || availabilityResults.length === 0) {
+      return rooms.map(room => ({ ...room, isAvailable: true }))
+    }
+
+    return rooms.map(room => {
+      const availability = availabilityResults.find(result => result.roomId === room.roomId)
       return {
         ...room,
         isAvailable: availability ? availability.isAvailable : true
@@ -119,7 +111,7 @@ export function RoomAndOptionsStep({ formData, onChange, availabilityResults, pr
 
   // 定員チェック
   const getCapacityStatus = () => {
-    const selectedRoomData = ROOMS.filter(room => formData.selectedRooms.includes(room.id))
+    const selectedRoomData = rooms.filter(room => formData.selectedRooms.includes(room.roomId))
     const totalCapacity = selectedRoomData.reduce((sum, room) => sum + room.capacity, 0)
     
     return {
@@ -243,26 +235,32 @@ export function RoomAndOptionsStep({ formData, onChange, availabilityResults, pr
           )}
 
           {/* 部屋一覧 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {roomsLoading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-muted-foreground">部屋情報を読み込み中...</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredRooms.map((room) => {
-              const isSelected = formData.selectedRooms.includes(room.id)
+              const isSelected = formData.selectedRooms.includes(room.roomId)
               const isAvailable = room.isAvailable
 
               return (
                 <Card
-                  key={room.id}
+                  key={room.roomId}
                   className={cn(
                     "cursor-pointer transition-all",
                     isSelected && "ring-2 ring-primary",
                     !isAvailable && "opacity-50 cursor-not-allowed"
                   )}
-                  onClick={() => isAvailable && toggleRoom(room.id)}
+                  onClick={() => isAvailable && toggleRoom(room.roomId)}
                 >
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between mb-2">
                       <div className="font-medium">{room.name}</div>
-                      <Badge variant="outline" className={getRoomTypeColor(room.type)}>
-                        {getRoomTypeLabel(room.type)}
+                      <Badge variant="outline" className={getRoomTypeColor(room.roomType)}>
+                        {getRoomTypeLabel(room.roomType)}
                       </Badge>
                     </div>
                     
@@ -273,7 +271,7 @@ export function RoomAndOptionsStep({ formData, onChange, availabilityResults, pr
                       </div>
                       <div className="flex items-center justify-between">
                         <span>基本料金</span>
-                        <span>¥{room.basePrice.toLocaleString()}</span>
+                        <span>¥{room.roomRate.toLocaleString()}</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span>状態</span>
@@ -295,7 +293,8 @@ export function RoomAndOptionsStep({ formData, onChange, availabilityResults, pr
                 </Card>
               )
             })}
-          </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -391,4 +390,29 @@ export function RoomAndOptionsStep({ formData, onChange, availabilityResults, pr
       </Card>
     </div>
   )
+}
+
+// Helper functions for room type display
+function getRoomTypeLabel(roomType: string) {
+  const labels = {
+    large: "大部屋",
+    medium_a: "中部屋A",
+    medium_b: "中部屋B", 
+    small_a: "小部屋A",
+    small_b: "小部屋B",
+    small_c: "小部屋C"
+  }
+  return labels[roomType as keyof typeof labels] || roomType
+}
+
+function getRoomTypeColor(roomType: string) {
+  const colors = {
+    large: "bg-blue-100 text-blue-800",
+    medium_a: "bg-green-100 text-green-800",
+    medium_b: "bg-green-100 text-green-800",
+    small_a: "bg-purple-100 text-purple-800",
+    small_b: "bg-purple-100 text-purple-800", 
+    small_c: "bg-purple-100 text-purple-800"
+  }
+  return colors[roomType as keyof typeof colors] || "bg-gray-100 text-gray-800"
 }

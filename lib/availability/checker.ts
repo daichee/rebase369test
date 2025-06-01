@@ -1,5 +1,5 @@
-import type { Booking } from "@/store/booking-store"
-import type { Room } from "@/store/room-store"
+import type { Project } from "@/store/booking-store"
+import type { Room } from "@/lib/hooks/use-rooms"
 
 export interface AvailabilityRequest {
   startDate: string
@@ -11,7 +11,7 @@ export interface AvailabilityRequest {
 export interface AvailabilityResult {
   isAvailable: boolean
   availableRooms: Room[]
-  conflictingBookings: Booking[]
+  conflictingBookings: Project[]
   suggestions: AvailabilitySuggestion[]
   occupancyRate: number
   partiallyAvailableRooms: PartialAvailabilityInfo[]
@@ -47,7 +47,7 @@ export interface AvailabilitySuggestion {
 
 export interface ConflictInfo {
   roomId: string
-  conflictingBookings: Booking[]
+  conflictingBookings: Project[]
   overlapDays: string[]
 }
 
@@ -55,29 +55,29 @@ export class AvailabilityChecker {
   /**
    * 空室状況チェック
    */
-  static checkAvailability(request: AvailabilityRequest, rooms: Room[], bookings: Booking[]): AvailabilityResult {
+  static checkAvailability(request: AvailabilityRequest, rooms: Room[], projects: Project[]): AvailabilityResult {
     const startTime = Date.now()
     const { startDate, endDate, guestCount, excludeBookingId } = request
 
     // 除外する予約をフィルタリング
-    const activeBookings = bookings.filter(
-      (booking) => booking.id !== excludeBookingId && booking.status !== "cancelled",
+    const activeProjects = projects.filter(
+      (project) => project.id !== excludeBookingId && project.status !== "cancelled",
     )
 
     // 期間中の競合予約を取得
-    const conflictingBookings = this.getConflictingBookings(startDate, endDate, activeBookings)
+    const conflictingProjects = this.getConflictingProjects(startDate, endDate, activeProjects)
 
     // 利用可能な部屋を取得
-    const availableRooms = this.getAvailableRooms(startDate, endDate, guestCount, rooms, conflictingBookings)
+    const availableRooms = this.getAvailableRooms(startDate, endDate, guestCount, rooms, conflictingProjects)
 
     // 部分的に利用可能な部屋を取得
-    const partiallyAvailableRooms = this.getPartiallyAvailableRooms(startDate, endDate, guestCount, rooms, activeBookings)
+    const partiallyAvailableRooms = this.getPartiallyAvailableRooms(startDate, endDate, guestCount, rooms, activeProjects)
 
     // 稼働率計算
-    const occupancyRate = this.calculateOccupancyRate(startDate, endDate, rooms, activeBookings)
+    const occupancyRate = this.calculateOccupancyRate(startDate, endDate, rooms, activeProjects)
 
     // 代替案生成
-    const suggestions = this.generateAdvancedSuggestions(request, rooms, activeBookings, availableRooms, partiallyAvailableRooms)
+    const suggestions = this.generateAdvancedSuggestions(request, rooms, activeProjects, availableRooms, partiallyAvailableRooms)
 
     // 検索メトリクス計算
     const searchMetrics: SearchMetrics = {
@@ -90,7 +90,7 @@ export class AvailabilityChecker {
     return {
       isAvailable: availableRooms.length > 0,
       availableRooms,
-      conflictingBookings,
+      conflictingBookings: conflictingProjects,
       suggestions,
       occupancyRate,
       partiallyAvailableRooms,
@@ -159,10 +159,10 @@ export class AvailabilityChecker {
   }
 
   /**
-   * 競合予約取得
+   * 競合プロジェクト取得
    */
-  private static getConflictingBookings(startDate: string, endDate: string, bookings: Booking[]): Booking[] {
-    return bookings.filter((booking) => this.isDateOverlap(startDate, endDate, booking.checkIn, booking.checkOut))
+  private static getConflictingProjects(startDate: string, endDate: string, projects: Project[]): Project[] {
+    return projects.filter((project) => this.isDateOverlap(startDate, endDate, project.start_date, project.end_date))
   }
 
   /**
@@ -173,9 +173,17 @@ export class AvailabilityChecker {
     endDate: string,
     guestCount: number,
     rooms: Room[],
-    conflictingBookings: Booking[],
+    conflictingProjects: Project[],
   ): Room[] {
-    const occupiedRoomIds = new Set(conflictingBookings.map((booking) => booking.roomId))
+    // プロジェクトから部屋IDを取得（project_rooms経由）
+    const occupiedRoomIds = new Set<string>()
+    conflictingProjects.forEach(project => {
+      project.project_rooms?.forEach(pr => {
+        if (pr.room_id) {
+          occupiedRoomIds.add(pr.room_id)
+        }
+      })
+    })
 
     return rooms.filter((room) => room.isActive && room.capacity >= guestCount && !occupiedRoomIds.has(room.roomId))
   }
@@ -187,7 +195,7 @@ export class AvailabilityChecker {
     startDate: string,
     endDate: string,
     rooms: Room[],
-    bookings: Booking[],
+    projects: Project[],
   ): number {
     const totalRooms = rooms.filter((room) => room.isActive).length
     const nights = this.calculateNights(startDate, endDate)
@@ -195,10 +203,12 @@ export class AvailabilityChecker {
 
     if (totalRoomNights === 0) return 0
 
-    const occupiedRoomNights = bookings.reduce((total, booking) => {
-      if (this.isDateOverlap(startDate, endDate, booking.checkIn, booking.checkOut)) {
-        const overlapNights = this.getOverlapNights(startDate, endDate, booking.checkIn, booking.checkOut)
-        return total + overlapNights
+    const occupiedRoomNights = projects.reduce((total, project) => {
+      if (this.isDateOverlap(startDate, endDate, project.start_date, project.end_date)) {
+        const overlapNights = this.getOverlapNights(startDate, endDate, project.start_date, project.end_date)
+        // プロジェクトが複数部屋を使用している場合は部屋数分を計算
+        const roomCount = project.project_rooms?.length || 1
+        return total + (overlapNights * roomCount)
       }
       return total
     }, 0)
@@ -257,7 +267,7 @@ export class AvailabilityChecker {
       const earlierAvailability = this.checkAvailability(
         { ...request, startDate: earlierStart, endDate: earlierEnd },
         rooms,
-        bookings,
+        projects,
       )
 
       if (earlierAvailability.isAvailable) {
@@ -276,7 +286,7 @@ export class AvailabilityChecker {
       const laterAvailability = this.checkAvailability(
         { ...request, startDate: laterStart, endDate: laterEnd },
         rooms,
-        bookings,
+        projects,
       )
 
       if (laterAvailability.isAvailable) {
@@ -428,7 +438,7 @@ export class AvailabilityChecker {
     endDate: string,
     guestCount: number,
     rooms: Room[],
-    bookings: Booking[],
+    projects: Project[],
   ): PartialAvailabilityInfo[] {
     const result: PartialAvailabilityInfo[] = []
     const requestedDates = this.getDateRange(startDate, endDate)
@@ -436,12 +446,16 @@ export class AvailabilityChecker {
     for (const room of rooms) {
       if (!room.isActive || room.capacity < guestCount) continue
 
-      const roomBookings = bookings.filter(b => b.roomId === room.roomId)
+      // このルームを使用するプロジェクトを取得
+      const roomProjects = projects.filter(project => 
+        project.project_rooms?.some(pr => pr.room_id === room.roomId)
+      )
+      
       const occupiedDates = new Set<string>()
       
-      roomBookings.forEach(booking => {
-        const bookingDates = this.getDateRange(booking.checkIn, booking.checkOut)
-        bookingDates.forEach(date => occupiedDates.add(date))
+      roomProjects.forEach(project => {
+        const projectDates = this.getDateRange(project.start_date, project.end_date)
+        projectDates.forEach(date => occupiedDates.add(date))
       })
 
       const availableDates = requestedDates.filter(date => !occupiedDates.has(date))
@@ -485,7 +499,7 @@ export class AvailabilityChecker {
   private static generateAdvancedSuggestions(
     request: AvailabilityRequest,
     rooms: Room[],
-    bookings: Booking[],
+    projects: Project[],
     availableRooms: Room[],
     partiallyAvailableRooms: PartialAvailabilityInfo[],
   ): AvailabilitySuggestion[] {
@@ -494,11 +508,11 @@ export class AvailabilityChecker {
     // 利用可能な部屋がない場合の代替案
     if (availableRooms.length === 0) {
       // 前後の日程での空室提案
-      const alternateDates = this.findIntelligentAlternateDates(request, rooms, bookings)
+      const alternateDates = this.findIntelligentAlternateDates(request, rooms, projects)
       suggestions.push(...alternateDates)
 
       // 部屋を分割する提案
-      const splitSuggestion = this.findOptimalRoomCombination(request, rooms, bookings)
+      const splitSuggestion = this.findOptimalRoomCombination(request, rooms, projects)
       if (splitSuggestion) {
         suggestions.push(splitSuggestion)
       }
@@ -528,7 +542,7 @@ export class AvailabilityChecker {
   private static findIntelligentAlternateDates(
     request: AvailabilityRequest,
     rooms: Room[],
-    bookings: Booking[],
+    projects: Project[],
   ): AvailabilitySuggestion[] {
     const suggestions: AvailabilitySuggestion[] = []
     const originalStartDate = new Date(request.startDate)
@@ -543,7 +557,7 @@ export class AvailabilityChecker {
       const earlierAvailability = this.checkAvailability(
         { ...request, startDate: earlierStart, endDate: earlierEnd },
         rooms,
-        bookings,
+        projects,
       )
 
       if (earlierAvailability.isAvailable) {
@@ -570,7 +584,7 @@ export class AvailabilityChecker {
       const laterAvailability = this.checkAvailability(
         { ...request, startDate: laterStart, endDate: laterEnd },
         rooms,
-        bookings,
+        projects,
       )
 
       if (laterAvailability.isAvailable) {
@@ -599,7 +613,7 @@ export class AvailabilityChecker {
   private static findOptimalRoomCombination(
     request: AvailabilityRequest,
     rooms: Room[],
-    bookings: Booking[],
+    projects: Project[],
   ): AvailabilitySuggestion | null {
     const availableRooms = this.getAvailableRooms(
       request.startDate,
