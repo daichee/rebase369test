@@ -9,91 +9,46 @@ import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Plus, Search, Filter, Calendar, Users, DollarSign } from "lucide-react"
-import { useBookingStore } from "@/store/booking-store"
+import type { Database } from "@/lib/supabase/types"
+
+type Project = Database["public"]["Tables"]["projects"]["Row"] & {
+  project_rooms?: {
+    rooms: Database["public"]["Tables"]["rooms"]["Row"]
+  }[]
+}
 
 export default function BookingPage() {
-  const { bookings, customers, setBookings, setCustomers } = useBookingStore()
+  const [bookings, setBookings] = useState<Project[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
-  const [filteredBookings, setFilteredBookings] = useState(bookings)
+  const [filteredBookings, setFilteredBookings] = useState<Project[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  // サンプルデータの初期化
+  // Supabaseから予約データを取得
   useEffect(() => {
-    if (bookings.length === 0) {
-      const sampleBookings = [
-        {
-          id: "1",
-          customerId: "1",
-          roomId: "1",
-          checkIn: "2024-02-15",
-          checkOut: "2024-02-17",
-          guestCount: 2,
-          totalAmount: 45000,
-          status: "confirmed" as const,
-          createdAt: "2024-02-01T10:00:00Z",
-          updatedAt: "2024-02-01T10:00:00Z",
-          boardEstimateId: "EST-001",
-          notes: "記念日での利用",
-        },
-        {
-          id: "2",
-          customerId: "2",
-          roomId: "2",
-          checkIn: "2024-02-20",
-          checkOut: "2024-02-22",
-          guestCount: 4,
-          totalAmount: 75000,
-          status: "pending" as const,
-          createdAt: "2024-02-05T14:30:00Z",
-          updatedAt: "2024-02-05T14:30:00Z",
-          notes: "ファミリー旅行",
-        },
-        {
-          id: "3",
-          customerId: "3",
-          roomId: "3",
-          checkIn: "2024-02-25",
-          checkOut: "2024-02-28",
-          guestCount: 2,
-          totalAmount: 120000,
-          status: "confirmed" as const,
-          createdAt: "2024-02-10T09:15:00Z",
-          updatedAt: "2024-02-10T09:15:00Z",
-          boardEstimateId: "EST-002",
-        },
-      ]
+    fetchBookings()
+  }, [])
 
-      const sampleCustomers = [
-        {
-          id: "1",
-          name: "田中太郎",
-          email: "tanaka@example.com",
-          phone: "090-1234-5678",
-          address: "東京都渋谷区1-1-1",
-          createdAt: "2024-01-15T10:00:00Z",
-        },
-        {
-          id: "2",
-          name: "佐藤花子",
-          email: "sato@example.com",
-          phone: "080-9876-5432",
-          address: "大阪府大阪市2-2-2",
-          createdAt: "2024-01-20T14:30:00Z",
-        },
-        {
-          id: "3",
-          name: "山田次郎",
-          email: "yamada@example.com",
-          phone: "070-5555-1111",
-          address: "京都府京都市3-3-3",
-          createdAt: "2024-01-25T16:45:00Z",
-        },
-      ]
-
-      setBookings(sampleBookings)
-      setCustomers(sampleCustomers)
+  const fetchBookings = async () => {
+    try {
+      setIsLoading(true)
+      setError(null)
+      
+      const response = await fetch('/api/booking')
+      if (!response.ok) {
+        throw new Error('予約データの取得に失敗しました')
+      }
+      
+      const result = await response.json()
+      setBookings(result.data || [])
+    } catch (err) {
+      console.error('Error fetching bookings:', err)
+      setError(err instanceof Error ? err.message : '予約データの取得に失敗しました')
+    } finally {
+      setIsLoading(false)
     }
-  }, [bookings.length, setBookings, setCustomers])
+  }
 
   // フィルタリング処理
   useEffect(() => {
@@ -101,10 +56,10 @@ export default function BookingPage() {
 
     if (searchTerm) {
       filtered = filtered.filter((booking) => {
-        const customer = customers.find((c) => c.id === booking.customerId)
         return (
-          customer?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          customer?.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          booking.guest_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          booking.guest_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          booking.guest_org?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           booking.id.toLowerCase().includes(searchTerm.toLowerCase())
         )
       })
@@ -115,18 +70,18 @@ export default function BookingPage() {
     }
 
     setFilteredBookings(filtered)
-  }, [bookings, customers, searchTerm, statusFilter])
+  }, [bookings, searchTerm, statusFilter])
 
   const getStatusBadge = (status: string) => {
     const variants = {
-      pending: "secondary",
+      draft: "secondary",
       confirmed: "default",
       cancelled: "destructive",
       completed: "outline",
     } as const
 
     const labels = {
-      pending: "保留中",
+      draft: "下書き",
       confirmed: "確定",
       cancelled: "キャンセル",
       completed: "完了",
@@ -135,9 +90,12 @@ export default function BookingPage() {
     return <Badge variant={variants[status as keyof typeof variants]}>{labels[status as keyof typeof labels]}</Badge>
   }
 
-  const getCustomerName = (customerId: string) => {
-    const customer = customers.find((c) => c.id === customerId)
-    return customer?.name || "不明"
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("ja-JP")
+  }
+
+  const formatShortId = (id: string) => {
+    return id.slice(0, 8)
   }
 
   return (
@@ -163,7 +121,7 @@ export default function BookingPage() {
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{bookings.length}</div>
+            <div className="text-2xl font-bold">{isLoading ? "..." : bookings.length}</div>
           </CardContent>
         </Card>
 
@@ -173,17 +131,17 @@ export default function BookingPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{bookings.filter((b) => b.status === "confirmed").length}</div>
+            <div className="text-2xl font-bold">{isLoading ? "..." : bookings.filter((b) => b.status === "confirmed").length}</div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">保留中</CardTitle>
+            <CardTitle className="text-sm font-medium">下書き</CardTitle>
             <Filter className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{bookings.filter((b) => b.status === "pending").length}</div>
+            <div className="text-2xl font-bold">{isLoading ? "..." : bookings.filter((b) => b.status === "draft").length}</div>
           </CardContent>
         </Card>
 
@@ -194,7 +152,7 @@ export default function BookingPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              ¥{bookings.reduce((sum, b) => sum + b.totalAmount, 0).toLocaleString()}
+              {isLoading ? "..." : `¥${bookings.reduce((sum, b) => sum + (b.total_amount || 0), 0).toLocaleString()}`}
             </div>
           </CardContent>
         </Card>
@@ -211,7 +169,7 @@ export default function BookingPage() {
               <div className="relative">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="顧客名、メール、予約IDで検索..."
+                  placeholder="顧客名、組織名、メール、予約IDで検索..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-8"
@@ -224,7 +182,7 @@ export default function BookingPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">すべて</SelectItem>
-                <SelectItem value="pending">保留中</SelectItem>
+                <SelectItem value="draft">下書き</SelectItem>
                 <SelectItem value="confirmed">確定</SelectItem>
                 <SelectItem value="cancelled">キャンセル</SelectItem>
                 <SelectItem value="completed">完了</SelectItem>
@@ -244,10 +202,10 @@ export default function BookingPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>予約ID</TableHead>
+                <TableHead>予約番号</TableHead>
                 <TableHead>顧客名</TableHead>
-                <TableHead>チェックイン</TableHead>
-                <TableHead>チェックアウト</TableHead>
+                <TableHead>組織名</TableHead>
+                <TableHead>宿泊期間</TableHead>
                 <TableHead>人数</TableHead>
                 <TableHead>金額</TableHead>
                 <TableHead>ステータス</TableHead>
@@ -255,22 +213,49 @@ export default function BookingPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredBookings.map((booking) => (
-                <TableRow key={booking.id}>
-                  <TableCell className="font-medium">{booking.id}</TableCell>
-                  <TableCell>{getCustomerName(booking.customerId)}</TableCell>
-                  <TableCell>{new Date(booking.checkIn).toLocaleDateString("ja-JP")}</TableCell>
-                  <TableCell>{new Date(booking.checkOut).toLocaleDateString("ja-JP")}</TableCell>
-                  <TableCell>{booking.guestCount}名</TableCell>
-                  <TableCell>¥{booking.totalAmount.toLocaleString()}</TableCell>
-                  <TableCell>{getStatusBadge(booking.status)}</TableCell>
-                  <TableCell>
-                    <Button variant="outline" size="sm" asChild>
-                      <Link href={`/booking/${booking.id}`}>詳細</Link>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                    <p className="text-sm text-muted-foreground mt-2">予約データを読み込み中...</p>
+                  </TableCell>
+                </TableRow>
+              ) : error ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center py-8">
+                    <p className="text-red-500">{error}</p>
+                    <Button onClick={fetchBookings} className="mt-2" size="sm">
+                      再試行
                     </Button>
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : filteredBookings.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center py-8">
+                    <p className="text-muted-foreground">予約データが見つかりません</p>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredBookings.map((booking) => (
+                  <TableRow key={booking.id}>
+                    <TableCell className="font-medium">{formatShortId(booking.id)}</TableCell>
+                    <TableCell>{booking.guest_name || "未設定"}</TableCell>
+                    <TableCell>{booking.guest_org || "―"}</TableCell>
+                    <TableCell>
+                      {formatDate(booking.start_date)} ～ {formatDate(booking.end_date)}
+                      <div className="text-xs text-muted-foreground">{booking.nights}泊</div>
+                    </TableCell>
+                    <TableCell>{booking.pax_total}名</TableCell>
+                    <TableCell>¥{(booking.total_amount || 0).toLocaleString()}</TableCell>
+                    <TableCell>{getStatusBadge(booking.status)}</TableCell>
+                    <TableCell>
+                      <Button variant="outline" size="sm" asChild>
+                        <Link href={`/booking/${booking.id}`}>詳細</Link>
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>

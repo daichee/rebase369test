@@ -315,7 +315,7 @@ export function BookingCalendar({ onCreateBooking, onViewBooking }: BookingCalen
               <span>今日</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-muted-foreground">クリックで新規予約作成</span>
+              <span className="text-muted-foreground">空室をクリックで新規予約作成</span>
             </div>
           </div>
         </CardContent>
