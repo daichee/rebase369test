@@ -10,42 +10,81 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Edit, Save, X, Calendar, User, CreditCard, Trash2 } from "lucide-react"
-import { useBookingStore } from "@/store/booking-store"
-import { useRoomStore } from "@/store/room-store"
 import { EstimateDisplay } from "@/components/booking/estimate-display"
+import type { Database } from "@/lib/supabase/types"
+
+type Project = Database["public"]["Tables"]["projects"]["Row"] & {
+  project_rooms?: (Database["public"]["Tables"]["project_rooms"]["Row"] & {
+    rooms: Database["public"]["Tables"]["rooms"]["Row"]
+  })[]
+}
 
 export default function BookingDetailPage() {
   const params = useParams()
   const router = useRouter()
   const bookingId = params.id as string
 
-  const { bookings, customers, updateBooking, deleteBooking } = useBookingStore()
-  const { rooms } = useRoomStore()
-
-  const [booking, setBooking] = useState<any>(null)
-  const [customer, setCustomer] = useState<any>(null)
-  const [room, setRoom] = useState<any>(null)
+  const [booking, setBooking] = useState<Project | null>(null)
   const [isEditing, setIsEditing] = useState(false)
-  const [editForm, setEditForm] = useState<any>({})
+  const [editForm, setEditForm] = useState<Partial<Project>>({})
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
-    const foundBooking = bookings.find((b) => b.id === bookingId)
-    if (foundBooking) {
-      setBooking(foundBooking)
-      setEditForm(foundBooking)
+    fetchBooking()
+  }, [bookingId])
 
-      const foundCustomer = customers.find((c) => c.id === foundBooking.customerId)
-      setCustomer(foundCustomer)
-
-      const foundRoom = rooms.find((r) => r.id === foundBooking.roomId)
-      setRoom(foundRoom)
+  const fetchBooking = async () => {
+    try {
+      setIsLoading(true)
+      setError(null)
+      
+      const response = await fetch(`/api/booking/${bookingId}`)
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error('予約が見つかりません')
+        }
+        throw new Error('予約データの取得に失敗しました')
+      }
+      
+      const data = await response.json()
+      setBooking(data)
+      setEditForm(data)
+    } catch (err) {
+      console.error('Error fetching booking:', err)
+      setError(err instanceof Error ? err.message : '予約データの取得に失敗しました')
+    } finally {
+      setIsLoading(false)
     }
-  }, [bookingId, bookings, customers, rooms])
+  }
 
-  const handleSave = () => {
-    updateBooking(bookingId, editForm)
-    setBooking(editForm)
-    setIsEditing(false)
+  const handleSave = async () => {
+    try {
+      setIsSaving(true)
+      
+      const response = await fetch(`/api/booking/${bookingId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(editForm),
+      })
+      
+      if (!response.ok) {
+        throw new Error('予約の更新に失敗しました')
+      }
+      
+      const updatedBooking = await response.json()
+      setBooking(updatedBooking)
+      setEditForm(updatedBooking)
+      setIsEditing(false)
+    } catch (err) {
+      console.error('Error updating booking:', err)
+      alert(err instanceof Error ? err.message : '予約の更新に失敗しました')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const handleCancel = () => {
@@ -53,23 +92,38 @@ export default function BookingDetailPage() {
     setIsEditing(false)
   }
 
-  const handleDelete = () => {
-    if (confirm("この予約を削除してもよろしいですか？")) {
-      deleteBooking(bookingId)
+  const handleDelete = async () => {
+    if (!confirm("この予約を削除してもよろしいですか？")) {
+      return
+    }
+    
+    try {
+      const response = await fetch(`/api/booking/${bookingId}`, {
+        method: 'DELETE',
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || '予約の削除に失敗しました')
+      }
+      
       router.push("/booking")
+    } catch (err) {
+      console.error('Error deleting booking:', err)
+      alert(err instanceof Error ? err.message : '予約の削除に失敗しました')
     }
   }
 
   const getStatusBadge = (status: string) => {
     const variants = {
-      pending: "secondary",
+      draft: "secondary",
       confirmed: "default",
       cancelled: "destructive",
       completed: "outline",
     } as const
 
     const labels = {
-      pending: "保留中",
+      draft: "下書き",
       confirmed: "確定",
       cancelled: "キャンセル",
       completed: "完了",
@@ -78,14 +132,30 @@ export default function BookingDetailPage() {
     return <Badge variant={variants[status as keyof typeof variants]}>{labels[status as keyof typeof labels]}</Badge>
   }
 
-  if (!booking || !customer || !room) {
+  if (isLoading) {
     return (
       <div className="p-8">
         <div className="text-center">
-          <p>予約が見つかりません</p>
-          <Button onClick={() => router.push("/booking")} className="mt-4">
-            予約一覧に戻る
-          </Button>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="text-sm text-muted-foreground mt-2">予約データを読み込み中...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error || !booking) {
+    return (
+      <div className="p-8">
+        <div className="text-center">
+          <p className="text-red-500">{error || "予約が見つかりません"}</p>
+          <div className="mt-4 space-x-2">
+            <Button onClick={fetchBooking} variant="outline">
+              再試行
+            </Button>
+            <Button onClick={() => router.push("/booking")}>
+              予約一覧に戻る
+            </Button>
+          </div>
         </div>
       </div>
     )
@@ -112,9 +182,9 @@ export default function BookingDetailPage() {
             </>
           ) : (
             <>
-              <Button onClick={handleSave}>
+              <Button onClick={handleSave} disabled={isSaving}>
                 <Save className="mr-2 h-4 w-4" />
-                保存
+                {isSaving ? "保存中..." : "保存"}
               </Button>
               <Button onClick={handleCancel} variant="outline">
                 <X className="mr-2 h-4 w-4" />
@@ -155,11 +225,11 @@ export default function BookingDetailPage() {
                       {isEditing ? (
                         <Input
                           type="date"
-                          value={editForm.checkIn}
-                          onChange={(e) => setEditForm({ ...editForm, checkIn: e.target.value })}
+                          value={editForm.start_date || ""}
+                          onChange={(e) => setEditForm({ ...editForm, start_date: e.target.value })}
                         />
                       ) : (
-                        <p className="text-sm">{new Date(booking.checkIn).toLocaleDateString("ja-JP")}</p>
+                        <p className="text-sm">{new Date(booking.start_date).toLocaleDateString("ja-JP")}</p>
                       )}
                     </div>
                     <div className="space-y-2">
@@ -167,11 +237,11 @@ export default function BookingDetailPage() {
                       {isEditing ? (
                         <Input
                           type="date"
-                          value={editForm.checkOut}
-                          onChange={(e) => setEditForm({ ...editForm, checkOut: e.target.value })}
+                          value={editForm.end_date || ""}
+                          onChange={(e) => setEditForm({ ...editForm, end_date: e.target.value })}
                         />
                       ) : (
-                        <p className="text-sm">{new Date(booking.checkOut).toLocaleDateString("ja-JP")}</p>
+                        <p className="text-sm">{new Date(booking.end_date).toLocaleDateString("ja-JP")}</p>
                       )}
                     </div>
                   </div>
@@ -180,23 +250,14 @@ export default function BookingDetailPage() {
                     <div className="space-y-2">
                       <Label>宿泊人数</Label>
                       {isEditing ? (
-                        <Select
-                          value={editForm.guestCount.toString()}
-                          onValueChange={(value) => setEditForm({ ...editForm, guestCount: Number.parseInt(value) })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {[1, 2, 3, 4, 5, 6].map((num) => (
-                              <SelectItem key={num} value={num.toString()}>
-                                {num}名
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <Input
+                          type="number"
+                          min="1"
+                          value={editForm.pax_total || 0}
+                          onChange={(e) => setEditForm({ ...editForm, pax_total: Number.parseInt(e.target.value) || 0 })}
+                        />
                       ) : (
-                        <p className="text-sm">{booking.guestCount}名</p>
+                        <p className="text-sm">{booking.pax_total}名</p>
                       )}
                     </div>
                     <div className="space-y-2">
@@ -223,10 +284,18 @@ export default function BookingDetailPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>部屋</Label>
-                    <p className="text-sm">
-                      {room.name} ({room.type})
-                    </p>
+                    <Label>割り当て部屋</Label>
+                    <div className="text-sm">
+                      {booking.project_rooms && booking.project_rooms.length > 0 ? (
+                        booking.project_rooms.map((pr, index) => (
+                          <div key={index} className="mb-1">
+                            {pr.rooms.name} ({pr.assigned_pax}名)
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-muted-foreground">部屋が割り当てられていません</p>
+                      )}
+                    </div>
                   </div>
 
                   <div className="space-y-2">
@@ -253,26 +322,26 @@ export default function BookingDetailPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>作成日時</Label>
-                      <p className="text-sm">{new Date(booking.createdAt).toLocaleString("ja-JP")}</p>
+                      <p className="text-sm">{new Date(booking.created_at).toLocaleString("ja-JP")}</p>
                     </div>
                     <div className="space-y-2">
                       <Label>更新日時</Label>
-                      <p className="text-sm">{new Date(booking.updatedAt).toLocaleString("ja-JP")}</p>
+                      <p className="text-sm">{new Date(booking.updated_at).toLocaleString("ja-JP")}</p>
                     </div>
                   </div>
                   <div className="space-y-2">
                     <Label>合計金額</Label>
-                    <p className="text-2xl font-bold text-primary">¥{booking.totalAmount.toLocaleString()}</p>
+                    <p className="text-2xl font-bold text-primary">¥{(booking.total_amount || 0).toLocaleString()}</p>
                   </div>
-                  {booking.boardEstimateId && (
-                    <div className="space-y-2">
-                      <Label>Board連携状況</Label>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline">{booking.boardEstimateId}</Badge>
-                        <span className="text-sm text-muted-foreground">見積もりが同期済みです</span>
-                      </div>
+                  <div className="space-y-2">
+                    <Label>内訳</Label>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>部屋料金: ¥{(booking.room_amount || 0).toLocaleString()}</div>
+                      <div>人数料金: ¥{(booking.pax_amount || 0).toLocaleString()}</div>
+                      <div>オプション: ¥{(booking.addon_amount || 0).toLocaleString()}</div>
+                      <div>小計: ¥{(booking.subtotal_amount || 0).toLocaleString()}</div>
                     </div>
-                  )}
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -286,29 +355,46 @@ export default function BookingDetailPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>氏名</Label>
-                      <p className="text-sm">{customer.name}</p>
+                      <p className="text-sm">{booking.guest_name}</p>
                     </div>
                     <div className="space-y-2">
                       <Label>メールアドレス</Label>
-                      <p className="text-sm">{customer.email}</p>
+                      <p className="text-sm">{booking.guest_email}</p>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>電話番号</Label>
-                      <p className="text-sm">{customer.phone}</p>
+                      <p className="text-sm">{booking.guest_phone || "未登録"}</p>
                     </div>
                     <div className="space-y-2">
-                      <Label>住所</Label>
-                      <p className="text-sm">{customer.address || "未登録"}</p>
+                      <Label>組織名</Label>
+                      <p className="text-sm">{booking.guest_org || "未登録"}</p>
                     </div>
                   </div>
+                  {booking.purpose && (
+                    <div className="space-y-2">
+                      <Label>利用目的</Label>
+                      <p className="text-sm">{booking.purpose}</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
 
             <TabsContent value="estimate" className="space-y-4">
-              <EstimateDisplay booking={booking} customer={customer} room={room} />
+              <Card>
+                <CardHeader>
+                  <CardTitle>見積もり詳細</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="text-sm text-muted-foreground">
+                      見積もり機能は準備中です。予約詳細は他のタブでご確認ください。
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
         </div>
