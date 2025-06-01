@@ -62,7 +62,8 @@ export async function GET(request: NextRequest) {
         )
       `)
       .not("projects.status", "eq", "cancelled")
-      .or(`and(projects.start_date.lte.${endDate},projects.end_date.gte.${startDate})`)
+      .gte("projects.end_date", startDate)
+      .lte("projects.start_date", endDate)
 
     if (bookingError) {
       console.error("Error fetching bookings:", bookingError)
