@@ -6,3 +6,6 @@ export const createServerClient = () => {
   const cookieStore = cookies()
   return createServerComponentClient<Database>({ cookies: () => cookieStore })
 }
+
+// Alias for API routes - same function but with expected name
+export const createClient = createServerClient
