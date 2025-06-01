@@ -133,7 +133,7 @@ export function BookingCalendar({ onCreateBooking, onViewBooking }: BookingCalen
                 予約台帳カレンダー
               </CardTitle>
               <CardDescription>
-                13部屋の予約状況を一覧で確認できます
+                {rooms.length}部屋の予約状況を一覧で確認できます
                 {!isConnected && (
                   <Badge variant="destructive" className="ml-2">
                     オフライン
