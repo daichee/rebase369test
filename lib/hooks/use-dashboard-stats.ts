@@ -66,7 +66,7 @@ export function useDashboardStats(): {
 } {
   useRealtimeBookings() // Initialize real-time connection
   const { rooms, loading: roomsLoading } = useRooms()
-  const { bookings } = useBookingStore()
+  const { projects } = useBookingStore()
 
   const stats = useMemo(() => {
     if (roomsLoading || !rooms.length) return null
@@ -80,12 +80,12 @@ export function useDashboardStats(): {
     const previousMonth = currentMonth === 0 ? 11 : currentMonth - 1
     const previousMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear
 
-    // Filter bookings by time periods
-    const todayBookings = bookings.filter(booking => {
-      const checkIn = new Date(booking.checkIn)
-      const checkOut = new Date(booking.checkOut)
+    // Filter projects by time periods
+    const todayBookings = projects.filter(project => {
+      const checkIn = new Date(project.start_date)
+      const checkOut = new Date(project.end_date)
       return (
-        booking.status === 'confirmed' &&
+        project.status === 'confirmed' &&
         checkIn <= today &&
         checkOut > today
       )
@@ -105,11 +105,11 @@ export function useDashboardStats(): {
     for (let i = 0; i < 7; i++) {
       const checkDate = new Date(weekStart)
       checkDate.setDate(weekStart.getDate() + i)
-      const hasBooking = bookings.some(booking => {
-        const checkIn = new Date(booking.checkIn)
-        const checkOut = new Date(booking.checkOut)
+      const hasBooking = projects.some(project => {
+        const checkIn = new Date(project.start_date)
+        const checkOut = new Date(project.end_date)
         return (
-          booking.status === 'confirmed' &&
+          project.status === 'confirmed' &&
           checkIn <= checkDate &&
           checkOut > checkDate
         )
@@ -131,11 +131,11 @@ export function useDashboardStats(): {
     
     for (let i = 1; i <= daysInMonth; i++) {
       const checkDate = new Date(currentYear, currentMonth, i)
-      const hasBooking = bookings.some(booking => {
-        const checkIn = new Date(booking.checkIn)
-        const checkOut = new Date(booking.checkOut)
+      const hasBooking = projects.some(project => {
+        const checkIn = new Date(project.start_date)
+        const checkOut = new Date(project.end_date)
         return (
-          booking.status === 'confirmed' &&
+          project.status === 'confirmed' &&
           checkIn <= checkDate &&
           checkOut > checkDate
         )
@@ -150,27 +150,27 @@ export function useDashboardStats(): {
     }
 
     // Calculate current month sales
-    const currentMonthBookings = bookings.filter(booking => {
-      const checkIn = new Date(booking.checkIn)
+    const currentMonthBookings = projects.filter(project => {
+      const checkIn = new Date(project.start_date)
       return (
-        booking.status === 'confirmed' &&
+        project.status === 'confirmed' &&
         checkIn.getMonth() === currentMonth &&
         checkIn.getFullYear() === currentYear
       )
     })
 
     // Calculate previous month sales
-    const previousMonthBookings = bookings.filter(booking => {
-      const checkIn = new Date(booking.checkIn)
+    const previousMonthBookings = projects.filter(project => {
+      const checkIn = new Date(project.start_date)
       return (
-        booking.status === 'confirmed' &&
+        project.status === 'confirmed' &&
         checkIn.getMonth() === previousMonth &&
         checkIn.getFullYear() === previousMonthYear
       )
     })
 
-    const currentMonthSales = currentMonthBookings.reduce((sum, booking) => sum + (booking.totalAmount || 0), 0)
-    const previousMonthSales = previousMonthBookings.reduce((sum, booking) => sum + (booking.totalAmount || 0), 0)
+    const currentMonthSales = currentMonthBookings.reduce((sum, project) => sum + (project.total_amount || 0), 0)
+    const previousMonthSales = previousMonthBookings.reduce((sum, project) => sum + (project.total_amount || 0), 0)
     const salesChangePercentage = previousMonthSales > 0 ? Math.round(((currentMonthSales - previousMonthSales) / previousMonthSales) * 100) : 0
 
     const monthlySales = {
@@ -202,65 +202,67 @@ export function useDashboardStats(): {
     }
 
     // Today's check-ins
-    const todayCheckIns = bookings
-      .filter(booking => {
-        const checkIn = new Date(booking.checkIn)
+    const todayCheckIns = projects
+      .filter(project => {
+        const checkIn = new Date(project.start_date)
         return (
-          booking.status === 'confirmed' &&
+          project.status === 'confirmed' &&
           checkIn.toISOString().split('T')[0] === todayStr
         )
       })
-      .map(booking => {
-        const room = rooms.find(r => r.roomId === booking.roomId)
+      .map(project => {
+        // Get the first room from project_rooms if available
+        const room = project.project_rooms?.[0]?.rooms || rooms[0]
         return {
-          id: booking.id,
-          guestName: booking.guestName || '名前未設定',
-          roomId: booking.roomId,
-          roomName: room?.name || booking.roomId,
-          guestCount: booking.guestCount,
-          checkIn: booking.checkIn
+          id: project.id,
+          guestName: project.guest_name || '名前未設定',
+          roomId: room?.roomId || 'TBD',
+          roomName: room?.name || 'TBD',
+          guestCount: project.pax_total || 0,
+          checkIn: project.start_date
         }
       })
 
     // Today's check-outs
-    const todayCheckOuts = bookings
-      .filter(booking => {
-        const checkOut = new Date(booking.checkOut)
+    const todayCheckOuts = projects
+      .filter(project => {
+        const checkOut = new Date(project.end_date)
         return (
-          booking.status === 'confirmed' &&
+          project.status === 'confirmed' &&
           checkOut.toISOString().split('T')[0] === todayStr
         )
       })
-      .map(booking => {
-        const room = rooms.find(r => r.roomId === booking.roomId)
+      .map(project => {
+        // Get the first room from project_rooms if available
+        const room = project.project_rooms?.[0]?.rooms || rooms[0]
         return {
-          id: booking.id,
-          guestName: booking.guestName || '名前未設定',
-          roomId: booking.roomId,
-          roomName: room?.name || booking.roomId,
-          guestCount: booking.guestCount,
-          checkOut: booking.checkOut
+          id: project.id,
+          guestName: project.guest_name || '名前未設定',
+          roomId: room?.roomId || 'TBD',
+          roomName: room?.name || 'TBD',
+          guestCount: project.pax_total || 0,
+          checkOut: project.end_date
         }
       })
 
-    // Generate sales chart data for last 30 days
+    // Generate sales chart data for last 3 months (90 days)
     const salesChartData = []
-    for (let i = 29; i >= 0; i--) {
+    for (let i = 89; i >= 0; i--) {
       const date = new Date()
       date.setDate(date.getDate() - i)
       const dateStr = date.toISOString().split('T')[0]
       
-      const dayBookings = bookings.filter(booking => {
-        const checkIn = new Date(booking.checkIn)
+      const dayBookings = projects.filter(project => {
+        const checkIn = new Date(project.start_date)
         return (
-          booking.status === 'confirmed' &&
+          project.status === 'confirmed' &&
           checkIn.toISOString().split('T')[0] === dateStr
         )
       })
       
       salesChartData.push({
         date: dateStr,
-        sales: dayBookings.reduce((sum, booking) => sum + (booking.totalAmount || 0), 0),
+        sales: dayBookings.reduce((sum, project) => sum + (project.total_amount || 0), 0),
         bookings: dayBookings.length
       })
     }
@@ -276,7 +278,7 @@ export function useDashboardStats(): {
       todayCheckOuts,
       salesChartData
     }
-  }, [bookings, rooms, roomsLoading])
+  }, [projects, rooms, roomsLoading])
 
   return {
     stats,
