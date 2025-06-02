@@ -372,19 +372,33 @@ export class PriceCalculator {
    * オプション料金計算 (Simplified - Phase 3.2)
    */
   static calculateAddonPriceSimplified(addons: AddonItem[], dateRange: DateRange): number {
+    console.log('🧮 [PriceCalculator] calculateAddonPriceSimplified called')
+    console.log('🧮 [PriceCalculator] Addons:', addons)
+    console.log('🧮 [PriceCalculator] Date range:', dateRange)
+    
     let total = 0
 
-    addons.forEach((addon) => {
+    addons.forEach((addon, index) => {
+      console.log(`🧮 [PriceCalculator] Processing addon ${index + 1}:`, addon)
+      
       const rate = this.getAddonRate(addon.category, addon.addonId)
       const quantity = addon.quantity || 1
       
+      console.log('🧮 [PriceCalculator] Rate retrieved:', rate, 'Quantity:', quantity)
+      
       // Daily addons multiply by nights, one-time addons don't
-      const isDailyAddon = ['breakfast', 'lunch', 'dinner'].includes(addon.addonId)
+      const isDailyAddon = ['breakfast', 'lunch', 'dinner', 'meal_breakfast', 'meal_lunch', 'meal_dinner'].includes(addon.addonId)
       const multiplier = isDailyAddon ? dateRange.nights : 1
       
-      total += rate * quantity * multiplier
+      console.log('🧮 [PriceCalculator] Is daily addon:', isDailyAddon, 'Multiplier:', multiplier)
+      
+      const addonTotal = rate * quantity * multiplier
+      console.log('🧮 [PriceCalculator] Addon total:', addonTotal, '=', rate, '*', quantity, '*', multiplier)
+      
+      total += addonTotal
     })
 
+    console.log('🧮 [PriceCalculator] Final addon total:', total)
     return Math.round(total)
   }
 
@@ -392,10 +406,59 @@ export class PriceCalculator {
    * Get addon rate from fixed table
    */
   private static getAddonRate(category: string, addonId: string): number {
-    const categoryRates = this.ADDON_RATES[category as keyof typeof this.ADDON_RATES]
-    if (!categoryRates) return 0
+    console.log('💰 [PriceCalculator] getAddonRate called with:', { category, addonId })
     
-    return categoryRates[addonId as keyof typeof categoryRates] || 0
+    // Map UI addon IDs to internal rate IDs
+    const idMapping: { [key: string]: string } = {
+      meal_breakfast: 'breakfast',
+      meal_lunch: 'lunch', 
+      meal_dinner: 'dinner',
+      meal_bbq: 'bbq',
+      facility_meeting: 'projector',
+      facility_parking: 'sound_system',
+      equipment_futon: 'bedding'
+    }
+    
+    const internalId = idMapping[addonId] || addonId
+    console.log('💰 [PriceCalculator] Mapped addonId:', addonId, '→', internalId)
+    
+    const categoryRates = this.ADDON_RATES[category as keyof typeof this.ADDON_RATES]
+    console.log('💰 [PriceCalculator] Category rates for', category, ':', categoryRates)
+    
+    if (!categoryRates) {
+      console.log('💰 [PriceCalculator] No rates found for category:', category)
+      return 0
+    }
+    
+    const rate = categoryRates[internalId as keyof typeof categoryRates] || 0
+    console.log('💰 [PriceCalculator] Final rate for', internalId, ':', rate)
+    
+    // Fallback: try to get rate from UI options if internal mapping fails
+    if (rate === 0) {
+      console.log('💰 [PriceCalculator] Internal mapping failed, trying UI fallback')
+      const uiRate = this.getUIOptionRate(addonId)
+      console.log('💰 [PriceCalculator] UI fallback rate:', uiRate)
+      return uiRate
+    }
+    
+    return rate
+  }
+  
+  /**
+   * Fallback: Get rate from UI option definitions
+   */
+  private static getUIOptionRate(addonId: string): number {
+    // These rates match the UI option definitions in RoomAndOptionsStep.tsx
+    const uiRates: { [key: string]: number } = {
+      meal_breakfast: 800,
+      meal_lunch: 1200,
+      meal_dinner: 2000,
+      facility_meeting: 3000,
+      facility_parking: 500,
+      equipment_futon: 1000
+    }
+    
+    return uiRates[addonId] || 0
   }
 
   /**
