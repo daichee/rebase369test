@@ -271,7 +271,7 @@ export function RoomAndOptionsStep({ formData, onChange, availabilityResults, pr
                       </div>
                       <div className="flex items-center justify-between">
                         <span>基本料金</span>
-                        <span>¥{room.roomRate.toLocaleString()}</span>
+                        <span>¥{(room.roomRate || 0).toLocaleString()}</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span>状態</span>

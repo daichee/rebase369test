@@ -171,7 +171,7 @@ export function ConfirmationStep({ formData, priceBreakdown, onChange }: Confirm
                   <Badge variant="secondary">{getRoomTypeLabel(room.type)}</Badge>
                 </div>
                 <div className="text-right">
-                  <div className="font-medium">¥{room.basePrice.toLocaleString()}</div>
+                  <div className="font-medium">¥{(room.basePrice || 0).toLocaleString()}</div>
                   <div className="text-sm text-muted-foreground">定員{room.capacity}名</div>
                 </div>
               </div>
@@ -209,10 +209,10 @@ export function ConfirmationStep({ formData, priceBreakdown, onChange }: Confirm
                     </div>
                     <div className="text-right">
                       <div className="font-medium">
-                        ¥{(optionData.price * addon.quantity).toLocaleString()}
+                        ¥{((optionData.price || 0) * (addon.quantity || 1)).toLocaleString()}
                       </div>
                       <div className="text-sm text-muted-foreground">
-                        ¥{optionData.price.toLocaleString()} × {addon.quantity}
+                        ¥{(optionData.price || 0).toLocaleString()} × {addon.quantity || 1}
                       </div>
                     </div>
                   </div>
@@ -233,20 +233,20 @@ export function ConfirmationStep({ formData, priceBreakdown, onChange }: Confirm
             <div className="space-y-3">
               <div className="flex justify-between">
                 <span>室料</span>
-                <span>¥{priceBreakdown.roomAmount?.toLocaleString()}</span>
+                <span>¥{(priceBreakdown.roomAmount || 0).toLocaleString()}</span>
               </div>
               <div className="flex justify-between">
                 <span>個人料金</span>
-                <span>¥{priceBreakdown.guestAmount?.toLocaleString()}</span>
+                <span>¥{(priceBreakdown.guestAmount || 0).toLocaleString()}</span>
               </div>
               <div className="flex justify-between">
                 <span>オプション</span>
-                <span>¥{priceBreakdown.addonAmount?.toLocaleString()}</span>
+                <span>¥{(priceBreakdown.addonAmount || 0).toLocaleString()}</span>
               </div>
               <Separator />
               <div className="flex justify-between text-lg font-bold">
                 <span>合計金額（税込）</span>
-                <span>¥{priceBreakdown.total?.toLocaleString()}</span>
+                <span>¥{(priceBreakdown.total || 0).toLocaleString()}</span>
               </div>
             </div>
           </CardContent>

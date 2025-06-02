@@ -481,21 +481,21 @@ export function SimpleBookingWizard({ onComplete, initialData }: SimpleBookingWi
             <div className="grid grid-cols-3 gap-4 text-sm">
               <div>
                 <div className="text-muted-foreground">室料</div>
-                <div className="font-semibold">¥{priceBreakdown.roomAmount?.toLocaleString()}</div>
+                <div className="font-semibold">¥{(priceBreakdown.roomAmount || 0).toLocaleString()}</div>
               </div>
               <div>
                 <div className="text-muted-foreground">個人料金</div>
-                <div className="font-semibold">¥{priceBreakdown.guestAmount?.toLocaleString()}</div>
+                <div className="font-semibold">¥{(priceBreakdown.guestAmount || 0).toLocaleString()}</div>
               </div>
               <div>
                 <div className="text-muted-foreground">オプション</div>
-                <div className="font-semibold">¥{priceBreakdown.addonAmount?.toLocaleString()}</div>
+                <div className="font-semibold">¥{(priceBreakdown.addonAmount || 0).toLocaleString()}</div>
               </div>
             </div>
             <div className="border-t pt-4 mt-4">
               <div className="flex justify-between items-center text-lg font-bold">
                 <span>合計金額（税込）</span>
-                <span>¥{priceBreakdown.total?.toLocaleString()}</span>
+                <span>¥{(priceBreakdown.total || 0).toLocaleString()}</span>
               </div>
             </div>
           </CardContent>
