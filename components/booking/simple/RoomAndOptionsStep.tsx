@@ -139,14 +139,29 @@ export function RoomAndOptionsStep({ formData, onChange, availabilityResults, pr
     console.log('Type of roomId:', typeof roomId)
     console.log('Type of selectedRooms items:', formData.selectedRooms.map(id => ({ id, type: typeof id })))
     
-    const isCurrentlySelected = formData.selectedRooms.includes(roomId)
+    // More robust selection check using explicit comparison
+    const currentSelection = [...formData.selectedRooms]
+    const roomIndex = currentSelection.findIndex(id => String(id) === String(roomId))
+    const isCurrentlySelected = roomIndex >= 0
+    
+    console.log('Room index in selection:', roomIndex)
     console.log('Is currently selected:', isCurrentlySelected)
     
-    const newSelectedRooms = isCurrentlySelected
-      ? formData.selectedRooms.filter(id => id !== roomId)
-      : [...formData.selectedRooms, roomId]
+    let newSelectedRooms: string[]
+    if (isCurrentlySelected) {
+      // Remove the room
+      newSelectedRooms = currentSelection.filter(id => String(id) !== String(roomId))
+      console.log('Removing room from selection')
+    } else {
+      // Add the room
+      newSelectedRooms = [...currentSelection, roomId]
+      console.log('Adding room to selection')
+    }
     
+    console.log('Old selectedRooms:', formData.selectedRooms)
     console.log('New selectedRooms:', newSelectedRooms)
+    console.log('Selection changed:', JSON.stringify(formData.selectedRooms) !== JSON.stringify(newSelectedRooms))
+    
     onChange({ selectedRooms: newSelectedRooms })
   }
 
