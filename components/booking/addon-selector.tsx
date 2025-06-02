@@ -211,7 +211,7 @@ export function AddonSelector({ selectedAddons, onChange, guests, dateRange }: A
               <CardContent className="pt-4">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">オプション合計</span>
-                  <span className="font-semibold">¥{getTotalAddonPrice().toLocaleString()}</span>
+                  <span className="font-semibold">¥{(getTotalAddonPrice() || 0).toLocaleString()}</span>
                 </div>
               </CardContent>
             </Card>
@@ -266,7 +266,7 @@ export function AddonSelector({ selectedAddons, onChange, guests, dateRange }: A
 
                               {isSelected && (
                                 <Badge className="bg-green-100 text-green-800">
-                                  ¥{calculateAddonPrice(selectedAddon).toLocaleString()}
+                                  ¥{(calculateAddonPrice(selectedAddon) || 0).toLocaleString()}
                                 </Badge>
                               )}
                             </div>

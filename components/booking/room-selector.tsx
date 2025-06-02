@@ -141,7 +141,7 @@ export function RoomSelector({
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">室料合計</span>
                   <span className="font-semibold">
-                    ¥{roomPrice.toLocaleString()} ({dateRange.nights}泊)
+                    ¥{(roomPrice || 0).toLocaleString()} ({dateRange.nights}泊)
                   </span>
                 </div>
               </CardContent>
@@ -203,7 +203,7 @@ export function RoomSelector({
                               </Badge>
                               
                               <Badge variant="outline">
-                                ¥{room.roomRate.toLocaleString()}/泊
+                                ¥{(room.roomRate || 0).toLocaleString()}/泊
                               </Badge>
                             </div>
 
