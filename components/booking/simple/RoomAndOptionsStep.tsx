@@ -202,18 +202,59 @@ export function RoomAndOptionsStep({ formData, onChange, availabilityResults, pr
   }
 
   const toggleOption = (optionId: string) => {
-    const newSelectedOptions = formData.selectedAddons.some(addon => addon.id === optionId)
-      ? formData.selectedAddons.filter(addon => addon.id !== optionId)
-      : [...formData.selectedAddons, { id: optionId, quantity: 1 }]
+    console.log('🔧 [RoomAndOptionsStep] toggleOption called with optionId:', optionId)
     
+    const optionData = OPTIONS.find(opt => opt.id === optionId)
+    if (!optionData) {
+      console.error('🔧 [RoomAndOptionsStep] Option not found:', optionId)
+      return
+    }
+    
+    const isCurrentlySelected = formData.selectedAddons.some(addon => addon.addonId === optionId)
+    console.log('🔧 [RoomAndOptionsStep] Is currently selected:', isCurrentlySelected)
+    
+    let newSelectedOptions
+    if (isCurrentlySelected) {
+      // Remove the option
+      newSelectedOptions = formData.selectedAddons.filter(addon => addon.addonId !== optionId)
+      console.log('🔧 [RoomAndOptionsStep] Removing option from selection')
+    } else {
+      // Add the option with proper AddonItem structure
+      const newAddon = {
+        addonId: optionData.id,
+        category: optionData.category as "meal" | "facility" | "equipment",
+        name: optionData.name,
+        quantity: 1,
+        unitPrice: optionData.price,
+        totalPrice: optionData.price * 1, // quantity is 1 initially
+      }
+      
+      newSelectedOptions = [...formData.selectedAddons, newAddon]
+      console.log('🔧 [RoomAndOptionsStep] Adding option to selection:', newAddon)
+    }
+    
+    console.log('🔧 [RoomAndOptionsStep] New selectedAddons:', newSelectedOptions)
     onChange({ selectedAddons: newSelectedOptions })
   }
 
   const updateOptionQuantity = (optionId: string, quantity: number) => {
-    const newSelectedOptions = formData.selectedAddons.map(addon =>
-      addon.id === optionId ? { ...addon, quantity: Math.max(0, quantity) } : addon
-    ).filter(addon => addon.quantity > 0)
+    console.log('🔧 [RoomAndOptionsStep] updateOptionQuantity called:', { optionId, quantity })
     
+    const newSelectedOptions = formData.selectedAddons.map(addon => {
+      if (addon.addonId === optionId) {
+        const newQuantity = Math.max(0, quantity)
+        const updatedAddon = { 
+          ...addon, 
+          quantity: newQuantity,
+          totalPrice: addon.unitPrice * newQuantity
+        }
+        console.log('🔧 [RoomAndOptionsStep] Updated addon:', updatedAddon)
+        return updatedAddon
+      }
+      return addon
+    }).filter(addon => addon.quantity > 0)
+    
+    console.log('🔧 [RoomAndOptionsStep] New selectedAddons after quantity update:', newSelectedOptions)
     onChange({ selectedAddons: newSelectedOptions })
   }
 
@@ -426,7 +467,7 @@ export function RoomAndOptionsStep({ formData, onChange, availabilityResults, pr
               <h4 className="font-medium mb-3">{category}</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {OPTIONS.filter(option => option.category === category).map((option) => {
-                  const selectedOption = formData.selectedAddons.find(addon => addon.id === option.id)
+                  const selectedOption = formData.selectedAddons.find(addon => addon.addonId === option.id)
                   const isSelected = !!selectedOption
                   const Icon = option.icon
 

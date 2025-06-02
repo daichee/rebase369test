@@ -207,10 +207,12 @@ export function SimpleBookingWizard({ onComplete, initialData }: SimpleBookingWi
   }
 
   const validateCurrentStep = (): boolean => {
+    console.log('📋 [SimpleBookingWizard] validateCurrentStep called for step:', currentStep)
     const errors: string[] = []
 
     switch (currentStep) {
       case 1:
+        console.log('📋 [SimpleBookingWizard] Validating step 1')
         if (!formData.dateRange.startDate || !formData.dateRange.endDate) {
           errors.push("宿泊期間を選択してください")
         }
@@ -227,33 +229,61 @@ export function SimpleBookingWizard({ onComplete, initialData }: SimpleBookingWi
         if (!formData.guestName) errors.push("代表者名を入力してください")
         if (!formData.guestEmail) errors.push("メールアドレスを入力してください")
         if (!formData.guestPhone) errors.push("電話番号を入力してください")
+        console.log('📋 [SimpleBookingWizard] Step 1 validation errors:', errors)
         break
 
       case 2:
+        console.log('📋 [SimpleBookingWizard] Validating step 2')
+        console.log('📋 [SimpleBookingWizard] formData.selectedRooms:', formData.selectedRooms)
+        console.log('📋 [SimpleBookingWizard] formData.selectedRooms.length:', formData.selectedRooms.length)
+        console.log('📋 [SimpleBookingWizard] formData.guests:', formData.guests)
+        
         if (formData.selectedRooms.length === 0) {
           errors.push("部屋を選択してください")
+          console.log('📋 [SimpleBookingWizard] No rooms selected - validation failed')
         }
         
         const validation = validateGuestCapacity(formData.selectedRooms, formData.guests)
+        console.log('📋 [SimpleBookingWizard] Guest capacity validation result:', validation)
         if (!validation.isValid) {
           errors.push(validation.message || "定員超過です")
         }
+        console.log('📋 [SimpleBookingWizard] Step 2 validation errors:', errors)
         break
 
       case 3:
+        console.log('📋 [SimpleBookingWizard] Validating step 3 - no validation needed')
         // 最終確認は前ステップで検証済み
         break
     }
 
+    console.log('📋 [SimpleBookingWizard] Total validation errors:', errors)
     setValidationErrors(errors)
-    return errors.length === 0
+    const isValid = errors.length === 0
+    console.log('📋 [SimpleBookingWizard] Validation result:', isValid)
+    return isValid
   }
 
   const handleNext = async () => {
-    if (!validateCurrentStep()) return
+    console.log('▶️ [SimpleBookingWizard] handleNext called for step:', currentStep)
+    console.log('▶️ [SimpleBookingWizard] Current form data:', {
+      selectedRooms: formData.selectedRooms,
+      selectedAddons: formData.selectedAddons,
+      guests: formData.guests
+    })
+    
+    const validationResult = validateCurrentStep()
+    console.log('▶️ [SimpleBookingWizard] Validation result:', validationResult)
+    
+    if (!validationResult) {
+      console.log('▶️ [SimpleBookingWizard] Validation failed - stopping progression')
+      console.log('▶️ [SimpleBookingWizard] Validation errors:', validationErrors)
+      return
+    }
 
     // 重複があれば進行を阻止
     if (hasActiveConflicts) {
+      console.log('▶️ [SimpleBookingWizard] Has active conflicts - stopping progression')
       toast({
         title: "❌ 予約競合のため進行できません",
         description: "競合を解決してから次のステップに進んでください",
@@ -261,6 +291,8 @@ export function SimpleBookingWizard({ onComplete, initialData }: SimpleBookingWi
       })
       return
     }
+    
+    console.log('▶️ [SimpleBookingWizard] All checks passed - proceeding to next step')
 
     // Step 1完了時: 空室チェック
     if (currentStep === 1) {
