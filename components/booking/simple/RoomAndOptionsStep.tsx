@@ -81,6 +81,7 @@ const OPTIONS = [
 
 export function RoomAndOptionsStep({ formData, onChange, availabilityResults, priceBreakdown }: RoomAndOptionsStepProps) {
   const [selectedFloor, setSelectedFloor] = useState<string>("all")
+  const [lastClickTime, setLastClickTime] = useState<number>(0)
   const { rooms, loading: roomsLoading } = useRooms()
 
   const totalGuests = Object.values(formData.guests).reduce((sum, count) => sum + count, 0)
@@ -150,7 +151,29 @@ export function RoomAndOptionsStep({ formData, onChange, availabilityResults, pr
   }
 
   const handleRoomClick = (roomId: string, roomName: string) => {
-    console.log(`handleRoomClick called for ${roomName} (${roomId})`)
+    const now = Date.now()
+    console.log(`handleRoomClick called for ${roomName} (${roomId}) at ${now}`)
+    
+    // Prevent rapid double-clicks (debounce)
+    if (now - lastClickTime < 300) {
+      console.log('Ignoring rapid click - too soon after last click')
+      return
+    }
+    setLastClickTime(now)
+    
+    // Validate roomId before proceeding
+    if (!roomId || typeof roomId !== 'string') {
+      console.error('Invalid roomId:', roomId)
+      return
+    }
+    
+    // Verify room exists in our data
+    const roomExists = rooms.find(r => r.roomId === roomId)
+    if (!roomExists) {
+      console.error('Room not found in rooms data:', roomId)
+      return
+    }
+    
     toggleRoom(roomId)
   }
 
