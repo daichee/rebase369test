@@ -341,7 +341,7 @@ export function RoomAndOptionsStep({ formData, onChange, availabilityResults, pr
                                 {option.description}
                               </p>
                               <div className="text-sm font-medium mt-2">
-                                ¥{option.price.toLocaleString()} / {option.unit}
+                                ¥{(option.price || 0).toLocaleString()} / {option.unit}
                               </div>
                             </div>
                           </div>
