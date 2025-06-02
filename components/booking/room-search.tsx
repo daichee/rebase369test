@@ -842,7 +842,7 @@ export function RoomSearch({ onRoomSelect, onSearchResults, initialData }: RoomS
                         )}
                       </div>
                       <div className="text-right">
-                        <div className="font-semibold">¥{room.pricePerNight.toLocaleString()}/泊</div>
+                        <div className="font-semibold">¥{(room.pricePerNight || 0).toLocaleString()}/泊</div>
                         <Badge 
                           variant={room.availability === "available" ? "success" : "destructive"}
                           className="mt-1"
@@ -899,7 +899,7 @@ export function RoomSearch({ onRoomSelect, onSearchResults, initialData }: RoomS
                           
                           {suggestion.estimatedSavings && (
                             <div className="text-sm text-green-600">
-                              推定節約額: ¥{suggestion.estimatedSavings.toLocaleString()}
+                              推定節約額: ¥{(suggestion.estimatedSavings || 0).toLocaleString()}
                             </div>
                           )}
                           

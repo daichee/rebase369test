@@ -145,7 +145,7 @@ export function BookingConfirmation({
                         (定員{room?.capacity}名)
                       </span>
                     </div>
-                    <span className="text-sm">¥{room?.rate.toLocaleString()}/泊</span>
+                    <span className="text-sm">¥{(room?.rate || 0).toLocaleString()}/泊</span>
                   </div>
                 ))}
               </div>
@@ -180,19 +180,19 @@ export function BookingConfirmation({
               <CardContent className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">室料</span>
-                  <span>¥{priceBreakdown.roomAmount?.toLocaleString()}</span>
+                  <span>¥{(priceBreakdown.roomAmount || 0).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">個人料金</span>
-                  <span>¥{priceBreakdown.guestAmount?.toLocaleString()}</span>
+                  <span>¥{(priceBreakdown.guestAmount || 0).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">オプション</span>
-                  <span>¥{priceBreakdown.addonAmount?.toLocaleString()}</span>
+                  <span>¥{(priceBreakdown.addonAmount || 0).toLocaleString()}</span>
                 </div>
                 <div className="border-t pt-3 flex justify-between items-center text-lg font-bold">
                   <span>合計金額（税込）</span>
-                  <span className="text-green-600">¥{priceBreakdown.total?.toLocaleString()}</span>
+                  <span className="text-green-600">¥{(priceBreakdown.total || 0).toLocaleString()}</span>
                 </div>
               </CardContent>
             </Card>
