@@ -273,6 +273,25 @@ export function RoomAndOptionsStep({ formData, onChange, availabilityResults, pr
             </Alert>
           )}
 
+          {/* Debug: Test buttons */}
+          <div className="p-4 bg-yellow-50 border border-yellow-200 rounded">
+            <h3 className="font-semibold text-yellow-800">Debug: Test Room Selection</h3>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {filteredRooms.slice(0, 3).map((room) => (
+                <button
+                  key={`debug-${room.roomId}`}
+                  onClick={() => {
+                    console.log(`Debug button clicked for ${room.name} (${room.roomId})`)
+                    toggleRoom(room.roomId)
+                  }}
+                  className="px-3 py-1 bg-blue-500 text-white rounded text-sm"
+                >
+                  Test {room.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* 部屋一覧 */}
           {roomsLoading ? (
             <div className="text-center py-8">
