@@ -115,7 +115,12 @@ export function RoomAndOptionsStep({ formData, onChange, availabilityResults, pr
 
   // 定員チェック
   const getCapacityStatus = () => {
+    console.log('getCapacityStatus - formData.selectedRooms:', formData.selectedRooms)
+    console.log('getCapacityStatus - available rooms for matching:', rooms.map(r => ({ roomId: r.roomId, name: r.name })))
+    
     const selectedRoomData = rooms.filter(room => formData.selectedRooms.includes(room.roomId))
+    console.log('getCapacityStatus - selectedRoomData:', selectedRoomData.map(r => ({ roomId: r.roomId, name: r.name, capacity: r.capacity })))
+    
     const totalCapacity = selectedRoomData.reduce((sum, room) => sum + room.capacity, 0)
     
     return {
@@ -172,6 +177,22 @@ export function RoomAndOptionsStep({ formData, onChange, availabilityResults, pr
       default: return "bg-gray-100 text-gray-800"
     }
   }
+
+  // Debug: Check if room IDs are unique
+  useEffect(() => {
+    if (rooms.length > 0) {
+      const roomIds = rooms.map(r => r.roomId)
+      const uniqueIds = new Set(roomIds)
+      console.log('Total rooms:', rooms.length)
+      console.log('Unique room IDs:', uniqueIds.size)
+      console.log('Room IDs:', roomIds)
+      console.log('Are all IDs unique?', roomIds.length === uniqueIds.size)
+      
+      if (roomIds.length !== uniqueIds.size) {
+        console.error('DUPLICATE ROOM IDS DETECTED!', roomIds)
+      }
+    }
+  }, [rooms])
 
   return (
     <div className="space-y-8">
@@ -250,13 +271,15 @@ export function RoomAndOptionsStep({ formData, onChange, availabilityResults, pr
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredRooms.map((room) => {
+            {filteredRooms.map((room, index) => {
+              console.log(`Room ${index}:`, { roomId: room.roomId, name: room.name, isSelected: formData.selectedRooms.includes(room.roomId) })
+              
               const isSelected = formData.selectedRooms.includes(room.roomId)
               const isAvailable = room.isAvailable
 
               return (
                 <Card
-                  key={room.roomId}
+                  key={`${room.roomId}-${index}`}
                   className={cn(
                     "cursor-pointer transition-all",
                     isSelected && "ring-2 ring-primary",
@@ -266,6 +289,7 @@ export function RoomAndOptionsStep({ formData, onChange, availabilityResults, pr
                     console.log('Card clicked for room:', room.roomId, room.name)
                     console.log('Event target:', e.target)
                     console.log('Current target:', e.currentTarget)
+                    console.log('All rooms in current render:', filteredRooms.map(r => r.roomId))
                     e.preventDefault()
                     e.stopPropagation()
                     if (isAvailable) {
