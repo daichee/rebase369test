@@ -135,13 +135,23 @@ export function RoomAndOptionsStep({ formData, onChange, availabilityResults, pr
   const toggleRoom = (roomId: string) => {
     console.log('toggleRoom called with roomId:', roomId)
     console.log('Current selectedRooms:', formData.selectedRooms)
+    console.log('Type of roomId:', typeof roomId)
+    console.log('Type of selectedRooms items:', formData.selectedRooms.map(id => ({ id, type: typeof id })))
     
-    const newSelectedRooms = formData.selectedRooms.includes(roomId)
+    const isCurrentlySelected = formData.selectedRooms.includes(roomId)
+    console.log('Is currently selected:', isCurrentlySelected)
+    
+    const newSelectedRooms = isCurrentlySelected
       ? formData.selectedRooms.filter(id => id !== roomId)
       : [...formData.selectedRooms, roomId]
     
     console.log('New selectedRooms:', newSelectedRooms)
     onChange({ selectedRooms: newSelectedRooms })
+  }
+
+  const handleRoomClick = (roomId: string, roomName: string) => {
+    console.log(`handleRoomClick called for ${roomName} (${roomId})`)
+    toggleRoom(roomId)
   }
 
   const toggleOption = (optionId: string) => {
@@ -286,14 +296,10 @@ export function RoomAndOptionsStep({ formData, onChange, availabilityResults, pr
                     !isAvailable && "opacity-50 cursor-not-allowed"
                   )}
                   onClick={(e) => {
-                    console.log('Card clicked for room:', room.roomId, room.name)
-                    console.log('Event target:', e.target)
-                    console.log('Current target:', e.currentTarget)
-                    console.log('All rooms in current render:', filteredRooms.map(r => r.roomId))
                     e.preventDefault()
                     e.stopPropagation()
                     if (isAvailable) {
-                      toggleRoom(room.roomId)
+                      handleRoomClick(room.roomId, room.name)
                     }
                   }}
                 >
