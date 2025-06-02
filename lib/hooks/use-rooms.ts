@@ -41,7 +41,29 @@ export function useRooms() {
 
       if (fetchError) throw fetchError
 
-      setRooms(data || [])
+      console.log('Raw room data from database:', data)
+      
+      // Map database fields to component interface
+      const mappedRooms = data?.map((room, index) => {
+        console.log(`Raw room ${index}:`, room)
+        const mapped = {
+          roomId: room.room_id,
+          name: room.name,
+          floor: room.floor,
+          capacity: room.capacity,
+          roomType: room.room_type,
+          roomRate: room.room_rate,
+          usageType: room.usage_type,
+          isActive: room.is_active,
+          amenities: room.amenities || [],
+          description: room.description
+        }
+        console.log(`Mapped room ${index}:`, mapped)
+        return mapped
+      }) || []
+      
+      console.log('Mapped room data:', mappedRooms)
+      setRooms(mappedRooms)
     } catch (err) {
       setError(err instanceof Error ? err.message : "部屋データの取得に失敗しました")
     } finally {

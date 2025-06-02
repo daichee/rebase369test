@@ -81,6 +81,7 @@ const OPTIONS = [
 
 export function RoomAndOptionsStep({ formData, onChange, availabilityResults, priceBreakdown }: RoomAndOptionsStepProps) {
   const [selectedFloor, setSelectedFloor] = useState<string>("all")
+  const [lastClickTime, setLastClickTime] = useState<number>(0)
   const { rooms, loading: roomsLoading } = useRooms()
 
   const totalGuests = Object.values(formData.guests).reduce((sum, count) => sum + count, 0)
@@ -105,13 +106,31 @@ export function RoomAndOptionsStep({ formData, onChange, availabilityResults, pr
   }
 
   const availableRooms = getAvailableRooms()
+  console.log('Available rooms data:', availableRooms.map(r => ({ roomId: r.roomId, name: r.name })))
+  
   const filteredRooms = selectedFloor === "all" 
     ? availableRooms 
     : availableRooms.filter(room => room.floor === selectedFloor)
+    
+  console.log('Filtered rooms data:', filteredRooms.map(r => ({ roomId: r.roomId, name: r.name })))
+
+  // Check for room ID uniqueness to detect potential duplication issues
+  const roomIds = filteredRooms.map(room => room.roomId)
+  const uniqueRoomIds = new Set(roomIds)
+  if (roomIds.length !== uniqueRoomIds.size) {
+    console.error('❌ [RoomAndOptionsStep] DUPLICATE ROOM IDs DETECTED!')
+    console.error('❌ [RoomAndOptionsStep] Room IDs:', roomIds)
+    console.error('❌ [RoomAndOptionsStep] This may cause selection issues')
+  }
 
   // 定員チェック
   const getCapacityStatus = () => {
+    console.log('getCapacityStatus - formData.selectedRooms:', formData.selectedRooms)
+    console.log('getCapacityStatus - available rooms for matching:', rooms.map(r => ({ roomId: r.roomId, name: r.name })))
+    
     const selectedRoomData = rooms.filter(room => formData.selectedRooms.includes(room.roomId))
+    console.log('getCapacityStatus - selectedRoomData:', selectedRoomData.map(r => ({ roomId: r.roomId, name: r.name, capacity: r.capacity })))
+    
     const totalCapacity = selectedRoomData.reduce((sum, room) => sum + room.capacity, 0)
     
     return {
@@ -124,11 +143,62 @@ export function RoomAndOptionsStep({ formData, onChange, availabilityResults, pr
   const capacityStatus = getCapacityStatus()
 
   const toggleRoom = (roomId: string) => {
-    const newSelectedRooms = formData.selectedRooms.includes(roomId)
-      ? formData.selectedRooms.filter(id => id !== roomId)
-      : [...formData.selectedRooms, roomId]
+    console.log('toggleRoom called with roomId:', roomId)
+    console.log('Current selectedRooms:', formData.selectedRooms)
+    console.log('Type of roomId:', typeof roomId)
+    console.log('Type of selectedRooms items:', formData.selectedRooms.map(id => ({ id, type: typeof id })))
+    
+    // More robust selection check using explicit comparison
+    const currentSelection = [...formData.selectedRooms]
+    const roomIndex = currentSelection.findIndex(id => String(id) === String(roomId))
+    const isCurrentlySelected = roomIndex >= 0
+    
+    console.log('Room index in selection:', roomIndex)
+    console.log('Is currently selected:', isCurrentlySelected)
+    
+    let newSelectedRooms: string[]
+    if (isCurrentlySelected) {
+      // Remove the room
+      newSelectedRooms = currentSelection.filter(id => String(id) !== String(roomId))
+      console.log('Removing room from selection')
+    } else {
+      // Add the room
+      newSelectedRooms = [...currentSelection, roomId]
+      console.log('Adding room to selection')
+    }
+    
+    console.log('Old selectedRooms:', formData.selectedRooms)
+    console.log('New selectedRooms:', newSelectedRooms)
+    console.log('Selection changed:', JSON.stringify(formData.selectedRooms) !== JSON.stringify(newSelectedRooms))
     
     onChange({ selectedRooms: newSelectedRooms })
+  }
+
+  const handleRoomClick = (roomId: string, roomName: string) => {
+    const now = Date.now()
+    console.log(`handleRoomClick called for ${roomName} (${roomId}) at ${now}`)
+    
+    // Prevent rapid double-clicks (debounce)
+    if (now - lastClickTime < 300) {
+      console.log('Ignoring rapid click - too soon after last click')
+      return
+    }
+    setLastClickTime(now)
+    
+    // Validate roomId before proceeding
+    if (!roomId || typeof roomId !== 'string') {
+      console.error('Invalid roomId:', roomId)
+      return
+    }
+    
+    // Verify room exists in our data
+    const roomExists = rooms.find(r => r.roomId === roomId)
+    if (!roomExists) {
+      console.error('Room not found in rooms data:', roomId)
+      return
+    }
+    
+    toggleRoom(roomId)
   }
 
   const toggleOption = (optionId: string) => {
@@ -164,6 +234,22 @@ export function RoomAndOptionsStep({ formData, onChange, availabilityResults, pr
       default: return "bg-gray-100 text-gray-800"
     }
   }
+
+  // Debug: Check if room IDs are unique
+  useEffect(() => {
+    if (rooms.length > 0) {
+      const roomIds = rooms.map(r => r.roomId)
+      const uniqueIds = new Set(roomIds)
+      console.log('Total rooms:', rooms.length)
+      console.log('Unique room IDs:', uniqueIds.size)
+      console.log('Room IDs:', roomIds)
+      console.log('Are all IDs unique?', roomIds.length === uniqueIds.size)
+      
+      if (roomIds.length !== uniqueIds.size) {
+        console.error('DUPLICATE ROOM IDS DETECTED!', roomIds)
+      }
+    }
+  }, [rooms])
 
   return (
     <div className="space-y-8">
@@ -234,6 +320,25 @@ export function RoomAndOptionsStep({ formData, onChange, availabilityResults, pr
             </Alert>
           )}
 
+          {/* Debug: Test buttons */}
+          <div className="p-4 bg-yellow-50 border border-yellow-200 rounded">
+            <h3 className="font-semibold text-yellow-800">Debug: Test Room Selection</h3>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {filteredRooms.slice(0, 3).map((room) => (
+                <button
+                  key={`debug-${room.roomId}`}
+                  onClick={() => {
+                    console.log(`Debug button clicked for ${room.name} (${room.roomId})`)
+                    toggleRoom(room.roomId)
+                  }}
+                  className="px-3 py-1 bg-blue-500 text-white rounded text-sm"
+                >
+                  Test {room.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* 部屋一覧 */}
           {roomsLoading ? (
             <div className="text-center py-8">
@@ -242,19 +347,27 @@ export function RoomAndOptionsStep({ formData, onChange, availabilityResults, pr
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredRooms.map((room) => {
+            {filteredRooms.map((room, index) => {
+              console.log(`Room ${index}:`, { roomId: room.roomId, name: room.name, isSelected: formData.selectedRooms.includes(room.roomId) })
+              
               const isSelected = formData.selectedRooms.includes(room.roomId)
               const isAvailable = room.isAvailable
 
               return (
                 <Card
-                  key={room.roomId}
+                  key={`${room.roomId}-${index}`}
                   className={cn(
                     "cursor-pointer transition-all",
                     isSelected && "ring-2 ring-primary",
                     !isAvailable && "opacity-50 cursor-not-allowed"
                   )}
-                  onClick={() => isAvailable && toggleRoom(room.roomId)}
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    if (isAvailable) {
+                      handleRoomClick(room.roomId, room.name)
+                    }
+                  }}
                 >
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between mb-2">
