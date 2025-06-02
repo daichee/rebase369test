@@ -114,6 +114,15 @@ export function RoomAndOptionsStep({ formData, onChange, availabilityResults, pr
     
   console.log('Filtered rooms data:', filteredRooms.map(r => ({ roomId: r.roomId, name: r.name })))
 
+  // Check for room ID uniqueness to detect potential duplication issues
+  const roomIds = filteredRooms.map(room => room.roomId)
+  const uniqueRoomIds = new Set(roomIds)
+  if (roomIds.length !== uniqueRoomIds.size) {
+    console.error('❌ [RoomAndOptionsStep] DUPLICATE ROOM IDs DETECTED!')
+    console.error('❌ [RoomAndOptionsStep] Room IDs:', roomIds)
+    console.error('❌ [RoomAndOptionsStep] This may cause selection issues')
+  }
+
   // 定員チェック
   const getCapacityStatus = () => {
     console.log('getCapacityStatus - formData.selectedRooms:', formData.selectedRooms)

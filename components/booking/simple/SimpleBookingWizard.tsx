@@ -93,9 +93,16 @@ export function SimpleBookingWizard({ onComplete, initialData }: SimpleBookingWi
 
   // リアルタイム料金計算と競合チェック
   useEffect(() => {
+    console.log('🔄 [SimpleBookingWizard] Price calculation useEffect triggered')
+    console.log('🔄 [SimpleBookingWizard] formData.selectedRooms.length:', formData.selectedRooms.length)
+    console.log('🔄 [SimpleBookingWizard] formData.dateRange.nights:', formData.dateRange.nights)
+    
     if (formData.selectedRooms.length > 0 && formData.dateRange.nights > 0) {
+      console.log('🔄 [SimpleBookingWizard] Conditions met - triggering price calculation')
       calculatePrice()
       performRealtimeConflictCheck()
+    } else {
+      console.log('🔄 [SimpleBookingWizard] Conditions not met - skipping price calculation')
     }
   }, [formData.selectedRooms, formData.guests, formData.dateRange, formData.selectedAddons])
 
@@ -145,9 +152,21 @@ export function SimpleBookingWizard({ onComplete, initialData }: SimpleBookingWi
 
   const calculatePrice = async () => {
     try {
+      console.log('💰 [SimpleBookingWizard] calculatePrice called')
+      console.log('💰 [SimpleBookingWizard] formData.selectedRooms:', formData.selectedRooms)
+      console.log('💰 [SimpleBookingWizard] formData.guests:', formData.guests)
+      console.log('💰 [SimpleBookingWizard] formData.dateRange:', formData.dateRange)
+      console.log('💰 [SimpleBookingWizard] formData.selectedAddons:', formData.selectedAddons)
+      
       const totalGuests = Object.values(formData.guests).reduce((sum, count) => sum + count, 0)
-      if (totalGuests === 0) return
+      console.log('💰 [SimpleBookingWizard] totalGuests:', totalGuests)
+      
+      if (totalGuests === 0) {
+        console.log('💰 [SimpleBookingWizard] Skipping price calculation - no guests')
+        return
+      }
 
+      console.log('💰 [SimpleBookingWizard] Calling calculateBookingPrice...')
       const breakdown = await calculateBookingPrice({
         rooms: formData.selectedRooms,
         guests: formData.guests,
@@ -155,9 +174,10 @@ export function SimpleBookingWizard({ onComplete, initialData }: SimpleBookingWi
         addons: formData.selectedAddons,
       })
 
+      console.log('💰 [SimpleBookingWizard] Price breakdown result:', breakdown)
       setPriceBreakdown(breakdown)
     } catch (error) {
-      console.error("料金計算エラー:", error)
+      console.error("💰 [SimpleBookingWizard] 料金計算エラー:", error)
     }
   }
 
