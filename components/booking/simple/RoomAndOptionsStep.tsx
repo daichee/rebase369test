@@ -105,9 +105,13 @@ export function RoomAndOptionsStep({ formData, onChange, availabilityResults, pr
   }
 
   const availableRooms = getAvailableRooms()
+  console.log('Available rooms data:', availableRooms.map(r => ({ roomId: r.roomId, name: r.name })))
+  
   const filteredRooms = selectedFloor === "all" 
     ? availableRooms 
     : availableRooms.filter(room => room.floor === selectedFloor)
+    
+  console.log('Filtered rooms data:', filteredRooms.map(r => ({ roomId: r.roomId, name: r.name })))
 
   // 定員チェック
   const getCapacityStatus = () => {
@@ -124,10 +128,14 @@ export function RoomAndOptionsStep({ formData, onChange, availabilityResults, pr
   const capacityStatus = getCapacityStatus()
 
   const toggleRoom = (roomId: string) => {
+    console.log('toggleRoom called with roomId:', roomId)
+    console.log('Current selectedRooms:', formData.selectedRooms)
+    
     const newSelectedRooms = formData.selectedRooms.includes(roomId)
       ? formData.selectedRooms.filter(id => id !== roomId)
       : [...formData.selectedRooms, roomId]
     
+    console.log('New selectedRooms:', newSelectedRooms)
     onChange({ selectedRooms: newSelectedRooms })
   }
 
@@ -254,7 +262,16 @@ export function RoomAndOptionsStep({ formData, onChange, availabilityResults, pr
                     isSelected && "ring-2 ring-primary",
                     !isAvailable && "opacity-50 cursor-not-allowed"
                   )}
-                  onClick={() => isAvailable && toggleRoom(room.roomId)}
+                  onClick={(e) => {
+                    console.log('Card clicked for room:', room.roomId, room.name)
+                    console.log('Event target:', e.target)
+                    console.log('Current target:', e.currentTarget)
+                    e.preventDefault()
+                    e.stopPropagation()
+                    if (isAvailable) {
+                      toggleRoom(room.roomId)
+                    }
+                  }}
                 >
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between mb-2">

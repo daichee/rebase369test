@@ -358,7 +358,14 @@ export function SimpleBookingWizard({ onComplete, initialData }: SimpleBookingWi
   }
 
   const updateFormData = (stepData: Partial<SimpleBookingFormData>) => {
-    setFormData((prev) => ({ ...prev, ...stepData }))
+    console.log('updateFormData called with:', stepData)
+    console.log('Previous formData.selectedRooms:', formData.selectedRooms)
+    
+    setFormData((prev) => {
+      const newData = { ...prev, ...stepData }
+      console.log('New formData.selectedRooms:', newData.selectedRooms)
+      return newData
+    })
     setValidationErrors([])
   }
 
