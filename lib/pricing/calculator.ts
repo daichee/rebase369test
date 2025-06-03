@@ -408,6 +408,13 @@ export class PriceCalculator {
   private static getAddonRate(category: string, addonId: string): number {
     console.log('💰 [PriceCalculator] getAddonRate called with:', { category, addonId })
     
+    // Map Japanese category names to English internal names
+    const categoryMapping: { [key: string]: string } = {
+      '食事': 'meal',
+      '施設': 'facility', 
+      '備品': 'equipment'
+    }
+    
     // Map UI addon IDs to internal rate IDs
     const idMapping: { [key: string]: string } = {
       meal_breakfast: 'breakfast',
@@ -419,15 +426,21 @@ export class PriceCalculator {
       equipment_futon: 'bedding'
     }
     
+    const internalCategory = categoryMapping[category] || category
     const internalId = idMapping[addonId] || addonId
+    
+    console.log('💰 [PriceCalculator] Mapped category:', category, '→', internalCategory)
     console.log('💰 [PriceCalculator] Mapped addonId:', addonId, '→', internalId)
     
-    const categoryRates = this.ADDON_RATES[category as keyof typeof this.ADDON_RATES]
-    console.log('💰 [PriceCalculator] Category rates for', category, ':', categoryRates)
+    const categoryRates = this.ADDON_RATES[internalCategory as keyof typeof this.ADDON_RATES]
+    console.log('💰 [PriceCalculator] Category rates for', internalCategory, ':', categoryRates)
     
     if (!categoryRates) {
-      console.log('💰 [PriceCalculator] No rates found for category:', category)
-      return 0
+      console.log('💰 [PriceCalculator] No rates found for category:', internalCategory)
+      // Fallback: try to get rate from UI options if category mapping fails
+      const uiRate = this.getUIOptionRate(addonId)
+      console.log('💰 [PriceCalculator] Using UI fallback rate:', uiRate)
+      return uiRate
     }
     
     const rate = categoryRates[internalId as keyof typeof categoryRates] || 0
