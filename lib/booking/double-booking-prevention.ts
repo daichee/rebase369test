@@ -50,8 +50,8 @@ export class DoubleBookingPrevention {
 
       if (error) {
         // 404エラー（RPC関数が存在しない）の場合は基本的な検証にフォールバック
-        if (error.message.includes('404') || error.message.includes('not found')) {
-          console.warn('⚠️ RPC function not found, falling back to basic validation')
+        if (error.message.includes('404') || error.message.includes('not found') || error.code === '42883' || error.details?.includes('does not exist')) {
+          console.warn('⚠️ RPC function not found, falling back to basic validation:', error)
           return await this.basicValidationFallback(roomIds, startDate, endDate, excludeBookingId)
         }
         throw new Error(`排他制御エラー: ${error.message}`)
@@ -77,18 +77,14 @@ export class DoubleBookingPrevention {
       }
     } catch (error) {
       // RPC関数エラーの場合はフォールバック検証を試行
-      if (error instanceof Error && (error.message.includes('404') || error.message.includes('not found'))) {
+      if (error instanceof Error && (error.message.includes('404') || error.message.includes('not found') || error.message.includes('does not exist'))) {
         console.warn('⚠️ RPC function error, falling back to basic validation:', error.message)
         return await this.basicValidationFallback(roomIds, startDate, endDate, excludeBookingId)
       }
       
-      return {
-        isValid: false,
-        conflicts: [],
-        warnings: [],
-        errors: [error instanceof Error ? error.message : '検証に失敗しました'],
-        canProceed: false,
-      }
+      // その他のエラーの場合も基本的な検証にフォールバック（プロダクション安定性のため）
+      console.warn('⚠️ Unknown validation error, falling back to basic validation:', error)
+      return await this.basicValidationFallback(roomIds, startDate, endDate, excludeBookingId)
     }
   }
 
