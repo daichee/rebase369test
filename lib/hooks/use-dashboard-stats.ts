@@ -245,26 +245,60 @@ export function useDashboardStats(): {
         }
       })
 
-    // Generate sales chart data for last 3 months (90 days)
+    // Generate sales chart data for last 60 days and next 30 days (90 days total)
     const salesChartData = []
-    for (let i = 89; i >= 0; i--) {
+    for (let i = 59; i >= -30; i--) {
       const date = new Date()
       date.setDate(date.getDate() - i)
       const dateStr = date.toISOString().split('T')[0]
       
-      const dayBookings = projects.filter(project => {
+      // Find all projects that have stay periods overlapping with this date
+      const dayProjects = projects.filter(project => {
+        if (project.status !== 'confirmed') return false
+        
         const checkIn = new Date(project.start_date)
-        return (
-          project.status === 'confirmed' &&
-          checkIn.toISOString().split('T')[0] === dateStr
-        )
+        const checkOut = new Date(project.end_date)
+        const targetDate = new Date(dateStr)
+        
+        // Check if the target date falls within the stay period
+        return targetDate >= checkIn && targetDate < checkOut
+      })
+      
+      // For sales, distribute the total amount across the stay period
+      let dailySales = 0
+      let dailyBookings = 0
+      
+      dayProjects.forEach(project => {
+        const checkIn = new Date(project.start_date)
+        const checkOut = new Date(project.end_date)
+        const stayDays = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))
+        
+        if (stayDays > 0) {
+          // Distribute total amount across stay days
+          dailySales += (project.total_amount || 0) / stayDays
+        }
+        
+        // Count booking only on check-in day
+        const targetDate = new Date(dateStr)
+        if (checkIn.toISOString().split('T')[0] === dateStr) {
+          dailyBookings += 1
+        }
       })
       
       salesChartData.push({
         date: dateStr,
-        sales: dayBookings.reduce((sum, project) => sum + (project.total_amount || 0), 0),
-        bookings: dayBookings.length
+        sales: Math.round(dailySales),
+        bookings: dailyBookings
       })
+    }
+
+    // Debug logging
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Dashboard Stats - Projects count:', projects.length)
+      console.log('Dashboard Stats - Confirmed projects:', projects.filter(p => p.status === 'confirmed').length)
+      console.log('Dashboard Stats - Sales chart data length:', salesChartData.length)
+      console.log('Dashboard Stats - Sample chart data:', salesChartData.slice(0, 5))
+      console.log('Dashboard Stats - Chart data with sales:', salesChartData.filter(d => d.sales > 0))
     }
 
     return {

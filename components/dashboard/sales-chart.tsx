@@ -14,11 +14,11 @@ type TimeRange = "daily" | "weekly" | "monthly"
 const chartConfig = {
   sales: {
     label: "売上",
-    color: "hsl(var(--primary))",
+    color: "#2563eb",
   },
   bookings: {
-    label: "予約数",
-    color: "hsl(var(--secondary))",
+    label: "予約数", 
+    color: "#dc2626",
   },
 }
 
@@ -104,6 +104,13 @@ export function SalesChart() {
   const chartData = formatData()
   const dataKey = chartType === "sales" ? "sales" : "bookings"
   
+  // Debug logging
+  if (process.env.NODE_ENV === 'development') {
+    console.log('SalesChart - Raw stats:', stats)
+    console.log('SalesChart - Chart data:', chartData)
+    console.log('SalesChart - Chart type:', chartType)
+  }
+  
   const formatValue = (value: number) => {
     const safeValue = value || 0
     if (chartType === "sales") {
@@ -111,6 +118,9 @@ export function SalesChart() {
     }
     return `${safeValue}件`
   }
+
+  // Show message if no data
+  const hasData = chartData && chartData.length > 0 && chartData.some(d => d.sales > 0 || d.bookings > 0)
 
   return (
     <Card>
@@ -120,6 +130,7 @@ export function SalesChart() {
             <CardTitle className="text-lg md:text-xl">売上・予約チャート</CardTitle>
             <CardDescription className="text-sm">
               {chartType === "sales" ? "売上" : "予約数"}の推移 ({timeRange === "daily" ? "日別" : timeRange === "weekly" ? "週別" : "月別"})
+              {!hasData && " - データがありません"}
             </CardDescription>
           </div>
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
@@ -177,7 +188,10 @@ export function SalesChart() {
           {chartType === "sales" ? (
             <AreaChart data={chartData}>
               <XAxis dataKey="displayDate" />
-              <YAxis tickFormatter={(value) => `¥${(value / 10000).toFixed(0)}万`} />
+              <YAxis 
+                tickFormatter={(value) => `¥${(value / 10000).toFixed(0)}万`}
+                domain={['dataMin', 'dataMax']}
+              />
               <ChartTooltip
                 content={<ChartTooltipContent 
                   formatter={(value) => [formatValue(Number(value)), "売上"]}
@@ -186,15 +200,15 @@ export function SalesChart() {
               <Area
                 type="monotone"
                 dataKey={dataKey}
-                stroke="var(--color-sales)"
-                fill="var(--color-sales)"
+                stroke="#2563eb"
+                fill="#2563eb"
                 fillOpacity={0.6}
               />
             </AreaChart>
           ) : (
             <BarChart data={chartData}>
               <XAxis dataKey="displayDate" />
-              <YAxis />
+              <YAxis domain={[0, 'dataMax']} />
               <ChartTooltip
                 content={<ChartTooltipContent 
                   formatter={(value) => [formatValue(Number(value)), "予約数"]}
@@ -202,7 +216,7 @@ export function SalesChart() {
               />
               <Bar
                 dataKey={dataKey}
-                fill="var(--color-bookings)"
+                fill="#dc2626"
                 radius={[2, 2, 0, 0]}
               />
             </BarChart>
