@@ -20,11 +20,13 @@ export function BookingCalendar({ onCreateBooking, onViewBooking }: BookingCalen
   const [currentDate, setCurrentDate] = useState(new Date())
   const [floorFilter, setFloorFilter] = useState<"all" | "2F" | "3F">("all")
   const [occupancyStats, setOccupancyStats] = useState<any>(null)
+  const [fallbackProjects, setFallbackProjects] = useState<any[]>([])
+  const [isLoadingFallback, setIsLoadingFallback] = useState(false)
 
   const { rooms, loading: roomsLoading } = useRooms()
   const { getOccupancyStats } = useAvailability()
   const { isConnected } = useRealtimeBookings()
-  const { projects } = useBookingStore()
+  const { projects, setProjects } = useBookingStore()
 
   // 月の最初と最後の日を取得
   const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
@@ -33,6 +35,53 @@ export function BookingCalendar({ onCreateBooking, onViewBooking }: BookingCalen
   useEffect(() => {
     loadOccupancyStats()
   }, [currentDate])
+
+  // リアルタイム接続が失敗した場合のフォールバック
+  useEffect(() => {
+    console.log(`Calendar: Connection status - isConnected: ${isConnected}, projects.length: ${projects.length}, isLoadingFallback: ${isLoadingFallback}`)
+    
+    // Give realtime connection some time to establish before falling back
+    const timeoutId = setTimeout(() => {
+      if (projects.length === 0 && !isLoadingFallback) {
+        console.log('Calendar: No projects found after timeout, attempting API fallback...')
+        fetchProjectsFromAPI()
+      }
+    }, 2000) // 2 second delay
+    
+    // Clear timeout if we get projects
+    if (projects.length > 0) {
+      clearTimeout(timeoutId)
+    }
+    
+    return () => clearTimeout(timeoutId)
+  }, [isConnected, projects.length, isLoadingFallback])
+
+  const fetchProjectsFromAPI = async () => {
+    try {
+      setIsLoadingFallback(true)
+      console.log('Calendar: Fetching projects from API fallback...')
+      
+      const response = await fetch('/api/booking')
+      if (!response.ok) {
+        throw new Error('予約データの取得に失敗しました')
+      }
+      
+      const result = await response.json()
+      const apiProjects = result.data || []
+      
+      console.log(`Calendar: API returned ${apiProjects.length} projects:`, apiProjects)
+      
+      // APIから取得したデータをストアに保存
+      setProjects(apiProjects)
+      setFallbackProjects(apiProjects)
+      
+      console.log('Calendar: Projects saved to store')
+    } catch (error) {
+      console.error('Calendar: 予約データの取得に失敗:', error)
+    } finally {
+      setIsLoadingFallback(false)
+    }
+  }
 
   const loadOccupancyStats = async () => {
     try {
@@ -102,7 +151,12 @@ export function BookingCalendar({ onCreateBooking, onViewBooking }: BookingCalen
   }
 
   const getBookingForDateAndRoom = (date: Date, roomId: string) => {
-    if (!projects || projects.length === 0) return null
+    if (!projects || projects.length === 0) {
+      console.log("Calendar: No projects data available")
+      return null
+    }
+    
+    console.log(`Calendar: Checking ${projects.length} projects for date ${date.toISOString().split("T")[0]} and room ${roomId}`)
     
     const targetDateString = date.toISOString().split("T")[0]
     
@@ -137,7 +191,7 @@ export function BookingCalendar({ onCreateBooking, onViewBooking }: BookingCalen
   const filteredRooms = getFilteredRooms()
   const calendarDates = generateCalendarDates()
 
-  if (roomsLoading) {
+  if (roomsLoading || isLoadingFallback) {
     return (
       <Card>
         <CardContent className="flex items-center justify-center h-96">
@@ -164,8 +218,8 @@ export function BookingCalendar({ onCreateBooking, onViewBooking }: BookingCalen
               <CardDescription>
                 {rooms.length}部屋の予約状況を一覧で確認できます
                 {!isConnected && (
-                  <Badge variant="destructive" className="ml-2">
-                    オフライン
+                  <Badge variant="secondary" className="ml-2">
+                    {fallbackProjects.length > 0 ? "フォールバック" : "オフライン"}
                   </Badge>
                 )}
               </CardDescription>
