@@ -95,8 +95,8 @@ export default function NewBookingPage() {
         if (roomError) throw roomError
       }
 
-      // 予約詳細ページにリダイレクト
-      router.push(`/booking/${project.id}`)
+      // 予約一覧ページにリダイレクト
+      router.push("/booking")
     } catch (error) {
       console.error("予約保存エラー:", error)
       // エラーハンドリング（トースト通知など）
