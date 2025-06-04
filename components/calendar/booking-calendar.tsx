@@ -71,6 +71,14 @@ export function BookingCalendar({ onCreateBooking, onViewBooking }: BookingCalen
       
       console.log(`Calendar: API returned ${apiProjects.length} projects:`, apiProjects)
       
+      // Debug: データ構造をより詳細にログ出力
+      if (apiProjects.length > 0) {
+        console.log('Calendar: First project structure:', JSON.stringify(apiProjects[0], null, 2))
+        if (apiProjects[0].project_rooms?.length > 0) {
+          console.log('Calendar: First project_rooms structure:', JSON.stringify(apiProjects[0].project_rooms[0], null, 2))
+        }
+      }
+      
       // APIから取得したデータをストアに保存
       setProjects(apiProjects)
       setFallbackProjects(apiProjects)
@@ -170,8 +178,19 @@ export function BookingCalendar({ onCreateBooking, onViewBooking }: BookingCalen
       // 日付範囲をチェック
       const isInDateRange = targetDateString >= startDate && targetDateString <= endDate
       
-      // 部屋割り当てをチェック
-      const hasRoomAssignment = project.project_rooms?.some(pr => pr.rooms?.roomId === roomId)
+      // 部屋割り当てをチェック（正しいデータ構造に対応）
+      const hasRoomAssignment = project.project_rooms?.some(pr => {
+        // pr.rooms が存在する場合は pr.rooms.room_id をチェック
+        if (pr.rooms && pr.rooms.room_id) {
+          return pr.rooms.room_id === roomId
+        }
+        // pr.room_id を直接チェック（フォールバック）
+        return pr.room_id === roomId
+      })
+      
+      if (isInDateRange && hasRoomAssignment) {
+        console.log(`Calendar: Found matching project ${project.id} for ${targetDateString} in room ${roomId}`)
+      }
       
       return isInDateRange && hasRoomAssignment
     })
