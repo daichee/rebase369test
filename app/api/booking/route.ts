@@ -95,7 +95,6 @@ export async function POST(request: NextRequest) {
     const projectData: ProjectInsert = {
       start_date: body.start_date,
       end_date: body.end_date,
-      nights,
       pax_total: body.pax_total,
       pax_adults: body.pax_adults || 0,
       pax_adult_leaders: body.pax_adult_leaders || 0,
@@ -181,7 +180,6 @@ export async function POST(request: NextRequest) {
         assigned_pax: room.assigned_pax,
         room_rate: room.room_rate,
         nights: nights,
-        amount: room.room_rate * nights,
       }))
 
       const { error: roomError } = await supabase
