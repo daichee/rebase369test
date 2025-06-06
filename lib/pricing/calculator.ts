@@ -1,5 +1,6 @@
 import type { GuestCount, DateRange, PriceBreakdown, DailyPrice, RoomUsage, AddonItem, RateInfo } from "./types"
 import { PriceConfigService, type RateConfig } from "./config-service"
+import { generateDateRange } from "@/lib/utils/date-utils"
 
 /**
  * Unified Price Calculator
@@ -553,15 +554,7 @@ export class PriceCalculator {
    * 日付範囲生成
    */
   private static generateDateRange(dateRange: DateRange): Date[] {
-    const dates: Date[] = []
-    const start = new Date(dateRange.startDate)
-    const end = new Date(dateRange.endDate)
-
-    for (let d = new Date(start); d < end; d.setDate(d.getDate() + 1)) {
-      dates.push(new Date(d))
-    }
-
-    return dates
+    return generateDateRange(dateRange.startDate, dateRange.endDate)
   }
 
   /**

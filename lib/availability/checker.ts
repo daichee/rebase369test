@@ -1,5 +1,6 @@
 import type { Project } from "@/store/booking-store"
 import type { Room } from "@/lib/hooks/use-rooms"
+import { isDateRangeOverlap } from "@/lib/utils/date-utils"
 
 export interface AvailabilityRequest {
   startDate: string
@@ -367,12 +368,7 @@ export class AvailabilityChecker {
    * 日付重複チェック
    */
   private static isDateOverlap(start1: string, end1: string, start2: string, end2: string): boolean {
-    const s1 = new Date(start1)
-    const e1 = new Date(end1)
-    const s2 = new Date(start2)
-    const e2 = new Date(end2)
-
-    return s1 < e2 && s2 < e1
+    return isDateRangeOverlap(start1, end1, start2, end2)
   }
 
   /**

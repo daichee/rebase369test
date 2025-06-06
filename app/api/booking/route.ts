@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import type { Database } from "@/lib/supabase/types"
+import { calculateNights } from "@/lib/utils/date-utils"
 
 type Project = Database["public"]["Tables"]["projects"]["Row"]
 type ProjectInsert = Database["public"]["Tables"]["projects"]["Insert"]
@@ -87,9 +88,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 宿泊日数計算
-    const startDate = new Date(body.start_date)
-    const endDate = new Date(body.end_date)
-    const nights = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)))
+    const nights = calculateNights(body.start_date, body.end_date)
 
     // プロジェクトデータ準備
     const projectData: ProjectInsert = {
