@@ -14,6 +14,89 @@ import { RealtimeBookingStatus } from "./realtime-booking-status"
 import { useRooms } from "@/lib/hooks/use-rooms"
 import type { BookingFormData } from "./booking-wizard"
 
+// オプションマスターデータ（AddonSelectorと同期）
+const AVAILABLE_ADDONS = [
+  {
+    id: "breakfast",
+    category: "meal",
+    name: "朝食",
+    description: "和食または洋食",
+    rates: { adult: 700, student: 700, child: 700, infant: 700 },
+    unit: "人・回",
+  },
+  {
+    id: "dinner",
+    category: "meal", 
+    name: "夕食",
+    description: "お弁当または定食",
+    rates: { adult: 1500, student: 1000, child: 800, infant: 800 },
+    unit: "人・回",
+  },
+  {
+    id: "bbq",
+    category: "meal",
+    name: "BBQ",
+    description: "屋外バーベキュー（10名以上）",
+    rates: { adult: 3000, student: 2200, child: 1500, infant: 1500 },
+    unit: "人・回",
+    minQuantity: 10,
+  },
+  {
+    id: "meeting_room",
+    category: "facility",
+    name: "会議室",
+    description: "個人料金 + 室料 + エアコン代",
+    personalFees: { under5h: 200, under10h: 400, over10h: 600 },
+    roomFees: { 
+      weekdayGuest: 1000, 
+      weekdayOther: 1500, 
+      weekendGuest: 1500, 
+      weekendOther: 2000 
+    },
+    airconFee: 500,
+    unit: "時間",
+  },
+  {
+    id: "gymnasium",
+    category: "facility",
+    name: "体育館",
+    description: "個人料金 + 室料 + エアコン代",
+    personalFees: { all: 500 },
+    roomFees: { 
+      weekdayGuest: 2000, 
+      weekdayOther: 3500, 
+      weekendGuest: 2500, 
+      weekendOther: 4500 
+    },
+    airconFee: 1500,
+    unit: "時間",
+  },
+  {
+    id: "projector",
+    category: "equipment",
+    name: "プロジェクター",
+    description: "スクリーンとセット",
+    rate: 2000,
+    unit: "台・日",
+  },
+  {
+    id: "sound_system",
+    category: "equipment",
+    name: "音響機器",
+    description: "マイク・アンプセット",
+    rate: 3000,
+    unit: "台・日",
+  },
+  {
+    id: "additional_futon",
+    category: "equipment",
+    name: "追加布団",
+    description: "1組（敷布団・掛布団・枕）",
+    rate: 1000,
+    unit: "組・日",
+  },
+]
+
 interface BookingConfirmationProps {
   formData: BookingFormData
   priceBreakdown: any
@@ -28,6 +111,45 @@ export function BookingConfirmation({
   const { getRoomById } = useRooms()
 
   const totalGuests = Object.values(formData.guests).reduce((sum, count) => sum + count, 0)
+
+  // オプション価格計算（AddonSelectorと同じロジック）
+  const calculateAddonPrice = (addon: any) => {
+    const config = AVAILABLE_ADDONS.find((a) => a.id === addon.addonId)
+    if (!config) return 0
+
+    if (config.category === "meal" && config.rates && addon.ageBreakdown) {
+      return Object.entries(addon.ageBreakdown).reduce((total, [ageGroup, count]) => {
+        const rate = config.rates[ageGroup as keyof typeof config.rates] || 0
+        return total + rate * (count as number)
+      }, 0)
+    }
+
+    if (config.category === "equipment") {
+      return config.rate * addon.quantity * formData.dateRange.nights
+    }
+
+    if (config.category === "facility" && addon.facilityUsage) {
+      const personalFee = config.personalFees?.all || 400
+      const roomFee = 2000 // 平均的な室料
+      const airconFee = config.airconFee * addon.facilityUsage.hours
+      
+      return personalFee * totalGuests + roomFee * addon.facilityUsage.hours + airconFee
+    }
+
+    return 0
+  }
+
+  // 年齢区分ラベル
+  const getAgeGroupLabel = (ageGroup: string) => {
+    const labels = {
+      adult: "大人",
+      student: "学生", 
+      child: "小学生",
+      infant: "未就学児",
+      baby: "乳幼児",
+    }
+    return labels[ageGroup as keyof typeof labels] || ageGroup
+  }
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("ja-JP", {
@@ -159,13 +281,59 @@ export function BookingConfirmation({
                 <CardTitle className="text-sm">選択オプション</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
-                  {formData.selectedAddons.map((addon, index) => (
-                    <div key={index} className="flex justify-between">
-                      <span>{addon.name}</span>
-                      <span className="text-sm">数量: {addon.quantity}</span>
-                    </div>
-                  ))}
+                <div className="space-y-3">
+                  {formData.selectedAddons.map((addon, index) => {
+                    const config = AVAILABLE_ADDONS.find((a) => a.id === addon.addonId)
+                    const addonPrice = calculateAddonPrice(addon)
+                    
+                    return (
+                      <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-3">
+                            <span className="font-medium">{addon.name}</span>
+                            <Badge variant="outline">数量: {addon.quantity}</Badge>
+                          </div>
+                          
+                          {/* 食事の場合：年齢別内訳 */}
+                          {config?.category === "meal" && addon.ageBreakdown && (
+                            <div className="mt-2 text-sm text-muted-foreground">
+                              {Object.entries(addon.ageBreakdown)
+                                .filter(([_, count]) => count > 0)
+                                .map(([ageGroup, count]) => {
+                                  const rate = config.rates?.[ageGroup as keyof typeof config.rates] || 0
+                                  return (
+                                    <span key={ageGroup} className="mr-3">
+                                      {getAgeGroupLabel(ageGroup)}: {count}名 (¥{rate.toLocaleString()})
+                                    </span>
+                                  )
+                                })}
+                            </div>
+                          )}
+                          
+                          {/* 施設の場合：利用時間 */}
+                          {config?.category === "facility" && addon.facilityUsage && (
+                            <div className="mt-2 text-sm text-muted-foreground">
+                              利用時間: {addon.facilityUsage.hours}時間
+                            </div>
+                          )}
+                          
+                          {/* 備品の場合：単価表示 */}
+                          {config?.category === "equipment" && (
+                            <div className="mt-2 text-sm text-muted-foreground">
+                              ¥{(config.rate || 0).toLocaleString()} × {addon.quantity} × {formData.dateRange.nights}泊
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="text-right">
+                          <div className="font-medium">¥{addonPrice.toLocaleString()}</div>
+                          {config?.unit && (
+                            <div className="text-xs text-muted-foreground">{config.unit}</div>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
                 </div>
               </CardContent>
             </Card>
