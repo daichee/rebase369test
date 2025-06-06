@@ -382,21 +382,41 @@ export class PriceCalculator {
     addons.forEach((addon, index) => {
       console.log(`🧮 [PriceCalculator] Processing addon ${index + 1}:`, addon)
       
-      const rate = this.getAddonRate(addon.category, addon.addonId)
-      const quantity = addon.quantity || 1
-      
-      console.log('🧮 [PriceCalculator] Rate retrieved:', rate, 'Quantity:', quantity)
-      
-      // Daily addons multiply by nights, one-time addons don't
-      const isDailyAddon = ['breakfast', 'lunch', 'dinner', 'meal_breakfast', 'meal_lunch', 'meal_dinner'].includes(addon.addonId)
-      const multiplier = isDailyAddon ? dateRange.nights : 1
-      
-      console.log('🧮 [PriceCalculator] Is daily addon:', isDailyAddon, 'Multiplier:', multiplier)
-      
-      const addonTotal = rate * quantity * multiplier
-      console.log('🧮 [PriceCalculator] Addon total:', addonTotal, '=', rate, '*', quantity, '*', multiplier)
-      
-      total += addonTotal
+      // Use the totalPrice already calculated in the addon object if available
+      // This includes the correct pricing from the database
+      if (addon.totalPrice !== undefined) {
+        console.log('🧮 [PriceCalculator] Using pre-calculated totalPrice:', addon.totalPrice)
+        
+        // For daily addons (meals), multiply by nights
+        const isDailyAddon = ['breakfast', 'lunch', 'dinner', 'meal_breakfast', 'meal_lunch', 'meal_dinner'].includes(addon.addonId)
+        const multiplier = isDailyAddon ? dateRange.nights : 1
+        
+        console.log('🧮 [PriceCalculator] Is daily addon:', isDailyAddon, 'Multiplier:', multiplier)
+        
+        const addonTotal = addon.totalPrice * multiplier
+        console.log('🧮 [PriceCalculator] Addon total:', addonTotal, '= totalPrice(', addon.totalPrice, ') * multiplier(', multiplier, ')')
+        
+        total += addonTotal
+      } else {
+        // Fallback to old calculation method for backward compatibility
+        console.log('🧮 [PriceCalculator] No totalPrice found, using fallback calculation')
+        
+        const rate = this.getAddonRate(addon.category, addon.addonId)
+        const quantity = addon.quantity || 1
+        
+        console.log('🧮 [PriceCalculator] Rate retrieved:', rate, 'Quantity:', quantity)
+        
+        // Daily addons multiply by nights, one-time addons don't
+        const isDailyAddon = ['breakfast', 'lunch', 'dinner', 'meal_breakfast', 'meal_lunch', 'meal_dinner'].includes(addon.addonId)
+        const multiplier = isDailyAddon ? dateRange.nights : 1
+        
+        console.log('🧮 [PriceCalculator] Is daily addon:', isDailyAddon, 'Multiplier:', multiplier)
+        
+        const addonTotal = rate * quantity * multiplier
+        console.log('🧮 [PriceCalculator] Addon total:', addonTotal, '=', rate, '*', quantity, '*', multiplier)
+        
+        total += addonTotal
+      }
     })
 
     console.log('🧮 [PriceCalculator] Final addon total:', total)
