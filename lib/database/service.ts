@@ -13,7 +13,11 @@ type Rates = Tables["rates"]["Row"]
 type AddOns = Tables["add_ons"]["Row"]
 
 export class DatabaseService {
-  private supabase = createClient()
+  private supabase: ReturnType<typeof createClient>
+
+  constructor(supabaseClient?: ReturnType<typeof createClient>) {
+    this.supabase = supabaseClient || createClient()
+  }
 
   // ========================================
   // 8.1 予約データ管理機能
@@ -380,6 +384,49 @@ export class DatabaseService {
       return null
     }
     return data
+  }
+
+  async createAddOn(data: Tables["add_ons"]["Insert"]): Promise<AddOns | null> {
+    const { data: addOn, error } = await this.supabase
+      .from("add_ons")
+      .insert(data)
+      .select()
+      .single()
+
+    if (error) {
+      console.error("Failed to create add-on:", error)
+      return null
+    }
+    return addOn
+  }
+
+  async updateAddOn(addOnId: string, data: Tables["add_ons"]["Update"]): Promise<AddOns | null> {
+    const { data: addOn, error } = await this.supabase
+      .from("add_ons")
+      .update(data)
+      .eq("add_on_id", addOnId)
+      .select()
+      .single()
+
+    if (error) {
+      console.error("Failed to update add-on:", error)
+      return null
+    }
+    return addOn
+  }
+
+  async deleteAddOn(addOnId: string): Promise<boolean> {
+    // Soft delete by setting is_active to false
+    const { error } = await this.supabase
+      .from("add_ons")
+      .update({ is_active: false })
+      .eq("add_on_id", addOnId)
+
+    if (error) {
+      console.error("Failed to delete add-on:", error)
+      return false
+    }
+    return true
   }
 
 

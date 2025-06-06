@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
@@ -32,17 +33,32 @@ const ROOMS = [
   { id: "R307", name: "307号室", floor: "3F", type: "suite", capacity: 8, basePrice: 22000 },
 ]
 
-// モックオプションデータ
-const OPTIONS = [
-  { id: "meal_breakfast", name: "朝食", price: 800, unit: "人/日" },
-  { id: "meal_lunch", name: "昼食", price: 1200, unit: "人/日" },
-  { id: "meal_dinner", name: "夕食", price: 2000, unit: "人/日" },
-  { id: "facility_meeting", name: "会議室利用", price: 3000, unit: "日" },
-  { id: "facility_parking", name: "駐車場", price: 500, unit: "台/日" },
-  { id: "equipment_futon", name: "追加布団", price: 1000, unit: "組/日" },
-]
+// Options will be loaded from API
 
 export function ConfirmationStep({ formData, priceBreakdown, onChange }: ConfirmationStepProps) {
+  const [options, setOptions] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  // Load options from API
+  useEffect(() => {
+    const fetchOptions = async () => {
+      try {
+        const response = await fetch('/api/booking/options')
+        const result = await response.json()
+        
+        if (result.success) {
+          setOptions(result.data)
+        }
+      } catch (error) {
+        console.error('Error fetching options:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchOptions()
+  }, [])
+
   const totalGuests = Object.values(formData.guests).reduce((sum, count) => sum + count, 0)
   const selectedRoomData = ROOMS.filter(room => formData.selectedRooms.includes(room.id))
   const totalCapacity = selectedRoomData.reduce((sum, room) => sum + room.capacity, 0)
@@ -197,27 +213,62 @@ export function ConfirmationStep({ formData, priceBreakdown, onChange }: Confirm
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {formData.selectedAddons.map((addon) => {
-                const optionData = OPTIONS.find(opt => opt.id === addon.id)
-                if (!optionData) return null
+              {loading ? (
+                <div className="text-center py-4">オプション情報を読み込み中...</div>
+              ) : (
+                formData.selectedAddons.map((addon) => {
+                  const optionData = options.find(opt => opt.id === addon.addonId)
+                  if (!optionData) return null
 
-                return (
-                  <div key={addon.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <span className="font-medium">{optionData.name}</span>
-                      <Badge variant="outline">数量: {addon.quantity}</Badge>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-medium">
-                        ¥{((optionData.price || 0) * (addon.quantity || 1)).toLocaleString()}
+                  // Calculate price based on addon type
+                  let price = 0
+                  let priceDisplay = ""
+
+                  if (optionData.category === 'meal' && optionData.rates && addon.ageBreakdown) {
+                    price = Object.entries(addon.ageBreakdown).reduce((total, [ageGroup, count]) => {
+                      const rate = optionData.rates[ageGroup as keyof typeof optionData.rates] || 0
+                      return total + rate * (count as number)
+                    }, 0)
+                    
+                    // Show age breakdown
+                    const breakdown = Object.entries(addon.ageBreakdown)
+                      .filter(([_, count]) => count > 0)
+                      .map(([ageGroup, count]) => {
+                        const ageLabel = ageGroup === "adult" ? "大人" : 
+                                       ageGroup === "student" ? "学生" :
+                                       ageGroup === "child" ? "子供" : "乳幼児"
+                        const rate = optionData.rates[ageGroup as keyof typeof optionData.rates] || 0
+                        return `${ageLabel}：${count}名 (¥${rate})`
+                      })
+                      .join(" ")
+                    priceDisplay = breakdown
+                  } else if (optionData.category === 'equipment') {
+                    price = optionData.rate * addon.quantity * (formData.dateRange.nights || 1)
+                    priceDisplay = `¥${optionData.rate} × ${addon.quantity} × ${formData.dateRange.nights}泊`
+                  } else if (optionData.category === 'facility' && addon.facilityUsage) {
+                    const personalFee = optionData.personalFees?.under5h || 400
+                    const roomFee = optionData.roomFees?.weekdayGuest || 2000
+                    const airconFee = optionData.airconFee || 500
+                    price = personalFee * totalGuests + roomFee * addon.facilityUsage.hours + airconFee * addon.facilityUsage.hours
+                    priceDisplay = `利用時間: ${addon.facilityUsage.hours}時間`
+                  }
+
+                  return (
+                    <div key={addon.addonId} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <span className="font-medium">{optionData.name}</span>
+                        <Badge variant="outline">数量: {addon.quantity}</Badge>
                       </div>
-                      <div className="text-sm text-muted-foreground">
-                        ¥{(optionData.price || 0).toLocaleString()} × {addon.quantity || 1}
+                      <div className="text-right">
+                        <div className="font-medium">¥{price.toLocaleString()}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {priceDisplay}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )
-              })}
+                  )
+                })
+              )}
             </div>
           </CardContent>
         </Card>

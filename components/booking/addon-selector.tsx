@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -38,75 +38,34 @@ const ADDON_CATEGORIES = {
   },
 }
 
-const AVAILABLE_ADDONS = [
-  {
-    id: "breakfast",
-    category: "meal",
-    name: "朝食",
-    description: "和食または洋食",
-    rates: { adult: 700, student: 700, child: 700, infant: 700 },
-    unit: "人・回",
-  },
-  {
-    id: "dinner",
-    category: "meal", 
-    name: "夕食",
-    description: "お弁当または定食",
-    rates: { adult: 1500, student: 1000, child: 800, infant: 800 },
-    unit: "人・回",
-  },
-  {
-    id: "bbq",
-    category: "meal",
-    name: "BBQ",
-    description: "屋外バーベキュー（10名以上）",
-    rates: { adult: 3000, student: 2200, child: 1500, infant: 1500 },
-    unit: "人・回",
-    minQuantity: 10,
-  },
-  {
-    id: "meeting_room",
-    category: "facility",
-    name: "会議室",
-    description: "個人料金 + 室料 + エアコン代",
-    personalFees: { under5h: 200, under10h: 400, over10h: 600 },
-    roomFees: { 
-      weekdayGuest: 1000, 
-      weekdayOther: 1500, 
-      weekendGuest: 1500, 
-      weekendOther: 2000 
-    },
-    airconFee: 500,
-    unit: "時間",
-  },
-  {
-    id: "gymnasium",
-    category: "facility",
-    name: "体育館",
-    description: "個人料金 + 室料 + エアコン代",
-    personalFees: { all: 500 },
-    roomFees: { 
-      weekdayGuest: 2000, 
-      weekdayOther: 3500, 
-      weekendGuest: 2500, 
-      weekendOther: 4500 
-    },
-    airconFee: 1500,
-    unit: "時間",
-  },
-  {
-    id: "projector",
-    category: "equipment",
-    name: "プロジェクター",
-    description: "会議・プレゼンテーション用",
-    rate: 3000,
-    unit: "台・泊",
-    maxQuantity: 3,
-  },
-]
+// Available addons will be loaded from API
 
 export function AddonSelector({ selectedAddons, onChange, guests, dateRange }: AddonSelectorProps) {
   const [expandedCategory, setExpandedCategory] = useState<string | null>("meal")
+  const [availableAddons, setAvailableAddons] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  // Load addons from API
+  useEffect(() => {
+    const fetchAddons = async () => {
+      try {
+        const response = await fetch('/api/booking/options')
+        const result = await response.json()
+        
+        if (result.success) {
+          setAvailableAddons(result.data)
+        } else {
+          console.error('Failed to fetch addons:', result.error)
+        }
+      } catch (error) {
+        console.error('Error fetching addons:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchAddons()
+  }, [])
 
   const totalGuests = Object.values(guests).reduce((sum, count) => sum + count, 0)
 
@@ -116,7 +75,7 @@ export function AddonSelector({ selectedAddons, onChange, guests, dateRange }: A
     if (existing) {
       onChange(selectedAddons.filter((addon) => addon.addonId !== addonId))
     } else {
-      const addonConfig = AVAILABLE_ADDONS.find((addon) => addon.id === addonId)
+      const addonConfig = availableAddons.find((addon) => addon.id === addonId)
       if (!addonConfig) return
 
       const newAddon = {
@@ -162,7 +121,7 @@ export function AddonSelector({ selectedAddons, onChange, guests, dateRange }: A
   }
 
   const calculateAddonPrice = (addon: any) => {
-    const config = AVAILABLE_ADDONS.find((a) => a.id === addon.addonId)
+    const config = availableAddons.find((a) => a.id === addon.addonId)
     if (!config) return 0
 
     if (config.category === "meal" && config.rates && addon.ageBreakdown) {
@@ -177,9 +136,9 @@ export function AddonSelector({ selectedAddons, onChange, guests, dateRange }: A
     }
 
     if (config.category === "facility" && addon.facilityUsage) {
-      // 施設料金の計算は複雑なので簡略化
-      const personalFee = config.personalFees?.all || 400
-      const roomFee = 2000 // 平均的な室料
+      // Full facility calculation based on database structure
+      const personalFee = config.personalFees?.under5h || 400
+      const roomFee = config.roomFees?.weekdayGuest || 2000 // Default to weekday guest rate
       const airconFee = config.airconFee * addon.facilityUsage.hours
       
       return personalFee * totalGuests + roomFee * addon.facilityUsage.hours + airconFee
@@ -190,6 +149,27 @@ export function AddonSelector({ selectedAddons, onChange, guests, dateRange }: A
 
   const getTotalAddonPrice = () => {
     return selectedAddons.reduce((total, addon) => total + calculateAddonPrice(addon), 0)
+  }
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ShoppingCart className="h-5 w-5" />
+              オプションサービス
+            </CardTitle>
+            <CardDescription>オプションを読み込み中...</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   return (
@@ -220,7 +200,7 @@ export function AddonSelector({ selectedAddons, onChange, guests, dateRange }: A
           {/* カテゴリ別オプション */}
           {Object.entries(ADDON_CATEGORIES).map(([categoryKey, category]) => {
             const Icon = category.icon
-            const categoryAddons = AVAILABLE_ADDONS.filter((addon) => addon.category === categoryKey)
+            const categoryAddons = availableAddons.filter((addon) => addon.category === categoryKey)
             const isExpanded = expandedCategory === categoryKey
 
             return (
