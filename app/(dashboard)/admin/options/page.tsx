@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -9,174 +9,61 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Plus, Edit, Trash2, Save, X } from "lucide-react"
+import { Plus, Edit, Trash2, Save, X, Loader2 } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
 
-interface Option {
-  id: string
-  name: string
+// Database add_on type
+interface AddOn {
+  add_on_id: string
   category: "meal" | "facility" | "equipment"
-  description: string
-  pricing: {
-    adult: number
-    student: number
-    child: number
-    preschool: number
-    infant: number
-  }
-  dayMultipliers: {
-    weekday: number
-    weekend: number
-  }
-  isActive: boolean
-  createdAt: string
-  updatedAt: string
+  name: string
+  unit: string
+  adult_fee: number
+  student_fee: number
+  child_fee: number
+  infant_fee: number
+  personal_fee_5h: number
+  personal_fee_10h: number
+  personal_fee_over: number
+  room_fee_weekday_guest: number
+  room_fee_weekday_other: number
+  room_fee_weekend_guest: number
+  room_fee_weekend_other: number
+  aircon_fee_per_hour: number
+  min_quantity: number
+  max_quantity: number | null
+  is_active: boolean
+  created_at: string
 }
 
-const sampleOptions: Option[] = [
-  {
-    id: "1",
-    name: "朝食",
-    category: "meal",
-    description: "和定食または洋定食をお選びいただけます",
-    pricing: {
-      adult: 700,
-      student: 700,
-      child: 700,
-      preschool: 700,
-      infant: 0,
-    },
-    dayMultipliers: {
-      weekday: 1.0,
-      weekend: 1.0,
-    },
-    isActive: true,
-    createdAt: "2024-01-01T00:00:00Z",
-    updatedAt: "2024-01-01T00:00:00Z",
-  },
-  {
-    id: "2",
-    name: "夕食",
-    category: "meal",
-    description: "地元の食材を使った会席料理",
-    pricing: {
-      adult: 1500,
-      student: 1000,
-      child: 800,
-      preschool: 0,
-      infant: 0,
-    },
-    dayMultipliers: {
-      weekday: 1.0,
-      weekend: 1.2,
-    },
-    isActive: true,
-    createdAt: "2024-01-01T00:00:00Z",
-    updatedAt: "2024-01-01T00:00:00Z",
-  },
-  {
-    id: "3",
-    name: "BBQ",
-    category: "meal",
-    description: "屋外バーベキュー（食材・機材込み）",
-    pricing: {
-      adult: 3000,
-      student: 2200,
-      child: 1500,
-      preschool: 0,
-      infant: 0,
-    },
-    dayMultipliers: {
-      weekday: 1.0,
-      weekend: 1.1,
-    },
-    isActive: true,
-    createdAt: "2024-01-01T00:00:00Z",
-    updatedAt: "2024-01-01T00:00:00Z",
-  },
-  {
-    id: "4",
-    name: "会議室",
-    category: "facility",
-    description: "プロジェクター付き会議室",
-    pricing: {
-      adult: 500,
-      student: 400,
-      child: 300,
-      preschool: 200,
-      infant: 0,
-    },
-    dayMultipliers: {
-      weekday: 1.0,
-      weekend: 1.5,
-    },
-    isActive: true,
-    createdAt: "2024-01-01T00:00:00Z",
-    updatedAt: "2024-01-01T00:00:00Z",
-  },
-  {
-    id: "5",
-    name: "体育館",
-    category: "facility",
-    description: "バスケットコート1面分の体育館",
-    pricing: {
-      adult: 500,
-      student: 500,
-      child: 500,
-      preschool: 500,
-      infant: 0,
-    },
-    dayMultipliers: {
-      weekday: 1.0,
-      weekend: 1.25,
-    },
-    isActive: true,
-    createdAt: "2024-01-01T00:00:00Z",
-    updatedAt: "2024-01-01T00:00:00Z",
-  },
-  {
-    id: "6",
-    name: "プロジェクター",
-    category: "equipment",
-    description: "HD対応プロジェクター",
-    pricing: {
-      adult: 3000,
-      student: 3000,
-      child: 3000,
-      preschool: 3000,
-      infant: 3000,
-    },
-    dayMultipliers: {
-      weekday: 1.0,
-      weekend: 1.0,
-    },
-    isActive: true,
-    createdAt: "2024-01-01T00:00:00Z",
-    updatedAt: "2024-01-01T00:00:00Z",
-  },
-]
-
 export default function OptionsAdminPage() {
-  const [options, setOptions] = useState<Option[]>(sampleOptions)
+  const [options, setOptions] = useState<AddOn[]>([])
+  const [loading, setLoading] = useState(true)
   const [isEditing, setIsEditing] = useState<string | null>(null)
   const [isAdding, setIsAdding] = useState(false)
-  const [editForm, setEditForm] = useState<Partial<Option>>({})
-  const [newOptionForm, setNewOptionForm] = useState<Partial<Option>>({
+  const [editForm, setEditForm] = useState<Partial<AddOn>>({})
+  const [newOptionForm, setNewOptionForm] = useState<Partial<AddOn>>({
     name: "",
     category: "meal",
-    description: "",
-    pricing: {
-      adult: 0,
-      student: 0,
-      child: 0,
-      preschool: 0,
-      infant: 0,
-    },
-    dayMultipliers: {
-      weekday: 1.0,
-      weekend: 1.0,
-    },
-    isActive: true,
+    unit: "人・回",
+    adult_fee: 0,
+    student_fee: 0,
+    child_fee: 0,
+    infant_fee: 0,
+    personal_fee_5h: 0,
+    personal_fee_10h: 0,
+    personal_fee_over: 0,
+    room_fee_weekday_guest: 0,
+    room_fee_weekday_other: 0,
+    room_fee_weekend_guest: 0,
+    room_fee_weekend_other: 0,
+    aircon_fee_per_hour: 0,
+    min_quantity: 1,
+    max_quantity: null,
+    is_active: true,
   })
+  
+  const { toast } = useToast()
 
   const categories = [
     { value: "meal", label: "食事オプション" },
@@ -184,30 +71,77 @@ export default function OptionsAdminPage() {
     { value: "equipment", label: "備品・機材" },
   ]
 
-  const ageGroups = [
-    { key: "adult", label: "大人" },
-    { key: "student", label: "中高大学生" },
-    { key: "child", label: "小学生" },
-    { key: "preschool", label: "未就学児(3歳~)" },
-    { key: "infant", label: "乳幼児(0~2歳)" },
-  ]
+  // Fetch options from API
+  const fetchOptions = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch('/api/admin/options')
+      const result = await response.json()
+      
+      if (result.success) {
+        setOptions(result.data)
+      } else {
+        toast({
+          title: "エラー",
+          description: "オプションの取得に失敗しました",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error('Error fetching options:', error)
+      toast({
+        title: "エラー",
+        description: "オプションの取得に失敗しました",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
 
-  const handleEdit = (option: Option) => {
-    setIsEditing(option.id)
+  useEffect(() => {
+    fetchOptions()
+  }, [])
+
+  const handleEdit = (option: AddOn) => {
+    setIsEditing(option.add_on_id)
     setEditForm(option)
   }
 
-  const handleSave = () => {
-    if (isEditing && editForm) {
-      setOptions((prev) =>
-        prev.map((option) =>
-          option.id === isEditing
-            ? { ...option, ...editForm, updatedAt: new Date().toISOString() }
-            : option,
-        ),
-      )
-      setIsEditing(null)
-      setEditForm({})
+  const handleSave = async () => {
+    if (!isEditing || !editForm) return
+    
+    try {
+      const response = await fetch('/api/admin/options', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ add_on_id: isEditing, ...editForm })
+      })
+      
+      const result = await response.json()
+      
+      if (result.success) {
+        await fetchOptions()
+        setIsEditing(null)
+        setEditForm({})
+        toast({
+          title: "成功",
+          description: "オプションが更新されました",
+        })
+      } else {
+        toast({
+          title: "エラー",
+          description: result.error || "更新に失敗しました",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error('Error updating option:', error)
+      toast({
+        title: "エラー",
+        description: "更新に失敗しました",
+        variant: "destructive",
+      })
     }
   }
 
@@ -216,39 +150,91 @@ export default function OptionsAdminPage() {
     setEditForm({})
   }
 
-  const handleDelete = (optionId: string) => {
-    if (confirm("このオプションを削除してもよろしいですか？")) {
-      setOptions((prev) => prev.filter((option) => option.id !== optionId))
+  const handleDelete = async (addOnId: string) => {
+    if (!confirm("このオプションを削除してもよろしいですか？")) return
+    
+    try {
+      const response = await fetch(`/api/admin/options/${addOnId}`, {
+        method: 'DELETE'
+      })
+      
+      const result = await response.json()
+      
+      if (result.success) {
+        await fetchOptions()
+        toast({
+          title: "成功",
+          description: "オプションが削除されました",
+        })
+      } else {
+        toast({
+          title: "エラー",
+          description: result.error || "削除に失敗しました",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error('Error deleting option:', error)
+      toast({
+        title: "エラー",
+        description: "削除に失敗しました",
+        variant: "destructive",
+      })
     }
   }
 
-  const handleAddOption = () => {
-    const newOption: Option = {
-      ...newOptionForm,
-      id: Math.random().toString(36).substr(2, 9),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    } as Option
-
-    setOptions((prev) => [...prev, newOption])
-    setNewOptionForm({
-      name: "",
-      category: "meal",
-      description: "",
-      pricing: {
-        adult: 0,
-        student: 0,
-        child: 0,
-        preschool: 0,
-        infant: 0,
-      },
-      dayMultipliers: {
-        weekday: 1.0,
-        weekend: 1.0,
-      },
-      isActive: true,
-    })
-    setIsAdding(false)
+  const handleAddOption = async () => {
+    try {
+      const response = await fetch('/api/admin/options', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newOptionForm)
+      })
+      
+      const result = await response.json()
+      
+      if (result.success) {
+        await fetchOptions()
+        setNewOptionForm({
+          name: "",
+          category: "meal",
+          unit: "人・回",
+          adult_fee: 0,
+          student_fee: 0,
+          child_fee: 0,
+          infant_fee: 0,
+          personal_fee_5h: 0,
+          personal_fee_10h: 0,
+          personal_fee_over: 0,
+          room_fee_weekday_guest: 0,
+          room_fee_weekday_other: 0,
+          room_fee_weekend_guest: 0,
+          room_fee_weekend_other: 0,
+          aircon_fee_per_hour: 0,
+          min_quantity: 1,
+          max_quantity: null,
+          is_active: true,
+        })
+        setIsAdding(false)
+        toast({
+          title: "成功",
+          description: "オプションが作成されました",
+        })
+      } else {
+        toast({
+          title: "エラー",
+          description: result.error || "作成に失敗しました",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error('Error creating option:', error)
+      toast({
+        title: "エラー",
+        description: "作成に失敗しました",
+        variant: "destructive",
+      })
+    }
   }
 
   const getCategoryLabel = (category: string) => {
@@ -259,23 +245,24 @@ export default function OptionsAdminPage() {
     return options.filter((option) => option.category === category)
   }
 
-  const OptionTable = ({ categoryOptions }: { categoryOptions: Option[] }) => (
+  const OptionTable = ({ categoryOptions }: { categoryOptions: AddOn[] }) => (
     <Table>
       <TableHeader>
         <TableRow>
           <TableHead>オプション名</TableHead>
-          <TableHead>説明</TableHead>
-          <TableHead>料金設定</TableHead>
-          <TableHead>曜日倍率</TableHead>
+          <TableHead>単位</TableHead>
+          <TableHead>年齢別料金</TableHead>
+          <TableHead>施設料金</TableHead>
+          <TableHead>数量制限</TableHead>
           <TableHead>ステータス</TableHead>
           <TableHead>操作</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {categoryOptions.map((option) => (
-          <TableRow key={option.id}>
+          <TableRow key={option.add_on_id}>
             <TableCell>
-              {isEditing === option.id ? (
+              {isEditing === option.add_on_id ? (
                 <Input
                   value={editForm.name}
                   onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
@@ -285,102 +272,136 @@ export default function OptionsAdminPage() {
               )}
             </TableCell>
             <TableCell>
-              {isEditing === option.id ? (
+              {isEditing === option.add_on_id ? (
                 <Input
-                  value={editForm.description}
-                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                  value={editForm.unit}
+                  onChange={(e) => setEditForm({ ...editForm, unit: e.target.value })}
                 />
               ) : (
-                option.description
+                option.unit
               )}
             </TableCell>
             <TableCell>
-              {isEditing === option.id ? (
+              {isEditing === option.add_on_id ? (
                 <div className="space-y-2">
-                  {ageGroups.map((group) => (
-                    <div key={group.key} className="flex items-center gap-2">
-                      <Label className="w-20 text-xs">{group.label}:</Label>
+                  <div className="flex items-center gap-2">
+                    <Label className="w-16 text-xs">大人:</Label>
+                    <Input
+                      type="number"
+                      value={editForm.adult_fee}
+                      onChange={(e) => setEditForm({ ...editForm, adult_fee: Number(e.target.value) })}
+                      className="w-20"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label className="w-16 text-xs">学生:</Label>
+                    <Input
+                      type="number"
+                      value={editForm.student_fee}
+                      onChange={(e) => setEditForm({ ...editForm, student_fee: Number(e.target.value) })}
+                      className="w-20"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label className="w-16 text-xs">子供:</Label>
+                    <Input
+                      type="number"
+                      value={editForm.child_fee}
+                      onChange={(e) => setEditForm({ ...editForm, child_fee: Number(e.target.value) })}
+                      className="w-20"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label className="w-16 text-xs">乳幼児:</Label>
+                    <Input
+                      type="number"
+                      value={editForm.infant_fee}
+                      onChange={(e) => setEditForm({ ...editForm, infant_fee: Number(e.target.value) })}
+                      className="w-20"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  <div className="text-xs">大人: ¥{option.adult_fee?.toLocaleString()}</div>
+                  <div className="text-xs">学生: ¥{option.student_fee?.toLocaleString()}</div>
+                  <div className="text-xs">子供: ¥{option.child_fee?.toLocaleString()}</div>
+                  <div className="text-xs">乳幼児: ¥{option.infant_fee?.toLocaleString()}</div>
+                </div>
+              )}
+            </TableCell>
+            <TableCell>
+              {option.category === 'facility' ? (
+                isEditing === option.add_on_id ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Label className="w-16 text-xs">5h:</Label>
                       <Input
                         type="number"
-                        value={editForm.pricing?.[group.key as keyof typeof editForm.pricing]}
-                        onChange={(e) =>
-                          setEditForm({
-                            ...editForm,
-                            pricing: {
-                              ...editForm.pricing!,
-                              [group.key]: Number.parseInt(e.target.value),
-                            },
-                          })
-                        }
+                        value={editForm.personal_fee_5h}
+                        onChange={(e) => setEditForm({ ...editForm, personal_fee_5h: Number(e.target.value) })}
                         className="w-20"
                       />
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="space-y-1">
-                  {ageGroups.map((group) => (
-                    <div key={group.key} className="text-xs">
-                      {group.label}: ¥{option.pricing[group.key as keyof typeof option.pricing]?.toLocaleString()}
+                    <div className="flex items-center gap-2">
+                      <Label className="w-16 text-xs">10h:</Label>
+                      <Input
+                        type="number"
+                        value={editForm.personal_fee_10h}
+                        onChange={(e) => setEditForm({ ...editForm, personal_fee_10h: Number(e.target.value) })}
+                        className="w-20"
+                      />
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    <div className="text-xs">5h: ¥{option.personal_fee_5h?.toLocaleString()}</div>
+                    <div className="text-xs">10h: ¥{option.personal_fee_10h?.toLocaleString()}</div>
+                    <div className="text-xs">室料平日: ¥{option.room_fee_weekday_guest?.toLocaleString()}</div>
+                    <div className="text-xs">エアコン: ¥{option.aircon_fee_per_hour?.toLocaleString()}/h</div>
+                  </div>
+                )
+              ) : (
+                <span className="text-xs text-muted-foreground">該当なし</span>
               )}
             </TableCell>
             <TableCell>
-              {isEditing === option.id ? (
+              {isEditing === option.add_on_id ? (
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <Label className="w-12 text-xs">平日:</Label>
+                    <Label className="w-12 text-xs">最小:</Label>
                     <Input
                       type="number"
-                      step="0.1"
-                      value={editForm.dayMultipliers?.weekday}
-                      onChange={(e) =>
-                        setEditForm({
-                          ...editForm,
-                          dayMultipliers: {
-                            ...editForm.dayMultipliers!,
-                            weekday: Number.parseFloat(e.target.value),
-                          },
-                        })
-                      }
-                      className="w-20"
+                      value={editForm.min_quantity}
+                      onChange={(e) => setEditForm({ ...editForm, min_quantity: Number(e.target.value) })}
+                      className="w-16"
                     />
                   </div>
                   <div className="flex items-center gap-2">
-                    <Label className="w-12 text-xs">休日:</Label>
+                    <Label className="w-12 text-xs">最大:</Label>
                     <Input
                       type="number"
-                      step="0.1"
-                      value={editForm.dayMultipliers?.weekend}
-                      onChange={(e) =>
-                        setEditForm({
-                          ...editForm,
-                          dayMultipliers: {
-                            ...editForm.dayMultipliers!,
-                            weekend: Number.parseFloat(e.target.value),
-                          },
-                        })
-                      }
-                      className="w-20"
+                      value={editForm.max_quantity || ''}
+                      onChange={(e) => setEditForm({ ...editForm, max_quantity: e.target.value ? Number(e.target.value) : null })}
+                      className="w-16"
+                      placeholder="無制限"
                     />
                   </div>
                 </div>
               ) : (
                 <div className="space-y-1">
-                  <div className="text-xs">平日: {option.dayMultipliers.weekday}x</div>
-                  <div className="text-xs">休日: {option.dayMultipliers.weekend}x</div>
+                  <div className="text-xs">最小: {option.min_quantity}</div>
+                  <div className="text-xs">最大: {option.max_quantity || '無制限'}</div>
                 </div>
               )}
             </TableCell>
             <TableCell>
-              <Badge variant={option.isActive ? "default" : "secondary"}>
-                {option.isActive ? "アクティブ" : "非アクティブ"}
+              <Badge variant={option.is_active ? "default" : "secondary"}>
+                {option.is_active ? "アクティブ" : "非アクティブ"}
               </Badge>
             </TableCell>
             <TableCell>
-              {isEditing === option.id ? (
+              {isEditing === option.add_on_id ? (
                 <div className="flex gap-2">
                   <Button size="sm" onClick={handleSave}>
                     <Save className="h-4 w-4" />
@@ -394,7 +415,7 @@ export default function OptionsAdminPage() {
                   <Button size="sm" variant="outline" onClick={() => handleEdit(option)}>
                     <Edit className="h-4 w-4" />
                   </Button>
-                  <Button size="sm" variant="destructive" onClick={() => handleDelete(option.id)}>
+                  <Button size="sm" variant="destructive" onClick={() => handleDelete(option.add_on_id)}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
@@ -405,6 +426,15 @@ export default function OptionsAdminPage() {
       </TableBody>
     </Table>
   )
+
+  if (loading) {
+    return (
+      <div className="p-8 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="ml-2">オプションを読み込み中...</span>
+      </div>
+    )
+  }
 
   return (
     <div className="p-8">
@@ -459,7 +489,7 @@ export default function OptionsAdminPage() {
             <CardTitle>新規オプション追加</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label>オプション名</Label>
                 <Input
@@ -486,77 +516,120 @@ export default function OptionsAdminPage() {
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>説明</Label>
-              <Input
-                value={newOptionForm.description}
-                onChange={(e) => setNewOptionForm({ ...newOptionForm, description: e.target.value })}
-                placeholder="オプションの説明"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>年齢区分別料金設定</Label>
-              <div className="grid grid-cols-5 gap-4">
-                {ageGroups.map((group) => (
-                  <div key={group.key} className="space-y-1">
-                    <Label className="text-xs">{group.label}</Label>
-                    <Input
-                      type="number"
-                      value={newOptionForm.pricing?.[group.key as keyof typeof newOptionForm.pricing]}
-                      onChange={(e) =>
-                        setNewOptionForm({
-                          ...newOptionForm,
-                          pricing: {
-                            ...newOptionForm.pricing!,
-                            [group.key]: Number.parseInt(e.target.value),
-                          },
-                        })
-                      }
-                      placeholder="0"
-                    />
-                  </div>
-                ))}
+              <div className="space-y-2">
+                <Label>単位</Label>
+                <Input
+                  value={newOptionForm.unit}
+                  onChange={(e) => setNewOptionForm({ ...newOptionForm, unit: e.target.value })}
+                  placeholder="人・回"
+                />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label>曜日別倍率</Label>
-              <div className="grid grid-cols-2 gap-4">
+              <Label>年齢区分別料金設定</Label>
+              <div className="grid grid-cols-4 gap-4">
                 <div className="space-y-1">
-                  <Label className="text-xs">平日倍率</Label>
+                  <Label className="text-xs">大人</Label>
                   <Input
                     type="number"
-                    step="0.1"
-                    value={newOptionForm.dayMultipliers?.weekday}
-                    onChange={(e) =>
-                      setNewOptionForm({
-                        ...newOptionForm,
-                        dayMultipliers: {
-                          ...newOptionForm.dayMultipliers!,
-                          weekday: Number.parseFloat(e.target.value),
-                        },
-                      })
-                    }
+                    value={newOptionForm.adult_fee}
+                    onChange={(e) => setNewOptionForm({ ...newOptionForm, adult_fee: Number(e.target.value) })}
+                    placeholder="0"
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs">休日倍率</Label>
+                  <Label className="text-xs">学生</Label>
                   <Input
                     type="number"
-                    step="0.1"
-                    value={newOptionForm.dayMultipliers?.weekend}
-                    onChange={(e) =>
-                      setNewOptionForm({
-                        ...newOptionForm,
-                        dayMultipliers: {
-                          ...newOptionForm.dayMultipliers!,
-                          weekend: Number.parseFloat(e.target.value),
-                        },
-                      })
-                    }
+                    value={newOptionForm.student_fee}
+                    onChange={(e) => setNewOptionForm({ ...newOptionForm, student_fee: Number(e.target.value) })}
+                    placeholder="0"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">子供</Label>
+                  <Input
+                    type="number"
+                    value={newOptionForm.child_fee}
+                    onChange={(e) => setNewOptionForm({ ...newOptionForm, child_fee: Number(e.target.value) })}
+                    placeholder="0"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">乳幼児</Label>
+                  <Input
+                    type="number"
+                    value={newOptionForm.infant_fee}
+                    onChange={(e) => setNewOptionForm({ ...newOptionForm, infant_fee: Number(e.target.value) })}
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {newOptionForm.category === 'facility' && (
+              <div className="space-y-2">
+                <Label>施設利用料金設定</Label>
+                <div className="grid grid-cols-4 gap-4">
+                  <div className="space-y-1">
+                    <Label className="text-xs">個人料金(5h)</Label>
+                    <Input
+                      type="number"
+                      value={newOptionForm.personal_fee_5h}
+                      onChange={(e) => setNewOptionForm({ ...newOptionForm, personal_fee_5h: Number(e.target.value) })}
+                      placeholder="0"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">個人料金(10h)</Label>
+                    <Input
+                      type="number"
+                      value={newOptionForm.personal_fee_10h}
+                      onChange={(e) => setNewOptionForm({ ...newOptionForm, personal_fee_10h: Number(e.target.value) })}
+                      placeholder="0"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">室料(平日宿泊者)</Label>
+                    <Input
+                      type="number"
+                      value={newOptionForm.room_fee_weekday_guest}
+                      onChange={(e) => setNewOptionForm({ ...newOptionForm, room_fee_weekday_guest: Number(e.target.value) })}
+                      placeholder="0"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">エアコン代(時間)</Label>
+                    <Input
+                      type="number"
+                      value={newOptionForm.aircon_fee_per_hour}
+                      onChange={(e) => setNewOptionForm({ ...newOptionForm, aircon_fee_per_hour: Number(e.target.value) })}
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label>数量制限</Label>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <Label className="text-xs">最小数量</Label>
+                  <Input
+                    type="number"
+                    value={newOptionForm.min_quantity}
+                    onChange={(e) => setNewOptionForm({ ...newOptionForm, min_quantity: Number(e.target.value) })}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">最大数量</Label>
+                  <Input
+                    type="number"
+                    value={newOptionForm.max_quantity || ''}
+                    onChange={(e) => setNewOptionForm({ ...newOptionForm, max_quantity: e.target.value ? Number(e.target.value) : null })}
+                    placeholder="無制限"
                   />
                 </div>
               </div>
