@@ -14,6 +14,7 @@ import { CalendarIcon, Plus, Minus, Users, User, Calendar as CalendarIconLucide 
 import { format } from "date-fns"
 import { ja } from "date-fns/locale"
 import { cn } from "@/lib/utils"
+import { parseLocalDate, formatLocalDate, calculateNights, getTodayDate } from "@/lib/utils/date-utils"
 import type { SimpleBookingFormData } from "./SimpleBookingWizard"
 
 interface BasicInfoStepProps {
@@ -24,21 +25,20 @@ interface BasicInfoStepProps {
 
 export function BasicInfoStep({ formData, onChange, availabilityResults }: BasicInfoStepProps) {
   const [startDate, setStartDate] = useState<Date | undefined>(
-    formData.dateRange.startDate ? new Date(formData.dateRange.startDate) : undefined
+    formData.dateRange.startDate ? parseLocalDate(formData.dateRange.startDate) : undefined
   )
   const [endDate, setEndDate] = useState<Date | undefined>(
-    formData.dateRange.endDate ? new Date(formData.dateRange.endDate) : undefined
+    formData.dateRange.endDate ? parseLocalDate(formData.dateRange.endDate) : undefined
   )
 
   const updateDateRange = (start: Date | undefined, end: Date | undefined) => {
     if (start && end) {
-      const diffTime = Math.abs(end.getTime() - start.getTime())
-      const nights = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+      const nights = calculateNights(start, end)
       
       onChange({
         dateRange: {
-          startDate: start.toISOString().split('T')[0],
-          endDate: end.toISOString().split('T')[0],
+          startDate: formatLocalDate(start),
+          endDate: formatLocalDate(end),
           nights: nights
         }
       })
@@ -108,7 +108,7 @@ export function BasicInfoStep({ formData, onChange, availabilityResults }: Basic
                     mode="single"
                     selected={startDate}
                     onSelect={handleStartDateSelect}
-                    disabled={(date) => date < new Date()}
+                    disabled={(date) => date < getTodayDate()}
                     initialFocus
                   />
                 </PopoverContent>
@@ -135,7 +135,7 @@ export function BasicInfoStep({ formData, onChange, availabilityResults }: Basic
                     mode="single"
                     selected={endDate}
                     onSelect={handleEndDateSelect}
-                    disabled={(date) => date < new Date() || (startDate && date <= startDate)}
+                    disabled={(date) => date < getTodayDate() || (startDate && date <= startDate)}
                     initialFocus
                   />
                 </PopoverContent>

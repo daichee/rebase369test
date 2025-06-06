@@ -10,6 +10,7 @@ import { useRooms } from "@/lib/hooks/use-rooms"
 import { useAvailability } from "@/lib/hooks/use-availability"
 import { useRealtimeBookings } from "@/lib/hooks/use-realtime-bookings"
 import { useBookingStore } from "@/store/booking-store"
+import { formatLocalDate, isDateInRange } from "@/lib/utils/date-utils"
 
 interface BookingCalendarProps {
   onCreateBooking?: (date: string, roomId?: string) => void
@@ -164,19 +165,15 @@ export function BookingCalendar({ onCreateBooking, onViewBooking }: BookingCalen
       return null
     }
     
-    console.log(`Calendar: Checking ${projects.length} projects for date ${date.toISOString().split("T")[0]} and room ${roomId}`)
-    
-    const targetDateString = date.toISOString().split("T")[0]
+    const targetDateString = formatLocalDate(date)
+    console.log(`Calendar: Checking ${projects.length} projects for date ${targetDateString} and room ${roomId}`)
     
     // その日その部屋に該当するプロジェクトを検索
     const matchingProject = projects.find(project => {
       if (!project.start_date || !project.end_date) return false
       
-      const startDate = new Date(project.start_date).toISOString().split("T")[0]
-      const endDate = new Date(project.end_date).toISOString().split("T")[0]
-      
-      // 日付範囲をチェック
-      const isInDateRange = targetDateString >= startDate && targetDateString <= endDate
+      // 日付範囲をチェック（タイムゾーン安全な方法で）
+      const isInDateRange = isDateInRange(targetDateString, project.start_date, project.end_date)
       
       // 部屋割り当てをチェック（正しいデータ構造に対応）
       const hasRoomAssignment = project.project_rooms?.some(pr => {
@@ -361,7 +358,7 @@ export function BookingCalendar({ onCreateBooking, onViewBooking }: BookingCalen
 
                         {weekDates.map((date, dateIndex) => {
                           const booking = getBookingForDateAndRoom(date, room.roomId)
-                          const dateString = date.toISOString().split("T")[0]
+                          const dateString = formatLocalDate(date)
 
                           return (
                             <div 

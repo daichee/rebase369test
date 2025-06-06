@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { CalendarDays, Info, RefreshCw, Search } from "lucide-react"
 import { useAvailability } from "@/lib/hooks/use-availability"
 import { useRooms } from "@/lib/hooks/use-rooms"
+import { formatLocalDate, parseLocalDate, calculateNights } from "@/lib/utils/date-utils"
 
 interface DateRangePickerProps {
   value: {
@@ -25,8 +26,8 @@ export function DateRangePicker({ value, onChange, availabilityResults = [] }: D
     from: Date | undefined
     to: Date | undefined
   }>({
-    from: value.startDate ? new Date(value.startDate) : undefined,
-    to: value.endDate ? new Date(value.endDate) : undefined,
+    from: value.startDate ? parseLocalDate(value.startDate) : undefined,
+    to: value.endDate ? parseLocalDate(value.endDate) : undefined,
   })
   
   const [realTimeAvailability, setRealTimeAvailability] = useState<any[]>([])
@@ -52,9 +53,9 @@ export function DateRangePicker({ value, onChange, availabilityResults = [] }: D
     setIsCheckingAvailability(true)
     try {
       const dateRange = {
-        startDate: selectedRange.from.toISOString().split("T")[0],
-        endDate: selectedRange.to.toISOString().split("T")[0],
-        nights: Math.ceil((selectedRange.to.getTime() - selectedRange.from.getTime()) / (1000 * 60 * 60 * 24)),
+        startDate: formatLocalDate(selectedRange.from),
+        endDate: formatLocalDate(selectedRange.to),
+        nights: calculateNights(selectedRange.from, selectedRange.to),
       }
 
       const allRoomIds = rooms.map(room => room.roomId)
@@ -73,9 +74,9 @@ export function DateRangePicker({ value, onChange, availabilityResults = [] }: D
     setSelectedRange(range)
 
     if (range.from && range.to) {
-      const startDate = range.from.toISOString().split("T")[0]
-      const endDate = range.to.toISOString().split("T")[0]
-      const nights = Math.ceil((range.to.getTime() - range.from.getTime()) / (1000 * 60 * 60 * 24))
+      const startDate = formatLocalDate(range.from)
+      const endDate = formatLocalDate(range.to)
+      const nights = calculateNights(range.from, range.to)
 
       onChange({
         startDate,
