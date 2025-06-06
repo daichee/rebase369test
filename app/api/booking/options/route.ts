@@ -1,14 +1,28 @@
 import { NextResponse } from 'next/server';
-import { DatabaseService } from '@/lib/database/service';
 import { createClient } from '@/lib/supabase/server';
 
 // GET /api/booking/options - Get options for booking system
 export async function GET() {
   try {
     const supabase = createClient();
-    const dbService = new DatabaseService(supabase);
     
-    const options = await dbService.getAllAddOns();
+    // Query add_ons directly without DatabaseService to avoid client/server compatibility issues
+    const { data: options, error } = await supabase
+      .from('add_ons')
+      .select('*')
+      .eq('is_active', true)
+      .order('category', { ascending: true });
+
+    if (error) {
+      throw error;
+    }
+
+    if (!options) {
+      return NextResponse.json({
+        success: true,
+        data: []
+      });
+    }
     
     // Transform database format to booking system format
     const transformedOptions = options.map(option => {
