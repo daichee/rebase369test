@@ -21,68 +21,118 @@ interface RoomAndOptionsStepProps {
 
 // Room data is now fetched from Supabase via useRooms hook
 
-// モックオプションデータ
-const OPTIONS = [
-  {
-    id: "meal_breakfast",
-    category: "食事",
-    name: "朝食",
-    description: "和洋バイキング",
-    price: 800,
-    unit: "人/日",
-    icon: Utensils
-  },
-  {
-    id: "meal_lunch",
-    category: "食事", 
-    name: "昼食",
-    description: "お弁当またはバイキング",
-    price: 1200,
-    unit: "人/日",
-    icon: Utensils
-  },
-  {
-    id: "meal_dinner",
-    category: "食事",
-    name: "夕食",
-    description: "BBQまたは和食",
-    price: 2000,
-    unit: "人/日",
-    icon: Utensils
-  },
-  {
-    id: "facility_meeting",
-    category: "施設",
-    name: "会議室利用",
-    description: "プロジェクター・ホワイトボード付き",
-    price: 3000,
-    unit: "日",
-    icon: Briefcase
-  },
-  {
-    id: "facility_parking",
-    category: "施設",
-    name: "駐車場",
-    description: "1台あたり",
-    price: 500,
-    unit: "台/日",
-    icon: Home
-  },
-  {
-    id: "equipment_futon",
-    category: "備品",
-    name: "追加布団",
-    description: "1組あたり",
-    price: 1000,
-    unit: "組/日",
-    icon: Bed
-  },
-]
+// Option data structure for display
+interface OptionData {
+  id: string
+  category: string
+  name: string
+  description: string
+  price: number
+  unit: string
+  icon: any
+}
 
 export function RoomAndOptionsStep({ formData, onChange, availabilityResults, priceBreakdown }: RoomAndOptionsStepProps) {
   const [selectedFloor, setSelectedFloor] = useState<string>("all")
   const [lastClickTime, setLastClickTime] = useState<number>(0)
+  const [options, setOptions] = useState<OptionData[]>([])
+  const [optionsLoading, setOptionsLoading] = useState(true)
   const { rooms, loading: roomsLoading } = useRooms()
+
+  // Load options from API (same as admin settings)
+  useEffect(() => {
+    const fetchOptions = async () => {
+      try {
+        const response = await fetch('/api/booking/options')
+        const result = await response.json()
+        
+        if (result.success) {
+          // Transform API data to display format with simplified pricing
+          const transformedOptions = result.data.map((option: any) => {
+            let price = 0
+            let unit = option.unit
+            let description = option.description || option.name
+            
+            // For meal options, use adult price as the base price
+            if (option.category === 'meal' && option.rates) {
+              price = option.rates.adult || 0
+              unit = "人/日" // Simplified unit for display
+              description = getOptionDescription(option.id)
+            }
+            // For facility options, use a simplified price (room fee for guests on weekdays)
+            else if (option.category === 'facility' && option.roomFees) {
+              price = option.roomFees.weekdayGuest || option.personalFees?.under5h || 0
+              unit = "日"
+              description = getOptionDescription(option.id)
+            }
+            // For equipment options, use the rate
+            else if (option.category === 'equipment' && option.rate) {
+              price = option.rate
+              unit = option.unit
+              description = getOptionDescription(option.id)
+            }
+            
+            return {
+              id: option.id,
+              category: getCategoryLabel(option.category),
+              name: option.name,
+              description,
+              price,
+              unit,
+              icon: getOptionIcon(option.category, option.id)
+            }
+          }).filter((option: OptionData) => option.price > 0) // Only show options with pricing
+          
+          setOptions(transformedOptions)
+        } else {
+          console.error('Failed to fetch options:', result.error)
+        }
+      } catch (error) {
+        console.error('Error fetching options:', error)
+      } finally {
+        setOptionsLoading(false)
+      }
+    }
+
+    fetchOptions()
+  }, [])
+
+  // Helper functions for option display
+  const getCategoryLabel = (category: string) => {
+    switch (category) {
+      case 'meal': return '食事'
+      case 'facility': return '施設' 
+      case 'equipment': return '備品'
+      default: return category
+    }
+  }
+
+  const getOptionIcon = (category: string, optionId: string) => {
+    if (category === 'meal') return Utensils
+    if (category === 'facility') {
+      if (optionId.includes('meeting')) return Briefcase
+      if (optionId.includes('parking')) return Home
+      return Briefcase
+    }
+    if (category === 'equipment') {
+      if (optionId.includes('futon')) return Bed
+      return Briefcase
+    }
+    return Briefcase
+  }
+
+  const getOptionDescription = (optionId: string) => {
+    // Provide user-friendly descriptions
+    switch (optionId) {
+      case 'breakfast': return '和洋バイキング'
+      case 'dinner': return 'BBQまたは和食'
+      case 'bbq': return '屋外バーベキュー（食材・機材込み）'
+      case 'meeting_room_weekday': return 'プロジェクター・ホワイトボード付き'
+      case 'gymnasium_weekday': return '体育館利用（1台あたり）'
+      case 'parking': return '駐車場（1台あたり）'
+      default: return optionId
+    }
+  }
 
   const totalGuests = Object.values(formData.guests).reduce((sum, count) => sum + count, 0)
 
@@ -204,7 +254,7 @@ export function RoomAndOptionsStep({ formData, onChange, availabilityResults, pr
   const toggleOption = (optionId: string) => {
     console.log('🔧 [RoomAndOptionsStep] toggleOption called with optionId:', optionId)
     
-    const optionData = OPTIONS.find(opt => opt.id === optionId)
+    const optionData = options.find(opt => opt.id === optionId)
     if (!optionData) {
       console.error('🔧 [RoomAndOptionsStep] Option not found:', optionId)
       return
@@ -222,7 +272,7 @@ export function RoomAndOptionsStep({ formData, onChange, availabilityResults, pr
       // Add the option with proper AddonItem structure
       const newAddon = {
         addonId: optionData.id,
-        category: optionData.category as "meal" | "facility" | "equipment",
+        category: mapCategoryToType(optionData.category),
         name: optionData.name,
         quantity: 1,
         unitPrice: optionData.price,
@@ -235,6 +285,16 @@ export function RoomAndOptionsStep({ formData, onChange, availabilityResults, pr
     
     console.log('🔧 [RoomAndOptionsStep] New selectedAddons:', newSelectedOptions)
     onChange({ selectedAddons: newSelectedOptions })
+  }
+
+  // Map display category to type
+  const mapCategoryToType = (category: string): "meal" | "facility" | "equipment" => {
+    switch (category) {
+      case '食事': return 'meal'
+      case '施設': return 'facility'
+      case '備品': return 'equipment'
+      default: return 'meal'
+    }
   }
 
   const updateOptionQuantity = (optionId: string, quantity: number) => {
@@ -462,11 +522,22 @@ export function RoomAndOptionsStep({ formData, onChange, availabilityResults, pr
           <CardDescription>必要なオプションサービスを選択してください</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {["食事", "施設", "備品"].map((category) => (
-            <div key={category}>
-              <h4 className="font-medium mb-3">{category}</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {OPTIONS.filter(option => option.category === category).map((option) => {
+          {optionsLoading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-muted-foreground">オプション情報を読み込み中...</p>
+            </div>
+          ) : (
+            ["食事", "施設", "備品"].map((category) => {
+              const categoryOptions = options.filter(option => option.category === category)
+              
+              if (categoryOptions.length === 0) return null
+              
+              return (
+                <div key={category}>
+                  <h4 className="font-medium mb-3">{category}</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {categoryOptions.map((option) => {
                   const selectedOption = formData.selectedAddons.find(addon => addon.addonId === option.id)
                   const isSelected = !!selectedOption
                   const Icon = option.icon
@@ -536,10 +607,12 @@ export function RoomAndOptionsStep({ formData, onChange, availabilityResults, pr
                       </CardContent>
                     </Card>
                   )
-                })}
-              </div>
-            </div>
-          ))}
+                    })}
+                  </div>
+                </div>
+              )
+            })
+          )}
         </CardContent>
       </Card>
     </div>
