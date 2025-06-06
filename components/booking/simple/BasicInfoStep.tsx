@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -21,15 +21,78 @@ interface BasicInfoStepProps {
   formData: SimpleBookingFormData
   onChange: (data: Partial<SimpleBookingFormData>) => void
   availabilityResults?: any[]
+  onValidationChange?: (isValid: boolean, errors: Record<string, string>) => void
 }
 
-export function BasicInfoStep({ formData, onChange, availabilityResults }: BasicInfoStepProps) {
+export function BasicInfoStep({ formData, onChange, availabilityResults, onValidationChange }: BasicInfoStepProps) {
   const [startDate, setStartDate] = useState<Date | undefined>(
     formData.dateRange.startDate ? parseLocalDate(formData.dateRange.startDate) : undefined
   )
   const [endDate, setEndDate] = useState<Date | undefined>(
     formData.dateRange.endDate ? parseLocalDate(formData.dateRange.endDate) : undefined
   )
+  const [errors, setErrors] = useState<Record<string, string>>({})
+
+  // 代表者情報のバリデーション関数
+  const validateRepresentativeInfo = () => {
+    const newErrors: Record<string, string> = {}
+
+    // 代表者名のバリデーション
+    if (!formData.guestName.trim()) {
+      newErrors.guestName = "代表者名は必須項目です"
+    } else if (formData.guestName.trim().length < 2) {
+      newErrors.guestName = "代表者名は2文字以上で入力してください"
+    } else if (formData.guestName.trim().length > 50) {
+      newErrors.guestName = "代表者名は50文字以内で入力してください"
+    }
+
+    // メールアドレスのバリデーション
+    if (!formData.guestEmail.trim()) {
+      newErrors.guestEmail = "メールアドレスは必須項目です"
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.guestEmail)) {
+      newErrors.guestEmail = "有効なメールアドレスを入力してください"
+    }
+
+    // 電話番号のバリデーション
+    if (!formData.guestPhone.trim()) {
+      newErrors.guestPhone = "電話番号は必須項目です"
+    } else if (!/^[\d\-\(\)\+\s]+$/.test(formData.guestPhone)) {
+      newErrors.guestPhone = "有効な電話番号を入力してください"
+    }
+
+    // 団体・組織名のバリデーション（任意フィールド）
+    if (formData.guestOrg.length > 100) {
+      newErrors.guestOrg = "団体・組織名は100文字以内で入力してください"
+    }
+
+    // 利用目的のバリデーション（任意フィールド）
+    if (formData.purpose.length > 200) {
+      newErrors.purpose = "利用目的は200文字以内で入力してください"
+    }
+
+    return newErrors
+  }
+
+  // 入力値変更時のバリデーション
+  const handleInputChange = (field: keyof SimpleBookingFormData, value: string) => {
+    onChange({ [field]: value })
+    
+    // リアルタイムバリデーション - エラーがある場合のみクリア
+    if (errors[field]) {
+      const updatedErrors = { ...errors }
+      delete updatedErrors[field]
+      setErrors(updatedErrors)
+    }
+  }
+
+  // バリデーション状態を親コンポーネントに通知
+  useEffect(() => {
+    if (onValidationChange) {
+      const validationErrors = validateRepresentativeInfo()
+      const isValid = Object.keys(validationErrors).length === 0
+      onValidationChange(isValid, validationErrors)
+    }
+  }, [formData.guestName, formData.guestEmail, formData.guestPhone, formData.guestOrg, formData.purpose, onValidationChange])
 
   const updateDateRange = (start: Date | undefined, end: Date | undefined) => {
     if (start && end) {
@@ -228,9 +291,17 @@ export function BasicInfoStep({ formData, onChange, availabilityResults }: Basic
               <Input
                 id="guestName"
                 value={formData.guestName}
-                onChange={(e) => onChange({ guestName: e.target.value })}
+                onChange={(e) => handleInputChange("guestName", e.target.value)}
+                onBlur={() => {
+                  const validationErrors = validateRepresentativeInfo()
+                  setErrors(validationErrors)
+                }}
                 placeholder="山田 太郎"
+                className={errors.guestName ? "border-red-500" : ""}
               />
+              {errors.guestName && (
+                <p className="text-sm text-red-500">{errors.guestName}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -238,9 +309,17 @@ export function BasicInfoStep({ formData, onChange, availabilityResults }: Basic
               <Input
                 id="guestOrg"
                 value={formData.guestOrg}
-                onChange={(e) => onChange({ guestOrg: e.target.value })}
+                onChange={(e) => handleInputChange("guestOrg", e.target.value)}
+                onBlur={() => {
+                  const validationErrors = validateRepresentativeInfo()
+                  setErrors(validationErrors)
+                }}
                 placeholder="関西大学"
+                className={errors.guestOrg ? "border-red-500" : ""}
               />
+              {errors.guestOrg && (
+                <p className="text-sm text-red-500">{errors.guestOrg}</p>
+              )}
             </div>
           </div>
 
@@ -251,9 +330,17 @@ export function BasicInfoStep({ formData, onChange, availabilityResults }: Basic
                 id="guestEmail"
                 type="email"
                 value={formData.guestEmail}
-                onChange={(e) => onChange({ guestEmail: e.target.value })}
+                onChange={(e) => handleInputChange("guestEmail", e.target.value)}
+                onBlur={() => {
+                  const validationErrors = validateRepresentativeInfo()
+                  setErrors(validationErrors)
+                }}
                 placeholder="example@email.com"
+                className={errors.guestEmail ? "border-red-500" : ""}
               />
+              {errors.guestEmail && (
+                <p className="text-sm text-red-500">{errors.guestEmail}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -262,9 +349,17 @@ export function BasicInfoStep({ formData, onChange, availabilityResults }: Basic
                 id="guestPhone"
                 type="tel"
                 value={formData.guestPhone}
-                onChange={(e) => onChange({ guestPhone: e.target.value })}
+                onChange={(e) => handleInputChange("guestPhone", e.target.value)}
+                onBlur={() => {
+                  const validationErrors = validateRepresentativeInfo()
+                  setErrors(validationErrors)
+                }}
                 placeholder="090-1234-5678"
+                className={errors.guestPhone ? "border-red-500" : ""}
               />
+              {errors.guestPhone && (
+                <p className="text-sm text-red-500">{errors.guestPhone}</p>
+              )}
             </div>
           </div>
 
@@ -273,9 +368,17 @@ export function BasicInfoStep({ formData, onChange, availabilityResults }: Basic
             <Input
               id="purpose"
               value={formData.purpose}
-              onChange={(e) => onChange({ purpose: e.target.value })}
+              onChange={(e) => handleInputChange("purpose", e.target.value)}
+              onBlur={() => {
+                const validationErrors = validateRepresentativeInfo()
+                setErrors(validationErrors)
+              }}
               placeholder="研修・合宿・会議など"
+              className={errors.purpose ? "border-red-500" : ""}
             />
+            {errors.purpose && (
+              <p className="text-sm text-red-500">{errors.purpose}</p>
+            )}
           </div>
         </CardContent>
       </Card>
