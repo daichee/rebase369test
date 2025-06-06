@@ -42,18 +42,21 @@ export class PriceCalculator {
   // Fixed addon rates for simplified calculation
   private static readonly ADDON_RATES = {
     meal: {
-      breakfast: 600,
-      lunch: 1000, 
-      dinner: 1500,
+      breakfast: 800,
+      lunch: 1200, 
+      dinner: 2000,
       bbq: 2000
     },
     facility: {
       projector: 2000,
+      meeting_room: 3000,
+      parking: 500,
       sound_system: 3000,
       flipchart: 500
     },
     equipment: {
-      bedding: 500,
+      bedding: 1000,
+      futon: 1000,
       towel: 200,
       pillow: 300
     }
@@ -421,9 +424,9 @@ export class PriceCalculator {
       meal_lunch: 'lunch', 
       meal_dinner: 'dinner',
       meal_bbq: 'bbq',
-      facility_meeting: 'projector',
-      facility_parking: 'sound_system',
-      equipment_futon: 'bedding'
+      facility_meeting: 'meeting_room',
+      facility_parking: 'parking',
+      equipment_futon: 'futon'
     }
     
     const internalCategory = categoryMapping[category] || category
