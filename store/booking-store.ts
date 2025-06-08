@@ -37,6 +37,27 @@ export interface Customer {
   createdAt: string
 }
 
+/**
+ * Booking store state interface for comprehensive booking and project management
+ * 
+ * Features:
+ * - Project-based booking management (replacing legacy booking system)
+ * - Room assignment tracking with detailed project-room relationships
+ * - Real-time state management with Zustand
+ * - Error handling and loading state management
+ * - Persistence support for offline capabilities
+ * 
+ * Data Structure:
+ * - Projects: Main booking entities with guest and financial information
+ * - Project Rooms: Many-to-many relationship tracking room assignments
+ * - Selected Project: Currently active project for detail views/editing
+ * 
+ * State Management Features:
+ * - Optimistic updates for better UX
+ * - Error state management with detailed error messages
+ * - Loading states for async operations
+ * - Filtering and searching capabilities
+ */
 interface BookingState {
   // 新しいProject型のリスト
   projects: Project[]
@@ -45,8 +66,26 @@ interface BookingState {
   error: string | null
 
   // 新しいActions (Project型)
+  /**
+   * Sets the complete list of projects, replacing current state
+   * 
+   * @param projects - Array of Project objects with optional room relationships
+   */
   setProjects: (projects: Project[]) => void
+  
+  /**
+   * Adds a new project to the store
+   * 
+   * @param project - Complete Project object to add to state
+   */
   addProject: (project: Project) => void
+  
+  /**
+   * Updates an existing project with partial data
+   * 
+   * @param id - Project ID to update
+   * @param updates - Partial Project object with fields to update
+   */
   updateProject: (id: string, updates: Partial<Project>) => void
   deleteProject: (id: string) => void
   setSelectedProject: (project: Project | null) => void

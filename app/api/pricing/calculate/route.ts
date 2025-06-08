@@ -2,6 +2,42 @@ import { NextRequest, NextResponse } from "next/server"
 import { PriceCalculator } from "@/lib/pricing/calculator"
 import type { GuestCount, DateRange, RoomUsage, AddonItem } from "@/lib/pricing/types"
 
+/**
+ * Calculates total pricing for a booking including rooms, guests, and add-ons
+ * 
+ * @param request - Next.js request object containing pricing calculation parameters
+ * @returns JSON response with detailed pricing breakdown and calculations
+ * 
+ * Required Body Fields:
+ * - rooms: Array of RoomUsage objects with roomType, capacity, etc.
+ * - guests: GuestCount object with adult, student, child, infant, baby counts
+ * - dateRange: Object with startDate and endDate (ISO strings)
+ * 
+ * Optional Body Fields:
+ * - addons: Array of AddonItem objects for additional services
+ * 
+ * Response Format:
+ * {
+ *   priceBreakdown: {
+ *     roomAmount: number,     // Total room charges
+ *     guestAmount: number,    // Total guest charges (varies by age/day type)
+ *     addonAmount: number,    // Total add-on charges
+ *     subtotal: number,       // Sum of all amounts
+ *     total: number,          // Rounded final total
+ *     dailyBreakdown: Array   // Day-by-day pricing details
+ *   },
+ *   priceDetails: Object,     // Detailed rate information by date
+ *   calculation: Object,      // Individual calculation components
+ *   input: Object            // Echo of input parameters for verification
+ * }
+ * 
+ * Validation:
+ * - Total guest count must be > 0
+ * - Total guest count must not exceed room capacity
+ * - Date range must be valid with startDate < endDate
+ * 
+ * Error Responses: 400 for validation/calculation errors, 500 for server errors
+ */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()

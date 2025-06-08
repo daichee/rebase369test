@@ -16,6 +16,30 @@ export interface Room {
   description?: string
 }
 
+/**
+ * Custom React hook for room data management and operations
+ * 
+ * Features:
+ * - Real-time room data fetching and caching
+ * - Room lookup and filtering utilities
+ * - Type-safe room interfaces with database mapping
+ * - Error handling and loading states
+ * - Optimized queries with consistent ordering
+ * 
+ * Room Data Structure:
+ * - Complete room information including capacity, type, and rates
+ * - Usage type classification (shared/private) for pricing
+ * - Amenities and description for user presentation
+ * - Active status filtering for availability
+ * 
+ * Integration Points:
+ * - Used by booking forms for room selection
+ * - Integrated with pricing calculations
+ * - Connected to availability checking
+ * - Supports admin room management
+ * 
+ * @returns Room hook interface with data and utility functions
+ */
 export function useRooms() {
   const [rooms, setRooms] = useState<Room[]>([])
   const [loading, setLoading] = useState(true)

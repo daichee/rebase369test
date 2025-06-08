@@ -27,7 +27,32 @@ const OptionSchema = z.object({
   is_active: z.boolean().optional()
 });
 
-// GET /api/admin/options - Get all options
+/**
+ * Retrieves all add-on options for admin management
+ * 
+ * @returns JSON response with complete add-on options data
+ * 
+ * Response Format:
+ * {
+ *   success: boolean,
+ *   data: AddOnOption[]
+ * }
+ * 
+ * Each AddOnOption includes:
+ * - name: Option display name
+ * - category: 'meal', 'facility', or 'equipment'
+ * - unit: Pricing unit (e.g., "per person", "per night")
+ * - Fee structures for different guest types and scenarios
+ * - Quantity constraints (min/max)
+ * - Active status flag
+ * 
+ * Used by admin interface for:
+ * - Viewing all available add-on services
+ * - Managing option pricing and availability
+ * - Configuring service constraints
+ * 
+ * Error Responses: 500 for server errors during data retrieval
+ */
 export async function GET() {
   try {
     const supabase = createClient();
@@ -52,7 +77,42 @@ export async function GET() {
   }
 }
 
-// POST /api/admin/options - Create new option
+/**
+ * Creates a new add-on option with comprehensive validation
+ * 
+ * @param request - Next.js request object containing new option data
+ * @returns JSON response with created option data or validation errors
+ * 
+ * Request Body Fields (validated with Zod schema):
+ * Required:
+ * - name: Option display name (minimum 1 character)
+ * - category: One of 'meal', 'facility', 'equipment'
+ * - unit: Pricing unit description
+ * 
+ * Optional Fee Structures:
+ * - adult_fee, student_fee, child_fee, infant_fee: Age-based pricing
+ * - personal_fee_5h, personal_fee_10h, personal_fee_over: Duration-based pricing
+ * - room_fee_*: Room-based pricing for weekday/weekend guest/other scenarios
+ * - aircon_fee_per_hour: Additional facility fees
+ * - min_quantity, max_quantity: Quantity constraints
+ * - is_active: Availability flag (default: true)
+ * 
+ * Processing:
+ * 1. Validates input against OptionSchema
+ * 2. Generates unique add_on_id from category and name
+ * 3. Creates option record in database
+ * 4. Returns created option with generated ID
+ * 
+ * Response Format:
+ * {
+ *   success: boolean,
+ *   data: AddOnOption  // Created option with generated add_on_id
+ * }
+ * 
+ * Error Responses:
+ * - 400: Validation errors with detailed field information
+ * - 500: Server error during option creation
+ */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();

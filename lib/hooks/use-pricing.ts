@@ -5,11 +5,57 @@ import { PriceCalculator } from "@/lib/pricing/calculator"
 import type { GuestCount, DateRange, PriceBreakdown, RoomUsage, AddonItem } from "@/lib/pricing/types"
 import { useRooms } from "./use-rooms"
 
+/**
+ * Custom React hook for booking pricing calculations and management
+ * 
+ * Features:
+ * - Real-time price calculations with room and guest data
+ * - Room usage optimization and guest assignment
+ * - Add-on service pricing integration
+ * - Error handling and loading states
+ * - Automatic room information resolution
+ * 
+ * Integration:
+ * - Uses PriceCalculator engine for consistent pricing logic
+ * - Integrates with useRooms hook for room data resolution
+ * - Supports both simple and complex pricing scenarios
+ * 
+ * @returns Pricing hook interface with calculation functions and state
+ */
 export function usePricing() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const { getRoomById } = useRooms()
 
+  /**
+   * Calculates comprehensive booking price with room optimization
+   * 
+   * @param params - Booking parameters including rooms, guests, dates, and add-ons
+   * @returns Promise<PriceBreakdown> - Detailed pricing breakdown with totals
+   * 
+   * Parameters:
+   * - rooms: Array of room IDs to include in booking
+   * - guests: Guest count breakdown by age group
+   * - dateRange: Check-in/out dates with calculated nights
+   * - addons: Optional add-on services (meals, facilities, equipment)
+   * 
+   * Processing:
+   * 1. Resolves room IDs to full room objects with pricing info
+   * 2. Optimizes guest assignment across selected rooms
+   * 3. Converts room data to RoomUsage format for calculator
+   * 4. Executes pricing calculation with all components
+   * 5. Handles errors and provides detailed error messages
+   * 
+   * Guest Assignment Logic:
+   * - Distributes guests optimally across rooms
+   * - Respects room capacity constraints
+   * - Minimizes unused capacity where possible
+   * 
+   * Error Handling:
+   * - Validates room existence and availability
+   * - Provides specific error messages for debugging
+   * - Maintains loading states for UI feedback
+   */
   const calculateBookingPrice = async (params: {
     rooms: string[]
     guests: GuestCount

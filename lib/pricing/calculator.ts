@@ -62,6 +62,14 @@ export class PriceCalculator {
 
   /**
    * 動的設定を読み込み（キャッシュ優先、フォールバック対応）
+   * Loads dynamic rate configuration with cache-first approach and fallback support
+   * 
+   * @returns Promise<RateConfig> - The rate configuration object
+   * 
+   * Loading Priority:
+   * 1. Check cache first for performance
+   * 2. Load from database if cache miss
+   * 3. Fallback to static configuration if database fails
    */
   private static async loadRateConfig(): Promise<RateConfig> {
     // まずキャッシュを確認
@@ -82,6 +90,14 @@ export class PriceCalculator {
 
   /**
    * 静的設定を取得（フォールバック用）
+   * Gets static configuration as fallback when database is unavailable
+   * 
+   * @returns RateConfig - Static rate configuration object
+   * 
+   * Used when:
+   * - Database connection fails
+   * - Dynamic configuration loading fails
+   * - Initial system setup before database configuration
    */
   private static getStaticConfig(): RateConfig {
     return {
@@ -97,6 +113,21 @@ export class PriceCalculator {
 
   /**
    * 計算結果をデータベースに保存
+   * Saves price calculation results to database for audit and analysis
+   * 
+   * @param bookingId - Unique booking identifier
+   * @param breakdown - Calculated price breakdown object
+   * @param params - Original calculation parameters including rooms, guests, dates, addons
+   * @returns Promise<void> - Resolves when save is complete (non-critical errors are logged)
+   * 
+   * Saves the following data:
+   * - Complete price breakdown and totals
+   * - Original calculation parameters
+   * - Rate configuration used
+   * - Daily breakdown details
+   * - Calculation method identifier
+   * 
+   * Error Handling: Non-critical errors are logged but don't throw exceptions
    */
   static async savePriceDetails(bookingId: string, breakdown: PriceBreakdown, params: {
     rooms: RoomUsage[]
@@ -149,6 +180,19 @@ export class PriceCalculator {
 
   /**
    * 設定変更時のキャッシュ更新
+   * Refreshes rate configuration cache when pricing settings are updated
+   * 
+   * @returns Promise<void> - Resolves when cache refresh is complete
+   * 
+   * Process:
+   * 1. Clears existing cached configuration
+   * 2. Forces reload from database
+   * 3. Updates in-memory cache with latest settings
+   * 
+   * Should be called after:
+   * - Admin updates to pricing configuration
+   * - Rate table modifications
+   * - Seasonal pricing changes
    */
   static async refreshRateConfig(): Promise<void> {
     PriceConfigService.clearCache()
@@ -157,6 +201,25 @@ export class PriceCalculator {
 
   /**
    * 総合料金計算 (Enhanced with database integration) - ASYNC VERSION
+   * Calculates total pricing with dynamic database-driven configuration
+   * 
+   * @param rooms - Array of room usage objects with roomType, capacity, etc.
+   * @param guests - Guest count breakdown by age group (adult, student, child, infant, baby)
+   * @param dateRange - Date range object with startDate, endDate, and nights
+   * @param addons - Optional array of add-on services (meals, facilities, equipment)
+   * @returns Promise<PriceBreakdown> - Complete pricing breakdown with totals and daily details
+   * 
+   * Features:
+   * - Uses dynamic rate configuration from database
+   * - Supports seasonal and day-of-week pricing variations
+   * - Calculates room, guest, and add-on charges separately
+   * - Provides detailed daily breakdown
+   * - Handles peak/regular seasons and weekday/weekend rates
+   * 
+   * Rate Calculation Logic:
+   * - Room rates: Fixed per night by room type
+   * - Guest rates: Variable by age group, day type, and season
+   * - Add-on rates: Some daily (meals), others one-time (equipment)
    */
   static async calculateTotalPriceAsync(
     rooms: RoomUsage[],
@@ -186,6 +249,24 @@ export class PriceCalculator {
 
   /**
    * 総合料金計算 (Backward compatibility - uses static rates)
+   * Calculates total pricing using static rate tables for backward compatibility
+   * 
+   * @param rooms - Array of room usage objects with roomType, capacity, etc.
+   * @param guests - Guest count breakdown by age group (adult, student, child, infant, baby)
+   * @param dateRange - Date range object with startDate, endDate, and nights
+   * @param addons - Optional array of add-on services (meals, facilities, equipment)
+   * @returns PriceBreakdown - Complete pricing breakdown with totals and daily details
+   * 
+   * This synchronous version:
+   * - Uses static rate tables (no database dependency)
+   * - Faster execution with no async operations
+   * - Guaranteed availability even when database is down
+   * - Suitable for real-time calculations and previews
+   * 
+   * Rate Sources:
+   * - Room rates: ROOM_RATES constant
+   * - Guest rates: FIXED_RATE_TABLE constant
+   * - Add-on rates: ADDON_RATES constant
    */
   static calculateTotalPrice(
     rooms: RoomUsage[],
@@ -342,6 +423,21 @@ export class PriceCalculator {
 
   /**
    * 室料計算（部屋タイプ別固定単価）
+   * Calculates room charges based on room type and number of nights
+   * 
+   * @param rooms - Array of room usage objects containing roomType
+   * @param nights - Number of nights for the stay
+   * @returns number - Total room charges
+   * 
+   * Room Types and Rates:
+   * - large: ¥20,000/night (大部屋: 作法室・被服室)
+   * - medium_a: ¥13,000/night (中部屋: 視聴覚室)
+   * - medium_b: ¥8,000/night (中部屋: 図書室)
+   * - small_a: ¥7,000/night (個室: 1年1組・1年2組)
+   * - small_b: ¥6,000/night (個室: 理科室)
+   * - small_c: ¥5,000/night (個室: 2年組・3年組)
+   * 
+   * Calculation: Sum of (room_rate × nights) for each room
    */
   static calculateRoomPrice(rooms: RoomUsage[], nights: number): number {
     return rooms.reduce((total, room) => {
@@ -352,6 +448,28 @@ export class PriceCalculator {
 
   /**
    * 個人料金計算 (Fixed rate table - Phase 3.1)
+   * Calculates guest charges based on age groups, date range, and room usage type
+   * 
+   * @param guests - Guest count breakdown by age group
+   * @param dateRange - Date range with startDate, endDate, and nights
+   * @param rooms - Room usage array to determine shared/private pricing
+   * @returns number - Total guest charges across all nights
+   * 
+   * Age Groups and Base Rates (weekday/weekend/peak_weekday/peak_weekend):
+   * Shared rooms:
+   * - adult: ¥4,800/¥5,856/¥5,520/¥6,734
+   * - student: ¥4,000/¥4,880/¥4,600/¥5,612
+   * - child: ¥3,200/¥3,904/¥3,680/¥4,490
+   * - infant: ¥1,600/¥1,952/¥1,840/¥2,245
+   * - baby: ¥0 (free)
+   * 
+   * Private rooms: Higher rates (see FIXED_RATE_TABLE)
+   * 
+   * Calculation Logic:
+   * - Determines usage type (shared/private) based on room types
+   * - Calculates day-by-day charges considering weekday/weekend and season
+   * - Peak months: 3,4,5,7,8,9,12
+   * - Weekend: Friday, Saturday, Sunday
    */
   static calculateGuestPriceSimplified(guests: GuestCount, dateRange: DateRange, rooms: RoomUsage[]): number {
     const usageType = this.determineUsageType(rooms)
@@ -382,6 +500,34 @@ export class PriceCalculator {
 
   /**
    * オプション料金計算 (Simplified - Phase 3.2)
+   * Calculates add-on service charges with support for daily and one-time items
+   * 
+   * @param addons - Array of selected add-on items with quantities
+   * @param dateRange - Date range with nights count for daily item calculations
+   * @returns number - Total add-on charges
+   * 
+   * Add-on Categories and Base Rates:
+   * Meals (daily items - multiply by nights):
+   * - breakfast: ¥600/person/day
+   * - lunch: ¥1,000/person/day
+   * - dinner: ¥1,500/person/day
+   * - bbq: ¥2,000/person/day
+   * 
+   * Facilities (one-time items):
+   * - projector: ¥2,000/stay
+   * - sound_system: ¥3,000/stay
+   * - flipchart: ¥500/stay
+   * 
+   * Equipment (one-time items):
+   * - bedding: ¥500/set
+   * - towel: ¥200/set
+   * - pillow: ¥300/set
+   * 
+   * Calculation Logic:
+   * - Uses pre-calculated totalPrice if available (from database)
+   * - Falls back to static rate calculation for backward compatibility
+   * - Daily items are multiplied by number of nights
+   * - One-time items are charged once regardless of stay length
    */
   static calculateAddonPriceSimplified(addons: AddonItem[], dateRange: DateRange): number {
     console.log('🧮 [PriceCalculator] calculateAddonPriceSimplified called')

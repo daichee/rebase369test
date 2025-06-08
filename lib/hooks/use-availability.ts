@@ -32,6 +32,24 @@ export interface OccupancyStats {
   guestOccupancyRate: number
 }
 
+/**
+ * Custom React hook for room availability checking and occupancy analytics
+ * 
+ * Features:
+ * - Real-time availability checking with conflict detection
+ * - Occupancy statistics and utilization analytics
+ * - Partial availability analysis with suggestion scoring
+ * - Integration with booking system for conflict prevention
+ * - Performance optimized database queries
+ * 
+ * Use Cases:
+ * - Booking form availability validation
+ * - Admin dashboard occupancy reporting
+ * - Alternative room suggestions
+ * - Capacity planning and analytics
+ * 
+ * @returns Availability hook interface with checking functions and state
+ */
 export function useAvailability() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -39,6 +57,34 @@ export function useAvailability() {
 
   const supabase = createClient()
 
+  /**
+   * Checks availability for specific rooms within a date range
+   * 
+   * @param roomIds - Array of room IDs to check availability for
+   * @param dateRange - Date range with start, end, and calculated nights
+   * @param excludeBookingId - Optional booking ID to exclude from conflict checking (for edits)
+   * @returns Promise<AvailabilityCheck[]> - Array of availability results per room
+   * 
+   * Analysis Process:
+   * 1. Queries database for existing bookings in the date range
+   * 2. Filters bookings by room IDs and active status
+   * 3. Excludes specified booking (useful for editing existing bookings)
+   * 4. Calculates availability and conflicts for each room
+   * 5. Determines available capacity considering overlapping bookings
+   * 6. Provides partial availability details when applicable
+   * 
+   * Availability Scoring:
+   * - Considers room capacity vs. guest requirements
+   * - Factors in conflict severity and duration
+   * - Provides suggestion scores for alternative recommendations
+   * 
+   * Return Data Structure:
+   * - isAvailable: Boolean availability status
+   * - conflictingBookings: Array of conflicting booking IDs
+   * - availableCapacity: Remaining room capacity
+   * - partialAvailability: Detailed availability breakdown by date
+   * - suggestionScore: Numeric score for recommendation ranking
+   */
   const checkAvailability = async (
     roomIds: string[],
     dateRange: DateRange,

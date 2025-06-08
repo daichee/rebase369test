@@ -23,6 +23,29 @@ export interface RoomAvailability {
   reason?: string
 }
 
+/**
+ * Room store state interface for comprehensive room and availability management
+ * 
+ * Features:
+ * - Complete room inventory management
+ * - Real-time availability tracking with date-specific pricing
+ * - Room type categorization and filtering
+ * - Amenity and feature management
+ * - Admin room configuration support
+ * 
+ * Room Management:
+ * - CRUD operations for room data
+ * - Room type classification (single, double, suite, family)
+ * - Capacity and pricing information
+ * - Amenity and description management
+ * - Active/inactive status control
+ * 
+ * Availability System:
+ * - Date-specific availability tracking
+ * - Dynamic pricing by date and room
+ * - Conflict detection and resolution
+ * - Booking integration for real-time updates
+ */
 interface RoomState {
   rooms: Room[]
   availability: RoomAvailability[]
@@ -31,22 +54,105 @@ interface RoomState {
   error: string | null
 
   // Actions
+  /**
+   * Sets the complete list of rooms
+   * 
+   * @param rooms - Array of Room objects
+   */
   setRooms: (rooms: Room[]) => void
+  
+  /**
+   * Adds a new room to the inventory
+   * 
+   * @param room - Complete Room object to add
+   */
   addRoom: (room: Room) => void
+  
+  /**
+   * Updates an existing room with partial data
+   * 
+   * @param id - Room ID to update
+   * @param updates - Partial Room object with changes
+   */
   updateRoom: (id: string, updates: Partial<Room>) => void
+  
+  /**
+   * Removes a room from the inventory
+   * 
+   * @param id - Room ID to delete
+   */
   deleteRoom: (id: string) => void
+  
+  /**
+   * Sets the currently selected room for detail views
+   * 
+   * @param room - Room object to select or null to clear
+   */
   setSelectedRoom: (room: Room | null) => void
 
+  /**
+   * Sets availability data for multiple rooms and dates
+   * 
+   * @param availability - Array of RoomAvailability objects
+   */
   setAvailability: (availability: RoomAvailability[]) => void
+  
+  /**
+   * Updates availability for a specific room and date
+   * 
+   * @param roomId - Room ID to update
+   * @param date - Date string (YYYY-MM-DD format)
+   * @param isAvailable - Availability status
+   * @param price - Optional price override for the date
+   */
   updateRoomAvailability: (roomId: string, date: string, isAvailable: boolean, price?: number) => void
 
+  /**
+   * Sets loading state for async operations
+   * 
+   * @param loading - Loading state boolean
+   */
   setLoading: (loading: boolean) => void
+  
+  /**
+   * Sets error state with optional message
+   * 
+   * @param error - Error message or null to clear
+   */
   setError: (error: string | null) => void
 
   // Computed
+  /**
+   * Gets available rooms for a specific date range
+   * 
+   * @param checkIn - Check-in date string
+   * @param checkOut - Check-out date string
+   * @returns Array of available Room objects
+   */
   getAvailableRooms: (checkIn: string, checkOut: string) => Room[]
+  
+  /**
+   * Filters rooms by type
+   * 
+   * @param type - Room type to filter by
+   * @returns Array of Room objects matching the type
+   */
   getRoomsByType: (type: Room["type"]) => Room[]
+  
+  /**
+   * Gets all active (non-disabled) rooms
+   * 
+   * @returns Array of active Room objects
+   */
   getActiveRooms: () => Room[]
+  
+  /**
+   * Gets availability information for a specific room and date
+   * 
+   * @param roomId - Room ID to check
+   * @param date - Date string to check
+   * @returns RoomAvailability object or null if not found
+   */
   getRoomAvailability: (roomId: string, date: string) => RoomAvailability | null
 }
 

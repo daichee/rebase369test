@@ -7,6 +7,27 @@ type Project = Database["public"]["Tables"]["projects"]["Row"]
 type ProjectInsert = Database["public"]["Tables"]["projects"]["Insert"]
 type ProjectUpdate = Database["public"]["Tables"]["projects"]["Update"]
 
+/**
+ * Retrieves a paginated list of bookings with optional filtering
+ * 
+ * @param request - Next.js request object containing query parameters
+ * @returns JSON response containing booking data, count, and pagination info
+ * 
+ * Query Parameters:
+ * - status: Filter by booking status
+ * - start_date: Filter bookings starting from this date (ISO string)
+ * - end_date: Filter bookings ending before this date (ISO string)
+ * - guest_name: Filter by guest name (partial match)
+ * - limit: Number of results to return (default: 50)
+ * - offset: Number of results to skip for pagination (default: 0)
+ * 
+ * Response Format:
+ * {
+ *   data: Project[], // Array of booking projects with room details
+ *   count: number,   // Total count of matching bookings
+ *   hasMore: boolean // Whether more results are available
+ * }
+ */
 export async function GET(request: NextRequest) {
   try {
     const supabase = createClient()
@@ -71,6 +92,36 @@ export async function GET(request: NextRequest) {
   }
 }
 
+/**
+ * Creates a new booking with room assignments and optional pricing details
+ * 
+ * @param request - Next.js request object containing booking data in JSON body
+ * @returns JSON response with created booking data or error message
+ * 
+ * Required Body Fields:
+ * - start_date: Check-in date (ISO string)
+ * - end_date: Check-out date (ISO string)  
+ * - pax_total: Total number of guests
+ * - guest_name: Primary guest name
+ * - guest_email: Primary guest email
+ * - rooms: Array of room assignments with room_id, assigned_pax, room_rate
+ * 
+ * Optional Body Fields:
+ * - pax_adults, pax_students, pax_children, etc.: Guest breakdown by age
+ * - guest_phone, guest_org, purpose: Additional guest information
+ * - room_amount, pax_amount, addon_amount: Pricing breakdown
+ * - priceBreakdown: Detailed calculation results for archival
+ * - addons: Selected add-on services
+ * - notes: Special instructions or notes
+ * 
+ * Validation Rules:
+ * - At least one room must be assigned
+ * - Total assigned pax must equal pax_total
+ * - Room rates and pax counts must be positive numbers
+ * 
+ * Response: Created booking project with room assignments (status 201)
+ * Error Responses: 400 for validation errors, 500 for server errors
+ */
 export async function POST(request: NextRequest) {
   try {
     const supabase = createClient()

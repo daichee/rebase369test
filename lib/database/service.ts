@@ -12,9 +12,27 @@ type Seasons = Tables["seasons"]["Row"]
 type Rates = Tables["rates"]["Row"]
 type AddOns = Tables["add_ons"]["Row"]
 
+/**
+ * Comprehensive database service class for managing all data operations
+ * Provides type-safe database access with error handling and optimized queries
+ * 
+ * Features:
+ * - Booking/project management (CRUD operations)
+ * - Room and availability management
+ * - Pricing and rate configuration
+ * - Add-on options management
+ * - Reporting and analytics queries
+ * 
+ * Uses Supabase client with automatic connection management and error handling
+ */
 export class DatabaseService {
   private supabase: ReturnType<typeof createClient>
 
+  /**
+   * Initialize database service with optional Supabase client
+   * 
+   * @param supabaseClient - Optional Supabase client instance. Uses default client if not provided
+   */
   constructor(supabaseClient?: ReturnType<typeof createClient>) {
     this.supabase = supabaseClient || createClient()
   }
@@ -24,6 +42,20 @@ export class DatabaseService {
   // ========================================
 
   // projects テーブル機能
+  /**
+   * Creates a new booking project with comprehensive validation
+   * 
+   * @param data - Project data conforming to database insert schema
+   * @returns Promise<Projects | null> - Created project object or null if failed
+   * 
+   * Features:
+   * - Auto-generates unique project ID
+   * - Validates required fields (guest info, dates, etc.)
+   * - Sets default values for optional fields
+   * - Returns complete project data after creation
+   * 
+   * Error Handling: Logs errors and returns null on failure
+   */
   async createProject(data: Tables["projects"]["Insert"]): Promise<Projects | null> {
     const { data: project, error } = await this.supabase
       .from("projects")
@@ -38,6 +70,20 @@ export class DatabaseService {
     return project
   }
 
+  /**
+   * Retrieves a single project by ID
+   * 
+   * @param id - Unique project identifier
+   * @returns Promise<Projects | null> - Project object or null if not found
+   * 
+   * Use Cases:
+   * - Booking detail views
+   * - Editing existing bookings
+   * - Order confirmations
+   * - Admin management
+   * 
+   * Error Handling: Logs errors and returns null on failure or not found
+   */
   async getProject(id: string): Promise<Projects | null> {
     const { data, error } = await this.supabase
       .from("projects")
