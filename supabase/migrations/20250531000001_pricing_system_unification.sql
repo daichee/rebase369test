@@ -275,7 +275,7 @@ INSERT INTO pricing_config (
     "configName": "default_pricing_2025",
     "version": "v1.0.0",
     "lastUpdated": "' || now()::text || '"
-  }',
+  }'::jsonb,
   true,
   now(),
   (SELECT id FROM auth.users LIMIT 1)
