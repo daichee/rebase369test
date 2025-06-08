@@ -13,6 +13,9 @@ import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { Loader2, User, Mail, Calendar, Shield, Save } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+import type { Database } from "@/lib/supabase/types"
+
+type UserProfile = Database['public']['Tables']['user_profiles']['Row']
 
 export default function ProfilePage() {
   const { user } = useAuth()
@@ -27,7 +30,7 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
-  const [userProfile, setUserProfile] = useState<any>(null)
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -39,18 +42,44 @@ export default function ProfilePage() {
           .from("user_profiles")
           .select("*")
           .eq("id", user.id)
-          .single()
+          .maybeSingle()
 
         if (error) throw error
 
-        setUserProfile(profile)
-        setProfileData({
-          name: profile.name || "",
-          email: profile.email || user.email || "",
-          currentPassword: "",
-          newPassword: "",
-          confirmPassword: "",
-        })
+        if (!profile) {
+          // プロフィールが存在しない場合は作成
+          console.log("プロフィールが見つからないため、新規作成します")
+          const { data: newProfile, error: insertError } = await supabase
+            .from("user_profiles")
+            .insert({
+              id: user.id,
+              email: user.email!,
+              name: user.email!.split("@")[0],
+              first_login: false,
+            })
+            .select()
+            .single()
+
+          if (insertError) throw insertError
+          
+          setUserProfile(newProfile)
+          setProfileData({
+            name: newProfile.name || "",
+            email: newProfile.email || user.email || "",
+            currentPassword: "",
+            newPassword: "",
+            confirmPassword: "",
+          })
+        } else {
+          setUserProfile(profile)
+          setProfileData({
+            name: profile.name || "",
+            email: profile.email || user.email || "",
+            currentPassword: "",
+            newPassword: "",
+            confirmPassword: "",
+          })
+        }
       } catch (error) {
         console.error("プロフィール取得エラー:", error)
         setError("プロフィール情報の取得に失敗しました")
