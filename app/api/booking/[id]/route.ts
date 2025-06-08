@@ -30,13 +30,13 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     if (error) {
       if (error.code === "PGRST116") {
         return NextResponse.json(
-          { error: "Project not found" },
+          { error: "予約が見つかりません" },
           { status: 404 }
         )
       }
       console.error("Error fetching project:", error)
       return NextResponse.json(
-        { error: "Failed to fetch project" },
+        { error: "予約データの取得に失敗しました" },
         { status: 500 }
       )
     }
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
   } catch (error) {
     console.error("Error in booking GET by ID:", error)
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "サーバー内部エラーが発生しました" },
       { status: 500 }
     )
   }
@@ -64,7 +64,7 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
     } catch (error) {
       console.error("BOOKING_EDIT_ERROR - Invalid JSON in request body:", error)
       return NextResponse.json(
-        { error: "Invalid JSON in request body" },
+        { error: "リクエストデータの形式が正しくありません" },
         { status: 400 }
       )
     }
@@ -95,12 +95,12 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
       console.error("BOOKING_EDIT_ERROR - Project fetch failed:", fetchError)
       if (fetchError.code === "PGRST116") {
         return NextResponse.json(
-          { error: "Project not found" },
+          { error: "予約が見つかりません" },
           { status: 404 }
         )
       }
       return NextResponse.json(
-        { error: "Failed to check project" },
+        { error: "予約の確認に失敗しました" },
         { status: 500 }
       )
     }
@@ -132,14 +132,14 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
       // Validate dates
       if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
         return NextResponse.json(
-          { error: "Invalid date format" },
+          { error: "日付の形式が正しくありません" },
           { status: 400 }
         )
       }
       
       if (startDate >= endDate) {
         return NextResponse.json(
-          { error: "End date must be after start date" },
+          { error: "終了日は開始日より後の日付を選択してください" },
           { status: 400 }
         )
       }
@@ -202,7 +202,7 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
       console.error("BOOKING_EDIT_ERROR - PAX constraint failed: pax_total must be > 0")
       return NextResponse.json(
         { 
-          error: "PAX validation failed: Total guests must be greater than 0",
+          error: "人数入力エラー: 宿泊者数は1名以上である必要があります",
           details: `pax_total: ${paxTotal}`
         },
         { status: 400 }
@@ -213,7 +213,7 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
       console.error("BOOKING_EDIT_ERROR - PAX constraint failed: pax_total ≠ sum of breakdown")
       return NextResponse.json(
         { 
-          error: "PAX validation failed: Total guests must equal sum of breakdown",
+          error: "人数内訳エラー: 宿泊者総数と内訳の合計が一致していません",
           details: `pax_total: ${paxTotal}, breakdown sum: ${paxSum}`,
           breakdown: paxFields,
           convertedBreakdown: {
@@ -242,7 +242,7 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
           console.error(`BOOKING_EDIT_ERROR - Invalid type for ${field}: ${typeof value}`)
           return NextResponse.json(
             { 
-              error: `Invalid data type for ${field}`,
+              error: `フィールド ${field} のデータ形式が正しくありません`,
               details: `Expected number, got ${typeof value}`
             },
             { status: 400 }
@@ -266,7 +266,7 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
           console.error(`BOOKING_EDIT_ERROR - Invalid type for PAX ${field}: ${typeof value}`)
           return NextResponse.json(
             { 
-              error: `Invalid data type for PAX ${field}`,
+              error: `PAXフィールド ${field} のデータ形式が正しくありません`,
               details: `Expected number, got ${typeof value}`
             },
             { status: 400 }
@@ -296,7 +296,7 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
       })
       return NextResponse.json(
         { 
-          error: "Failed to update project",
+          error: "予約の更新に失敗しました",
           details: updateError.message,
           code: updateError.code,
           hint: updateError.hint,
@@ -319,7 +319,7 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
       if (deleteError) {
         console.error("Error deleting existing room assignments:", deleteError)
         return NextResponse.json(
-          { error: "Failed to update room assignments" },
+          { error: "部屋割り当ての更新に失敗しました" },
           { status: 500 }
         )
       }
@@ -342,7 +342,7 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
         if (roomError) {
           console.error("Error creating new room assignments:", roomError)
           return NextResponse.json(
-            { error: "Failed to update room assignments" },
+            { error: "部屋割り当ての更新に失敗しました" },
             { status: 500 }
           )
         }
@@ -365,7 +365,7 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
     if (finalFetchError) {
       console.error("Error fetching updated project:", finalFetchError)
       return NextResponse.json(
-        { error: "Project updated but failed to fetch details" },
+        { error: "予約は更新されましたが詳細の取得に失敗しました" },
         { status: 500 }
       )
     }
@@ -375,7 +375,7 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
   } catch (error) {
     console.error("Error in booking PUT:", error)
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "サーバー内部エラーが発生しました" },
       { status: 500 }
     )
   }
@@ -396,13 +396,13 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
     if (fetchError) {
       if (fetchError.code === "PGRST116") {
         return NextResponse.json(
-          { error: "Project not found" },
+          { error: "予約が見つかりません" },
           { status: 404 }
         )
       }
       console.error("Error checking project:", fetchError)
       return NextResponse.json(
-        { error: "Failed to check project" },
+        { error: "予約の確認に失敗しました" },
         { status: 500 }
       )
     }
@@ -410,7 +410,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
     // 確定済みの予約は削除不可
     if (existingProject.status === "confirmed") {
       return NextResponse.json(
-        { error: "Cannot delete confirmed booking. Please cancel first." },
+        { error: "確定済みの予約は削除できません。まずキャンセルしてください。" },
         { status: 400 }
       )
     }
@@ -424,7 +424,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
     if (roomDeleteError) {
       console.error("Error deleting room assignments:", roomDeleteError)
       return NextResponse.json(
-        { error: "Failed to delete room assignments" },
+        { error: "部屋割り当ての削除に失敗しました" },
         { status: 500 }
       )
     }
@@ -438,17 +438,17 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
     if (deleteError) {
       console.error("Error deleting project:", deleteError)
       return NextResponse.json(
-        { error: "Failed to delete project" },
+        { error: "予約の削除に失敗しました" },
         { status: 500 }
       )
     }
 
-    return NextResponse.json({ message: "Project deleted successfully" })
+    return NextResponse.json({ message: "予約が正常に削除されました" })
 
   } catch (error) {
     console.error("Error in booking DELETE:", error)
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "サーバー内部エラーが発生しました" },
       { status: 500 }
     )
   }
