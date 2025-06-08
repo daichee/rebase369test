@@ -16,7 +16,7 @@ export async function GET() {
     // 管理者権限チェック
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ error: "認証が必要です" }, { status: 401 })
     }
 
     const { data: profile } = await supabase
@@ -26,7 +26,7 @@ export async function GET() {
       .single()
 
     if (profile?.role !== "admin") {
-      return NextResponse.json({ error: "Admin access required" }, { status: 403 })
+      return NextResponse.json({ error: "管理者権限が必要です" }, { status: 403 })
     }
 
     // 現在の設定を取得
@@ -37,7 +37,7 @@ export async function GET() {
   } catch (error) {
     console.error("Error fetching pricing config:", error)
     return NextResponse.json(
-      { error: "Failed to fetch pricing configuration" },
+      { error: "料金設定の取得に失敗しました" },
       { status: 500 }
     )
   }
@@ -51,7 +51,7 @@ export async function PUT(request: NextRequest) {
     // 管理者権限チェック
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ error: "認証が必要です" }, { status: 401 })
     }
 
     const { data: profile } = await supabase
@@ -61,7 +61,7 @@ export async function PUT(request: NextRequest) {
       .single()
 
     if (profile?.role !== "admin") {
-      return NextResponse.json({ error: "Admin access required" }, { status: 403 })
+      return NextResponse.json({ error: "管理者権限が必要です" }, { status: 403 })
     }
 
     const body = await request.json()
@@ -70,7 +70,7 @@ export async function PUT(request: NextRequest) {
     // バリデーション
     if (!PriceConfigService.validateConfig(config)) {
       return NextResponse.json(
-        { error: "Invalid configuration provided" },
+        { error: "無効な設定が指定されました" },
         { status: 400 }
       )
     }
@@ -83,13 +83,13 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({ 
       success: true, 
-      message: "Pricing configuration updated successfully" 
+      message: "料金設定が正常に更新されました" 
     })
 
   } catch (error) {
     console.error("Error updating pricing config:", error)
     return NextResponse.json(
-      { error: "Failed to update pricing configuration" },
+      { error: "料金設定の更新に失敗しました" },
       { status: 500 }
     )
   }

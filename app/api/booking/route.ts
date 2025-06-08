@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
     if (error) {
       console.error("Error fetching projects:", error)
       return NextResponse.json(
-        { error: "Failed to fetch projects" },
+        { error: "予約一覧の取得に失敗しました" },
         { status: 500 }
       )
     }
@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("Error in booking GET:", error)
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "サーバー内部エラーが発生しました" },
       { status: 500 }
     )
   }
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
     for (const field of requiredFields) {
       if (!body[field]) {
         return NextResponse.json(
-          { error: `Missing required field: ${field}` },
+          { error: `必須フィールドが不足しています: ${field}` },
           { status: 400 }
         )
       }
@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
     if (projectError) {
       console.error("Error creating project:", projectError)
       return NextResponse.json(
-        { error: "Failed to create project" },
+        { error: "予約の作成に失敗しました" },
         { status: 500 }
       )
     }
@@ -201,7 +201,7 @@ export async function POST(request: NextRequest) {
         // プロジェクトをロールバック
         await supabase.from("projects").delete().eq("id", project.id)
         return NextResponse.json(
-          { error: "Failed to create room assignments" },
+          { error: "部屋割り当ての作成に失敗しました" },
           { status: 500 }
         )
       }
@@ -223,7 +223,7 @@ export async function POST(request: NextRequest) {
     if (fetchError) {
       console.error("Error fetching created project:", fetchError)
       return NextResponse.json(
-        { error: "Project created but failed to fetch details" },
+        { error: "予約は作成されましたが詳細の取得に失敗しました" },
         { status: 500 }
       )
     }
@@ -233,7 +233,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Error in booking POST:", error)
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "サーバー内部エラーが発生しました" },
       { status: 500 }
     )
   }
