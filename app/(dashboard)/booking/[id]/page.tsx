@@ -63,6 +63,25 @@ export default function BookingDetailPage() {
     try {
       setIsSaving(true)
       
+      // Validate PAX constraint before sending to server
+      const paxTotal = editForm.pax_total || 0
+      const paxSum = (editForm.pax_adults || 0) + 
+                    (editForm.pax_adult_leaders || 0) + 
+                    (editForm.pax_students || 0) + 
+                    (editForm.pax_children || 0) + 
+                    (editForm.pax_infants || 0) + 
+                    (editForm.pax_babies || 0)
+      
+      if (paxTotal <= 0) {
+        alert('宿泊人数は1名以上である必要があります')
+        return
+      }
+      
+      if (paxTotal !== paxSum) {
+        alert(`人数内訳の合計(${paxSum}名)が宿泊人数(${paxTotal}名)と一致していません。内訳を確認してください。`)
+        return
+      }
+      
       // Clean the data to only include database-valid updatable fields
       const updateData: Record<string, any> = {}
       
@@ -278,12 +297,39 @@ export default function BookingDetailPage() {
                     <div className="space-y-2">
                       <Label>宿泊人数</Label>
                       {isEditing ? (
-                        <Input
-                          type="number"
-                          min="1"
-                          value={editForm.pax_total || 0}
-                          onChange={(e) => setEditForm({ ...editForm, pax_total: Number.parseInt(e.target.value) || 0 })}
-                        />
+                        <div className="space-y-2">
+                          <Input
+                            type="number"
+                            min="1"
+                            value={editForm.pax_total || 0}
+                            onChange={(e) => {
+                              const newTotal = Number.parseInt(e.target.value) || 0
+                              // When pax_total changes, adjust the breakdown to maintain constraint
+                              // Keep existing breakdown proportions but adjust to match new total
+                              const currentSum = (editForm.pax_adults || 0) + 
+                                                (editForm.pax_adult_leaders || 0) + 
+                                                (editForm.pax_students || 0) + 
+                                                (editForm.pax_children || 0) + 
+                                                (editForm.pax_infants || 0) + 
+                                                (editForm.pax_babies || 0)
+                              
+                              if (currentSum > 0 && newTotal !== currentSum) {
+                                // Simple adjustment: put the difference in students field
+                                const difference = newTotal - currentSum
+                                setEditForm({ 
+                                  ...editForm, 
+                                  pax_total: newTotal,
+                                  pax_students: Math.max(0, (editForm.pax_students || 0) + difference)
+                                })
+                              } else {
+                                setEditForm({ ...editForm, pax_total: newTotal })
+                              }
+                            }}
+                          />
+                          <div className="text-xs text-muted-foreground">
+                            内訳合計: {((editForm.pax_adults || 0) + (editForm.pax_adult_leaders || 0) + (editForm.pax_students || 0) + (editForm.pax_children || 0) + (editForm.pax_infants || 0) + (editForm.pax_babies || 0))}名
+                          </div>
+                        </div>
                       ) : (
                         <p className="text-sm">{booking.pax_total}名</p>
                       )}
@@ -310,6 +356,72 @@ export default function BookingDetailPage() {
                       )}
                     </div>
                   </div>
+
+                  {/* PAX Breakdown Details (only shown in edit mode) */}
+                  {isEditing && (
+                    <div className="space-y-2">
+                      <Label>人数内訳詳細</Label>
+                      <div className="grid grid-cols-2 gap-4 p-3 border rounded-lg bg-muted/20">
+                        <div className="space-y-2">
+                          <Label className="text-xs">大人</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            value={editForm.pax_adults || 0}
+                            onChange={(e) => setEditForm({ ...editForm, pax_adults: Number.parseInt(e.target.value) || 0 })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-xs">引率者</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            value={editForm.pax_adult_leaders || 0}
+                            onChange={(e) => setEditForm({ ...editForm, pax_adult_leaders: Number.parseInt(e.target.value) || 0 })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-xs">学生</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            value={editForm.pax_students || 0}
+                            onChange={(e) => setEditForm({ ...editForm, pax_students: Number.parseInt(e.target.value) || 0 })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-xs">子供</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            value={editForm.pax_children || 0}
+                            onChange={(e) => setEditForm({ ...editForm, pax_children: Number.parseInt(e.target.value) || 0 })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-xs">幼児</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            value={editForm.pax_infants || 0}
+                            onChange={(e) => setEditForm({ ...editForm, pax_infants: Number.parseInt(e.target.value) || 0 })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-xs">乳児</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            value={editForm.pax_babies || 0}
+                            onChange={(e) => setEditForm({ ...editForm, pax_babies: Number.parseInt(e.target.value) || 0 })}
+                          />
+                        </div>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        ※ 内訳合計が宿泊人数と一致する必要があります
+                      </div>
+                    </div>
+                  )}
 
                   <div className="space-y-2">
                     <Label>割り当て部屋</Label>

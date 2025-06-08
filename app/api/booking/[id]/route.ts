@@ -74,6 +74,15 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
     console.log("- Booking ID:", id)
     console.log("- Request body keys:", Object.keys(body))
     console.log("- Request body:", JSON.stringify(body, null, 2))
+    console.log("- Request body PAX values:", {
+      pax_total: body.pax_total,
+      pax_adults: body.pax_adults,
+      pax_adult_leaders: body.pax_adult_leaders,
+      pax_students: body.pax_students,
+      pax_children: body.pax_children,
+      pax_infants: body.pax_infants,
+      pax_babies: body.pax_babies
+    })
 
     // プロジェクトの存在確認
     const { data: existingProject, error: fetchError } = await supabase
@@ -153,45 +162,74 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
     }
 
     console.log("BOOKING_EDIT_DEBUG - PAX validation fields:", paxFields)
+    console.log("BOOKING_EDIT_DEBUG - PAX field types:", {
+      pax_total: typeof paxFields.pax_total,
+      pax_adults: typeof paxFields.pax_adults,
+      pax_adult_leaders: typeof paxFields.pax_adult_leaders,
+      pax_students: typeof paxFields.pax_students,
+      pax_children: typeof paxFields.pax_children,
+      pax_infants: typeof paxFields.pax_infants,
+      pax_babies: typeof paxFields.pax_babies
+    })
 
-    // Calculate PAX sum for validation
-    const paxSum = (paxFields.pax_adults || 0) + 
-                   (paxFields.pax_adult_leaders || 0) + 
-                   (paxFields.pax_students || 0) + 
-                   (paxFields.pax_children || 0) + 
-                   (paxFields.pax_infants || 0) + 
-                   (paxFields.pax_babies || 0)
+    // Calculate PAX sum for validation - handle data types carefully
+    const paxSum = Number(paxFields.pax_adults || 0) + 
+                   Number(paxFields.pax_adult_leaders || 0) + 
+                   Number(paxFields.pax_students || 0) + 
+                   Number(paxFields.pax_children || 0) + 
+                   Number(paxFields.pax_infants || 0) + 
+                   Number(paxFields.pax_babies || 0)
+
+    const paxTotal = Number(paxFields.pax_total)
 
     console.log("BOOKING_EDIT_DEBUG - PAX calculation:")
-    console.log("- pax_total:", paxFields.pax_total)
-    console.log("- calculated sum:", paxSum)
-    console.log("- constraint validation:", paxFields.pax_total === paxSum)
+    console.log("- pax_total (raw):", paxFields.pax_total, typeof paxFields.pax_total)
+    console.log("- pax_total (converted):", paxTotal, typeof paxTotal)
+    console.log("- calculated sum:", paxSum, typeof paxSum)
+    console.log("- constraint validation (===):", paxTotal === paxSum)
+    console.log("- constraint validation (==):", paxTotal == paxSum)
+    console.log("- individual PAX values (converted):", {
+      adults: Number(paxFields.pax_adults || 0),
+      adult_leaders: Number(paxFields.pax_adult_leaders || 0),
+      students: Number(paxFields.pax_students || 0),
+      children: Number(paxFields.pax_children || 0),
+      infants: Number(paxFields.pax_infants || 0),
+      babies: Number(paxFields.pax_babies || 0)
+    })
 
     // Validate PAX constraint (must match database constraint)
-    if (paxFields.pax_total <= 0) {
+    if (paxTotal <= 0) {
       console.error("BOOKING_EDIT_ERROR - PAX constraint failed: pax_total must be > 0")
       return NextResponse.json(
         { 
           error: "PAX validation failed: Total guests must be greater than 0",
-          details: `pax_total: ${paxFields.pax_total}`
+          details: `pax_total: ${paxTotal}`
         },
         { status: 400 }
       )
     }
 
-    if (paxFields.pax_total !== paxSum) {
+    if (paxTotal !== paxSum) {
       console.error("BOOKING_EDIT_ERROR - PAX constraint failed: pax_total ≠ sum of breakdown")
       return NextResponse.json(
         { 
           error: "PAX validation failed: Total guests must equal sum of breakdown",
-          details: `pax_total: ${paxFields.pax_total}, breakdown sum: ${paxSum}`,
-          breakdown: paxFields
+          details: `pax_total: ${paxTotal}, breakdown sum: ${paxSum}`,
+          breakdown: paxFields,
+          convertedBreakdown: {
+            adults: Number(paxFields.pax_adults || 0),
+            adult_leaders: Number(paxFields.pax_adult_leaders || 0),
+            students: Number(paxFields.pax_students || 0),
+            children: Number(paxFields.pax_children || 0),
+            infants: Number(paxFields.pax_infants || 0),
+            babies: Number(paxFields.pax_babies || 0)
+          }
         },
         { status: 400 }
       )
     }
 
-    // Data type validation for numeric fields
+    // Data type validation and conversion for numeric fields
     const numericFields = ['room_amount', 'pax_amount', 'addon_amount', 'subtotal_amount', 'total_amount']
     for (const field of numericFields) {
       if (updateData[field as keyof ProjectUpdate] !== undefined) {
@@ -205,6 +243,30 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
           return NextResponse.json(
             { 
               error: `Invalid data type for ${field}`,
+              details: `Expected number, got ${typeof value}`
+            },
+            { status: 400 }
+          )
+        }
+      }
+    }
+
+    // Convert PAX fields to integers for database consistency
+    const paxFieldsToConvert = ['pax_total', 'pax_adults', 'pax_adult_leaders', 'pax_students', 'pax_children', 'pax_infants', 'pax_babies']
+    for (const field of paxFieldsToConvert) {
+      if (updateData[field as keyof ProjectUpdate] !== undefined) {
+        const value = updateData[field as keyof ProjectUpdate]
+        if (typeof value === 'string' && !isNaN(Number(value))) {
+          updateData[field as keyof ProjectUpdate] = parseInt(value, 10)
+          console.log(`BOOKING_EDIT_DEBUG - Converted PAX ${field} from string to integer: ${value}`)
+        } else if (typeof value === 'number') {
+          updateData[field as keyof ProjectUpdate] = Math.round(value)
+          console.log(`BOOKING_EDIT_DEBUG - Rounded PAX ${field} to integer: ${value}`)
+        } else if (value !== null && value !== undefined) {
+          console.error(`BOOKING_EDIT_ERROR - Invalid type for PAX ${field}: ${typeof value}`)
+          return NextResponse.json(
+            { 
+              error: `Invalid data type for PAX ${field}`,
               details: `Expected number, got ${typeof value}`
             },
             { status: 400 }
