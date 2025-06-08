@@ -1,51 +1,75 @@
 -- Pricing System Unification Migration
 -- Phase 4: Database schema extension for unified pricing system
 
--- 料金計算詳細保存テーブル
-CREATE TABLE booking_price_details (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-  booking_id uuid REFERENCES projects(id) ON DELETE CASCADE,
-  calculation_timestamp timestamptz DEFAULT now(),
-  
-  -- 計算入力パラメータ
-  rooms_used jsonb NOT NULL,           -- 使用部屋詳細
-  guest_breakdown jsonb NOT NULL,      -- 人数内訳
-  date_range jsonb NOT NULL,           -- 日程・泊数
-  addons_selected jsonb DEFAULT '[]',  -- 選択オプション
-  season_config jsonb NOT NULL,       -- 計算時のシーズン設定
-  
-  -- 計算結果詳細  
-  room_amount decimal(10,2) NOT NULL,
-  guest_amount decimal(10,2) NOT NULL,
-  addon_amount decimal(10,2) NOT NULL,
-  subtotal decimal(10,2) NOT NULL,
-  total_amount decimal(10,2) NOT NULL,
-  daily_breakdown jsonb NOT NULL,      -- 日別内訳
-  calculation_method text DEFAULT 'unified_calculator',
-  
-  -- メタデータ
-  created_at timestamptz DEFAULT now(),
-  created_by uuid REFERENCES auth.users(id)
-);
+-- 料金計算詳細保存テーブル（安全チェック付き）
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT FROM information_schema.tables 
+                   WHERE table_schema = 'public' 
+                   AND table_name = 'booking_price_details') THEN
+        
+        CREATE TABLE booking_price_details (
+          id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+          booking_id uuid REFERENCES projects(id) ON DELETE CASCADE,
+          calculation_timestamp timestamptz DEFAULT now(),
+          
+          -- 計算入力パラメータ
+          rooms_used jsonb NOT NULL,           -- 使用部屋詳細
+          guest_breakdown jsonb NOT NULL,      -- 人数内訳
+          date_range jsonb NOT NULL,           -- 日程・泊数
+          addons_selected jsonb DEFAULT '[]',  -- 選択オプション
+          season_config jsonb NOT NULL,       -- 計算時のシーズン設定
+          
+          -- 計算結果詳細  
+          room_amount decimal(10,2) NOT NULL,
+          guest_amount decimal(10,2) NOT NULL,
+          addon_amount decimal(10,2) NOT NULL,
+          subtotal decimal(10,2) NOT NULL,
+          total_amount decimal(10,2) NOT NULL,
+          daily_breakdown jsonb NOT NULL,      -- 日別内訳
+          calculation_method text DEFAULT 'unified_calculator',
+          
+          -- メタデータ
+          created_at timestamptz DEFAULT now(),
+          created_by uuid REFERENCES auth.users(id)
+        );
+        
+        RAISE NOTICE 'Created booking_price_details table';
+    ELSE
+        RAISE NOTICE 'booking_price_details table already exists';
+    END IF;
+END$$;
 
--- 動的料金設定管理テーブル  
-CREATE TABLE pricing_config (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-  config_name text UNIQUE NOT NULL,
-  config_data jsonb NOT NULL,          -- 料金設定JSON
-  is_active boolean DEFAULT false,     -- アクティブ設定フラグ
-  valid_from timestamptz DEFAULT now(),
-  valid_until timestamptz,
-  created_at timestamptz DEFAULT now(),
-  updated_at timestamptz DEFAULT now(),
-  created_by uuid REFERENCES auth.users(id)
-);
+-- 動的料金設定管理テーブル（安全チェック付き）
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT FROM information_schema.tables 
+                   WHERE table_schema = 'public' 
+                   AND table_name = 'pricing_config') THEN
+        
+        CREATE TABLE pricing_config (
+          id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+          config_name text UNIQUE NOT NULL,
+          config_data jsonb NOT NULL,          -- 料金設定JSON
+          is_active boolean DEFAULT false,     -- アクティブ設定フラグ
+          valid_from timestamptz DEFAULT now(),
+          valid_until timestamptz,
+          created_at timestamptz DEFAULT now(),
+          updated_at timestamptz DEFAULT now(),
+          created_by uuid REFERENCES auth.users(id)
+        );
+        
+        RAISE NOTICE 'Created pricing_config table';
+    ELSE
+        RAISE NOTICE 'pricing_config table already exists';
+    END IF;
+END$$;
 
--- インデックス作成
-CREATE INDEX idx_booking_price_details_booking ON booking_price_details(booking_id);
-CREATE INDEX idx_booking_price_details_created_at ON booking_price_details(created_at);
-CREATE INDEX idx_pricing_config_active ON pricing_config(is_active, valid_from, valid_until);
-CREATE INDEX idx_pricing_config_name ON pricing_config(config_name);
+-- インデックス作成（安全チェック付き）
+CREATE INDEX IF NOT EXISTS idx_booking_price_details_booking ON booking_price_details(booking_id);
+CREATE INDEX IF NOT EXISTS idx_booking_price_details_created_at ON booking_price_details(created_at);
+CREATE INDEX IF NOT EXISTS idx_pricing_config_active ON pricing_config(is_active, valid_from, valid_until);
+CREATE INDEX IF NOT EXISTS idx_pricing_config_name ON pricing_config(config_name);
 
 -- RLS（Row Level Security）設定
 ALTER TABLE booking_price_details ENABLE ROW LEVEL SECURITY;
