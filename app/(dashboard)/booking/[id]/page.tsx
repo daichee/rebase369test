@@ -111,14 +111,8 @@ export default function BookingDetailPage() {
         }
       })
       
-      // Handle room data separately if project_rooms exist
-      if (editForm.project_rooms && Array.isArray(editForm.project_rooms)) {
-        updateData.rooms = editForm.project_rooms.map(pr => ({
-          room_id: pr.room_id,
-          assigned_pax: pr.assigned_pax,
-          room_rate: pr.room_rate
-        }))
-      }
+      // Note: Room assignment changes are not supported in edit mode
+      // Users should delete and recreate the booking to change room assignments
       
       const response = await fetch(`/api/booking/${bookingId}`, {
         method: 'PUT',
@@ -479,6 +473,11 @@ export default function BookingDetailPage() {
                         <p className="text-muted-foreground">部屋が割り当てられていません</p>
                       )}
                     </div>
+                    {isEditing && booking.project_rooms && booking.project_rooms.length > 0 && (
+                      <div className="text-xs text-amber-600 bg-amber-50 p-2 rounded border">
+                        💡 部屋の割り当てを変更したい場合は、この予約を一旦削除して新規作成してください。
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-2">
