@@ -446,7 +446,7 @@ export function SimpleBookingWizard({ onComplete, initialData }: SimpleBookingWi
 
       toast({
         title: "✅ 予約が完了しました",
-        description: `予約ID: ${createdBooking.id} - 確認メールをお送りしました`,
+        description: `予約ID: ${createdBooking.id}`,
         variant: "default"
       })
 

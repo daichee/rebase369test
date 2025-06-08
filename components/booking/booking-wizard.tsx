@@ -384,7 +384,7 @@ export function BookingWizard({ onComplete, initialData }: BookingWizardProps) {
 
       toast({
         title: "✅ 予約が完了しました",
-        description: "確認メールをお送りしました",
+        description: "予約内容を確認してください",
         variant: "default"
       })
 
