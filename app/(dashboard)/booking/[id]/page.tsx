@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Edit, Save, X, Calendar, User, CreditCard, Trash2 } from "lucide-react"
 import { EstimateDisplay } from "@/components/booking/estimate-display"
+import { useToast } from "@/hooks/use-toast"
 import type { Database } from "@/lib/supabase/types"
 
 type Project = Database["public"]["Tables"]["projects"]["Row"] & {
@@ -23,6 +24,7 @@ export default function BookingDetailPage() {
   const params = useParams()
   const router = useRouter()
   const bookingId = params.id as string
+  const { toast } = useToast()
 
   const [booking, setBooking] = useState<Project | null>(null)
   const [isEditing, setIsEditing] = useState(false)
@@ -73,12 +75,20 @@ export default function BookingDetailPage() {
                     (editForm.pax_babies || 0)
       
       if (paxTotal <= 0) {
-        alert('宿泊人数は1名以上である必要があります')
+        toast({
+          title: "入力エラー",
+          description: "宿泊人数は1名以上である必要があります",
+          variant: "destructive"
+        })
         return
       }
       
       if (paxTotal !== paxSum) {
-        alert(`人数内訳の合計(${paxSum}名)が宿泊人数(${paxTotal}名)と一致していません。内訳を確認してください。`)
+        toast({
+          title: "人数内訳エラー",
+          description: `人数内訳の合計(${paxSum}名)が宿泊人数(${paxTotal}名)と一致していません。内訳を確認してください。`,
+          variant: "destructive"
+        })
         return
       }
       
@@ -119,16 +129,40 @@ export default function BookingDetailPage() {
       })
       
       if (!response.ok) {
-        throw new Error('予約の更新に失敗しました')
+        // Parse error response for more specific error messages
+        let errorMessage = '予約の更新に失敗しました'
+        try {
+          const errorData = await response.json()
+          if (errorData.error) {
+            errorMessage = errorData.error
+          }
+          if (errorData.details) {
+            errorMessage += ` (${errorData.details})`
+          }
+        } catch {
+          // If we can't parse the error response, use default message
+        }
+        throw new Error(errorMessage)
       }
       
       const updatedBooking = await response.json()
       setBooking(updatedBooking)
       setEditForm(updatedBooking)
       setIsEditing(false)
+      
+      // Show success notification
+      toast({
+        title: "保存完了",
+        description: "予約情報が正常に更新されました",
+        variant: "default"
+      })
     } catch (err) {
       console.error('Error updating booking:', err)
-      alert(err instanceof Error ? err.message : '予約の更新に失敗しました')
+      toast({
+        title: "保存エラー",
+        description: err instanceof Error ? err.message : '予約の更新に失敗しました',
+        variant: "destructive"
+      })
     } finally {
       setIsSaving(false)
     }
@@ -154,10 +188,19 @@ export default function BookingDetailPage() {
         throw new Error(errorData.error || '予約の削除に失敗しました')
       }
       
+      toast({
+        title: "削除完了",
+        description: "予約が正常に削除されました",
+        variant: "default"
+      })
       router.push("/booking")
     } catch (err) {
       console.error('Error deleting booking:', err)
-      alert(err instanceof Error ? err.message : '予約の削除に失敗しました')
+      toast({
+        title: "削除エラー",
+        description: err instanceof Error ? err.message : '予約の削除に失敗しました',
+        variant: "destructive"
+      })
     }
   }
 
