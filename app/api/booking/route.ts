@@ -87,6 +87,46 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // 部屋割り当て必須バリデーション
+    if (!body.rooms || !Array.isArray(body.rooms) || body.rooms.length === 0) {
+      return NextResponse.json(
+        { error: "部屋の割り当てが必要です。宿泊には最低1部屋の割り当てが必要です。" },
+        { status: 400 }
+      )
+    }
+
+    // 部屋データの構造バリデーション
+    for (let i = 0; i < body.rooms.length; i++) {
+      const room = body.rooms[i]
+      if (!room.room_id || !room.assigned_pax || !room.room_rate) {
+        return NextResponse.json(
+          { error: `部屋データが不正です (部屋 ${i + 1}): room_id, assigned_pax, room_rateが必要です` },
+          { status: 400 }
+        )
+      }
+      if (typeof room.assigned_pax !== 'number' || room.assigned_pax <= 0) {
+        return NextResponse.json(
+          { error: `部屋割り当て人数が不正です (部屋 ${i + 1}): 1名以上である必要があります` },
+          { status: 400 }
+        )
+      }
+      if (typeof room.room_rate !== 'number' || room.room_rate < 0) {
+        return NextResponse.json(
+          { error: `部屋料金が不正です (部屋 ${i + 1}): 0以上の数値である必要があります` },
+          { status: 400 }
+        )
+      }
+    }
+
+    // 部屋割り当て人数の合計チェック
+    const totalAssignedPax = body.rooms.reduce((sum: number, room: any) => sum + room.assigned_pax, 0)
+    if (totalAssignedPax !== body.pax_total) {
+      return NextResponse.json(
+        { error: `部屋割り当て人数の合計 (${totalAssignedPax}名) が宿泊者総数 (${body.pax_total}名) と一致しません` },
+        { status: 400 }
+      )
+    }
+
     // 宿泊日数計算
     const nights = calculateNights(body.start_date, body.end_date)
 
@@ -182,29 +222,43 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 部屋割り当て処理
-    if (body.rooms && Array.isArray(body.rooms)) {
-      const roomData = body.rooms.map((room: any) => ({
-        project_id: project.id,
-        room_id: room.room_id,
-        assigned_pax: room.assigned_pax,
-        room_rate: room.room_rate,
-        nights: nights,
-      }))
+    // 部屋割り当て処理 (必須)
+    const roomData = body.rooms.map((room: any) => ({
+      project_id: project.id,
+      room_id: room.room_id,
+      assigned_pax: room.assigned_pax,
+      room_rate: room.room_rate,
+      nights: nights,
+    }))
 
-      const { error: roomError } = await supabase
-        .from("project_rooms")
-        .insert(roomData)
+    const { error: roomError } = await supabase
+      .from("project_rooms")
+      .insert(roomData)
 
-      if (roomError) {
-        console.error("Error creating room assignments:", roomError)
-        // プロジェクトをロールバック
-        await supabase.from("projects").delete().eq("id", project.id)
-        return NextResponse.json(
-          { error: "部屋割り当ての作成に失敗しました" },
-          { status: 500 }
-        )
+    if (roomError) {
+      console.error("Error creating room assignments:", roomError)
+      
+      // プロジェクトをロールバック（安全な処理）
+      try {
+        const { error: rollbackError } = await supabase
+          .from("projects")
+          .delete()
+          .eq("id", project.id)
+        
+        if (rollbackError) {
+          console.error("Critical: Failed to rollback project after room assignment failure:", rollbackError)
+          // プロジェクトが残存する可能性があることをログに記録
+          console.error("Orphaned project ID:", project.id)
+        }
+      } catch (rollbackException) {
+        console.error("Critical: Exception during project rollback:", rollbackException)
+        console.error("Orphaned project ID:", project.id)
       }
+      
+      return NextResponse.json(
+        { error: "部屋割り当ての作成に失敗しました。予約は作成されませんでした。" },
+        { status: 500 }
+      )
     }
 
     // 作成されたプロジェクトと部屋情報を取得

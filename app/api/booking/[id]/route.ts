@@ -310,6 +310,46 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
 
     // 部屋割り当て更新（部屋情報が含まれている場合）
     if (body.rooms && Array.isArray(body.rooms)) {
+      // 部屋データの構造バリデーション（更新時）
+      if (body.rooms.length === 0) {
+        return NextResponse.json(
+          { error: "部屋の割り当てをすべて削除することはできません。宿泊には最低1部屋の割り当てが必要です。" },
+          { status: 400 }
+        )
+      }
+
+      for (let i = 0; i < body.rooms.length; i++) {
+        const room = body.rooms[i]
+        if (!room.room_id || !room.assigned_pax || !room.room_rate) {
+          return NextResponse.json(
+            { error: `部屋データが不正です (部屋 ${i + 1}): room_id, assigned_pax, room_rateが必要です` },
+            { status: 400 }
+          )
+        }
+        if (typeof room.assigned_pax !== 'number' || room.assigned_pax <= 0) {
+          return NextResponse.json(
+            { error: `部屋割り当て人数が不正です (部屋 ${i + 1}): 1名以上である必要があります` },
+            { status: 400 }
+          )
+        }
+        if (typeof room.room_rate !== 'number' || room.room_rate < 0) {
+          return NextResponse.json(
+            { error: `部屋料金が不正です (部屋 ${i + 1}): 0以上の数値である必要があります` },
+            { status: 400 }
+          )
+        }
+      }
+
+      // 部屋割り当て人数の合計チェック（更新されたpax_totalと比較）
+      const finalPaxTotal = updateData.pax_total ?? existingProject.pax_total
+      const totalAssignedPax = body.rooms.reduce((sum: number, room: any) => sum + room.assigned_pax, 0)
+      if (totalAssignedPax !== finalPaxTotal) {
+        return NextResponse.json(
+          { error: `部屋割り当て人数の合計 (${totalAssignedPax}名) が宿泊者総数 (${finalPaxTotal}名) と一致しません` },
+          { status: 400 }
+        )
+      }
+
       // 既存の部屋割り当てを削除
       const { error: deleteError } = await supabase
         .from("project_rooms")
@@ -325,27 +365,25 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
       }
 
       // 新しい部屋割り当てを追加
-      if (body.rooms.length > 0) {
-        const roomData = body.rooms.map((room: any) => ({
-          project_id: id,
-          room_id: room.room_id,
-          assigned_pax: room.assigned_pax,
-          room_rate: room.room_rate,
-          nights: updatedProject.nights, // 更新されたプロジェクトから取得
-          amount: room.room_rate * updatedProject.nights,
-        }))
+      const roomData = body.rooms.map((room: any) => ({
+        project_id: id,
+        room_id: room.room_id,
+        assigned_pax: room.assigned_pax,
+        room_rate: room.room_rate,
+        nights: updatedProject.nights, // 更新されたプロジェクトから取得
+        amount: room.room_rate * updatedProject.nights,
+      }))
 
-        const { error: roomError } = await supabase
-          .from("project_rooms")
-          .insert(roomData)
+      const { error: roomError } = await supabase
+        .from("project_rooms")
+        .insert(roomData)
 
-        if (roomError) {
-          console.error("Error creating new room assignments:", roomError)
-          return NextResponse.json(
-            { error: "部屋割り当ての更新に失敗しました" },
-            { status: 500 }
-          )
-        }
+      if (roomError) {
+        console.error("Error creating new room assignments:", roomError)
+        return NextResponse.json(
+          { error: "部屋割り当ての更新に失敗しました" },
+          { status: 500 }
+        )
       }
     }
 
