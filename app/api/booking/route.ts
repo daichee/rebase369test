@@ -130,40 +130,51 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 料金計算結果を保存
+    // 料金計算結果を保存 (オプション - テーブルが存在しない場合はスキップ)
     if (body.priceBreakdown) {
       try {
-        const { error: priceError } = await supabase
+        // まずテーブルの存在確認
+        const { error: tableCheckError } = await supabase
           .from("booking_price_details")
-          .insert({
-            booking_id: project.id,
-            rooms_used: body.rooms || [],
-            guest_breakdown: {
-              adult: body.adult || 0,
-              student: body.student || 0,
-              child: body.child || 0,
-              infant: body.infant || 0,
-              baby: body.baby || 0
-            },
-            date_range: {
-              startDate: body.start_date,
-              endDate: body.end_date,
-              nights: nights
-            },
-            addons_selected: body.addons || [],
-            season_config: body.priceBreakdown.seasonConfig || {},
-            room_amount: body.priceBreakdown.roomAmount || 0,
-            guest_amount: body.priceBreakdown.guestAmount || 0,
-            addon_amount: body.priceBreakdown.addonAmount || 0,
-            subtotal: body.priceBreakdown.subtotal || 0,
-            total_amount: body.priceBreakdown.total || 0,
-            daily_breakdown: body.priceBreakdown.dailyBreakdown || [],
-            calculation_method: 'unified_calculator'
-          })
+          .select("id")
+          .limit(1)
 
-        if (priceError) {
-          console.warn("Failed to save price details:", priceError)
-          // 非致命的エラーとして継続
+        if (!tableCheckError) {
+          // テーブルが存在する場合のみ保存を試行
+          const { error: priceError } = await supabase
+            .from("booking_price_details")
+            .insert({
+              booking_id: project.id,
+              rooms_used: body.rooms || [],
+              guest_breakdown: {
+                adult: body.adult || 0,
+                student: body.student || 0,
+                child: body.child || 0,
+                infant: body.infant || 0,
+                baby: body.baby || 0
+              },
+              date_range: {
+                startDate: body.start_date,
+                endDate: body.end_date,
+                nights: nights
+              },
+              addons_selected: body.addons || [],
+              season_config: body.priceBreakdown.seasonConfig || {},
+              room_amount: body.priceBreakdown.roomAmount || 0,
+              guest_amount: body.priceBreakdown.guestAmount || 0,
+              addon_amount: body.priceBreakdown.addonAmount || 0,
+              subtotal: body.priceBreakdown.subtotal || 0,
+              total_amount: body.priceBreakdown.total || 0,
+              daily_breakdown: body.priceBreakdown.dailyBreakdown || [],
+              calculation_method: 'unified_calculator'
+            })
+
+          if (priceError) {
+            console.warn("Failed to save price details:", priceError)
+            // 非致命的エラーとして継続
+          }
+        } else {
+          console.info("booking_price_details table not found, skipping price details save")
         }
       } catch (error) {
         console.warn("Error saving price details:", error)
