@@ -75,7 +75,8 @@ CREATE INDEX IF NOT EXISTS idx_pricing_config_name ON pricing_config(config_name
 ALTER TABLE booking_price_details ENABLE ROW LEVEL SECURITY;
 ALTER TABLE pricing_config ENABLE ROW LEVEL SECURITY;
 
--- booking_price_details のRLSポリシー
+-- booking_price_details のRLSポリシー（安全チェック付き）
+DROP POLICY IF EXISTS "Users can view booking price details they own" ON booking_price_details;
 CREATE POLICY "Users can view booking price details they own" ON booking_price_details
   FOR SELECT USING (
     booking_id IN (
@@ -83,6 +84,7 @@ CREATE POLICY "Users can view booking price details they own" ON booking_price_d
     )
   );
 
+DROP POLICY IF EXISTS "Users can insert booking price details for their bookings" ON booking_price_details;
 CREATE POLICY "Users can insert booking price details for their bookings" ON booking_price_details
   FOR INSERT WITH CHECK (
     booking_id IN (
@@ -91,15 +93,18 @@ CREATE POLICY "Users can insert booking price details for their bookings" ON boo
     created_by = auth.uid()
   );
 
+DROP POLICY IF EXISTS "Admins can view all booking price details" ON booking_price_details;
 CREATE POLICY "Admins can view all booking price details" ON booking_price_details
   FOR SELECT USING (
     auth.uid() IS NOT NULL
   );
 
--- pricing_config のRLSポリシー
+-- pricing_config のRLSポリシー（安全チェック付き）
+DROP POLICY IF EXISTS "All users can view active pricing config" ON pricing_config;
 CREATE POLICY "All users can view active pricing config" ON pricing_config
   FOR SELECT USING (is_active = true);
 
+DROP POLICY IF EXISTS "Admins can manage pricing config" ON pricing_config;
 CREATE POLICY "Admins can manage pricing config" ON pricing_config
   FOR ALL USING (
     auth.uid() IS NOT NULL
