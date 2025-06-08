@@ -153,11 +153,40 @@ END;
 $$;
 
 -- 3. Fix RLS policies with incorrect field references
--- First, drop the problematic policies if they exist
-DROP POLICY IF EXISTS "Users can view booking price details they own" ON booking_price_details;
-DROP POLICY IF EXISTS "Users can insert booking price details for their bookings" ON booking_price_details;
-DROP POLICY IF EXISTS "Admins can view all booking price details" ON booking_price_details;
-DROP POLICY IF EXISTS "Admins can manage pricing config" ON pricing_config;
+-- Safely drop problematic policies (some may fail due to broken references, which is expected)
+DO $$
+BEGIN
+    -- Attempt to drop each policy, ignore errors if they don't exist or have broken references
+    BEGIN
+        DROP POLICY IF EXISTS "Users can view booking price details they own" ON booking_price_details;
+    EXCEPTION WHEN OTHERS THEN
+        RAISE NOTICE 'Could not drop policy "Users can view booking price details they own": %', SQLERRM;
+    END;
+    
+    BEGIN
+        DROP POLICY IF EXISTS "Users can insert booking price details for their bookings" ON booking_price_details;
+    EXCEPTION WHEN OTHERS THEN
+        RAISE NOTICE 'Could not drop policy "Users can insert booking price details for their bookings": %', SQLERRM;
+    END;
+    
+    BEGIN
+        DROP POLICY IF EXISTS "Admins can view all booking price details" ON booking_price_details;
+    EXCEPTION WHEN OTHERS THEN
+        RAISE NOTICE 'Could not drop policy "Admins can view all booking price details": %', SQLERRM;
+    END;
+    
+    BEGIN
+        DROP POLICY IF EXISTS "All users can view active pricing config" ON pricing_config;
+    EXCEPTION WHEN OTHERS THEN
+        RAISE NOTICE 'Could not drop policy "All users can view active pricing config": %', SQLERRM;
+    END;
+    
+    BEGIN
+        DROP POLICY IF EXISTS "Admins can manage pricing config" ON pricing_config;
+    EXCEPTION WHEN OTHERS THEN
+        RAISE NOTICE 'Could not drop policy "Admins can manage pricing config": %', SQLERRM;
+    END;
+END$$;
 
 -- Create corrected RLS policies for booking_price_details
 CREATE POLICY "Users can view booking price details they own" ON booking_price_details
@@ -177,9 +206,12 @@ CREATE POLICY "Users can insert booking price details for their bookings" ON boo
 
 -- Simplified admin policy without role check (since role was removed)
 CREATE POLICY "Users can view all booking price details" ON booking_price_details
-  FOR SELECT USING (true);  -- Simplified: allow all authenticated users to view
+  FOR SELECT USING (auth.uid() IS NOT NULL);  -- Simplified: allow all authenticated users to view
 
--- Simplified admin policy for pricing_config
+-- Create corrected RLS policies for pricing_config
+CREATE POLICY "All users can view active pricing config" ON pricing_config
+  FOR SELECT USING (is_active = true);
+
 CREATE POLICY "Users can manage pricing config" ON pricing_config
   FOR ALL USING (auth.uid() IS NOT NULL)  -- Simplified: allow all authenticated users
   WITH CHECK (auth.uid() IS NOT NULL);
