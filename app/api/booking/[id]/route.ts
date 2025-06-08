@@ -56,12 +56,23 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
   try {
     const supabase = createClient()
     const { id } = params
-    const body = await request.json()
+    
+    // Validate request body
+    let body
+    try {
+      body = await request.json()
+    } catch (error) {
+      console.error("Invalid JSON in request body:", error)
+      return NextResponse.json(
+        { error: "Invalid JSON in request body" },
+        { status: 400 }
+      )
+    }
 
     // プロジェクトの存在確認
     const { data: existingProject, error: fetchError } = await supabase
       .from("projects")
-      .select("id")
+      .select("id, nights")
       .eq("id", id)
       .single()
 
@@ -84,6 +95,22 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
     if (body.start_date && body.end_date) {
       const startDate = new Date(body.start_date)
       const endDate = new Date(body.end_date)
+      
+      // Validate dates
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        return NextResponse.json(
+          { error: "Invalid date format" },
+          { status: 400 }
+        )
+      }
+      
+      if (startDate >= endDate) {
+        return NextResponse.json(
+          { error: "End date must be after start date" },
+          { status: 400 }
+        )
+      }
+      
       const nights = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)))
       updateData.nights = nights
     }
@@ -98,8 +125,13 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
 
     if (updateError) {
       console.error("Error updating project:", updateError)
+      console.error("Update data:", updateData)
       return NextResponse.json(
-        { error: "Failed to update project" },
+        { 
+          error: "Failed to update project",
+          details: updateError.message,
+          code: updateError.code 
+        },
         { status: 500 }
       )
     }

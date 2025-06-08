@@ -63,12 +63,42 @@ export default function BookingDetailPage() {
     try {
       setIsSaving(true)
       
+      // Clean the data to only include updatable fields
+      const updateData = {
+        start_date: editForm.start_date,
+        end_date: editForm.end_date,
+        pax_total: editForm.pax_total,
+        pax_adults: editForm.pax_adults,
+        pax_adult_leaders: editForm.pax_adult_leaders,
+        pax_students: editForm.pax_students,
+        pax_children: editForm.pax_children,
+        pax_infants: editForm.pax_infants,
+        pax_babies: editForm.pax_babies,
+        guest_name: editForm.guest_name,
+        guest_email: editForm.guest_email,
+        guest_phone: editForm.guest_phone,
+        guest_org: editForm.guest_org,
+        purpose: editForm.purpose,
+        room_amount: editForm.room_amount,
+        pax_amount: editForm.pax_amount,
+        addon_amount: editForm.addon_amount,
+        subtotal_amount: editForm.subtotal_amount,
+        total_amount: editForm.total_amount,
+        notes: editForm.notes,
+        status: editForm.status,
+      }
+      
+      // Remove undefined values
+      Object.keys(updateData).forEach(key => 
+        updateData[key as keyof typeof updateData] === undefined && delete updateData[key as keyof typeof updateData]
+      )
+      
       const response = await fetch(`/api/booking/${bookingId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(editForm),
+        body: JSON.stringify(updateData),
       })
       
       if (!response.ok) {
