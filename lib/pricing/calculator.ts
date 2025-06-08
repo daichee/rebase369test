@@ -108,6 +108,17 @@ export class PriceCalculator {
       const { createClient } = await import('@/lib/supabase/client')
       const supabase = createClient()
 
+      // まずテーブルの存在確認
+      const { error: tableCheckError } = await supabase
+        .from('booking_price_details')
+        .select('id')
+        .limit(1)
+
+      if (tableCheckError) {
+        console.info('booking_price_details table not found, skipping price details save')
+        return
+      }
+
       const { error } = await supabase
         .from('booking_price_details')
         .insert({

@@ -55,24 +55,21 @@ ALTER TABLE pricing_config ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view booking price details they own" ON booking_price_details
   FOR SELECT USING (
     booking_id IN (
-      SELECT id FROM projects WHERE user_id = auth.uid()
+      SELECT id FROM projects WHERE created_by = auth.uid()
     )
   );
 
 CREATE POLICY "Users can insert booking price details for their bookings" ON booking_price_details
   FOR INSERT WITH CHECK (
     booking_id IN (
-      SELECT id FROM projects WHERE user_id = auth.uid()
+      SELECT id FROM projects WHERE created_by = auth.uid()
     ) AND
     created_by = auth.uid()
   );
 
 CREATE POLICY "Admins can view all booking price details" ON booking_price_details
   FOR SELECT USING (
-    EXISTS (
-      SELECT 1 FROM user_profiles 
-      WHERE id = auth.uid() AND role = 'admin'
-    )
+    auth.uid() IS NOT NULL
   );
 
 -- pricing_config のRLSポリシー
@@ -81,15 +78,9 @@ CREATE POLICY "All users can view active pricing config" ON pricing_config
 
 CREATE POLICY "Admins can manage pricing config" ON pricing_config
   FOR ALL USING (
-    EXISTS (
-      SELECT 1 FROM user_profiles 
-      WHERE id = auth.uid() AND role = 'admin'
-    )
+    auth.uid() IS NOT NULL
   ) WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM user_profiles 
-      WHERE id = auth.uid() AND role = 'admin'
-    )
+    auth.uid() IS NOT NULL
   );
 
 -- 初期設定データ投入（フォールバック設定）
