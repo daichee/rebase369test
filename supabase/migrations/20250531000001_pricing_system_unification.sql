@@ -75,42 +75,149 @@ CREATE INDEX IF NOT EXISTS idx_pricing_config_name ON pricing_config(config_name
 ALTER TABLE booking_price_details ENABLE ROW LEVEL SECURITY;
 ALTER TABLE pricing_config ENABLE ROW LEVEL SECURITY;
 
--- booking_price_details のRLSポリシー（安全チェック付き）
-DROP POLICY IF EXISTS "Users can view booking price details they own" ON booking_price_details;
-CREATE POLICY "Users can view booking price details they own" ON booking_price_details
-  FOR SELECT USING (
-    booking_id IN (
-      SELECT id FROM projects WHERE created_by = auth.uid()
-    )
-  );
+-- booking_price_details のRLSポリシー（強化された安全チェック付き）
+DO $$
+BEGIN
+    -- Drop existing policies with error handling
+    BEGIN
+        DROP POLICY IF EXISTS "Users can view booking price details they own" ON booking_price_details;
+    EXCEPTION WHEN OTHERS THEN
+        RAISE NOTICE 'Could not drop policy "Users can view booking price details they own": %', SQLERRM;
+    END;
+    
+    BEGIN
+        DROP POLICY IF EXISTS "Users can insert booking price details for their bookings" ON booking_price_details;
+    EXCEPTION WHEN OTHERS THEN
+        RAISE NOTICE 'Could not drop policy "Users can insert booking price details for their bookings": %', SQLERRM;
+    END;
+    
+    BEGIN
+        DROP POLICY IF EXISTS "Admins can view all booking price details" ON booking_price_details;
+    EXCEPTION WHEN OTHERS THEN
+        RAISE NOTICE 'Could not drop policy "Admins can view all booking price details": %', SQLERRM;
+    END;
+    
+    BEGIN
+        DROP POLICY IF EXISTS "Users can view all booking price details" ON booking_price_details;
+    EXCEPTION WHEN OTHERS THEN
+        RAISE NOTICE 'Could not drop policy "Users can view all booking price details": %', SQLERRM;
+    END;
+    
+    RAISE NOTICE 'Completed booking_price_details policy cleanup';
+END$$;
 
-DROP POLICY IF EXISTS "Users can insert booking price details for their bookings" ON booking_price_details;
-CREATE POLICY "Users can insert booking price details for their bookings" ON booking_price_details
-  FOR INSERT WITH CHECK (
-    booking_id IN (
-      SELECT id FROM projects WHERE created_by = auth.uid()
-    ) AND
-    created_by = auth.uid()
-  );
+-- Create booking_price_details policies only if they don't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE schemaname = 'public' 
+        AND tablename = 'booking_price_details' 
+        AND policyname = 'Users can view booking price details they own'
+    ) THEN
+        CREATE POLICY "Users can view booking price details they own" ON booking_price_details
+          FOR SELECT USING (
+            booking_id IN (
+              SELECT id FROM projects WHERE created_by = auth.uid()
+            )
+          );
+        RAISE NOTICE 'Created policy: Users can view booking price details they own';
+    ELSE
+        RAISE NOTICE 'Policy already exists: Users can view booking price details they own';
+    END IF;
+    
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE schemaname = 'public' 
+        AND tablename = 'booking_price_details' 
+        AND policyname = 'Users can insert booking price details for their bookings'
+    ) THEN
+        CREATE POLICY "Users can insert booking price details for their bookings" ON booking_price_details
+          FOR INSERT WITH CHECK (
+            booking_id IN (
+              SELECT id FROM projects WHERE created_by = auth.uid()
+            ) AND
+            created_by = auth.uid()
+          );
+        RAISE NOTICE 'Created policy: Users can insert booking price details for their bookings';
+    ELSE
+        RAISE NOTICE 'Policy already exists: Users can insert booking price details for their bookings';
+    END IF;
+    
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE schemaname = 'public' 
+        AND tablename = 'booking_price_details' 
+        AND policyname = 'Admins can view all booking price details'
+    ) THEN
+        CREATE POLICY "Admins can view all booking price details" ON booking_price_details
+          FOR SELECT USING (
+            auth.uid() IS NOT NULL
+          );
+        RAISE NOTICE 'Created policy: Admins can view all booking price details';
+    ELSE
+        RAISE NOTICE 'Policy already exists: Admins can view all booking price details';
+    END IF;
+END$$;
 
-DROP POLICY IF EXISTS "Admins can view all booking price details" ON booking_price_details;
-CREATE POLICY "Admins can view all booking price details" ON booking_price_details
-  FOR SELECT USING (
-    auth.uid() IS NOT NULL
-  );
+-- pricing_config のRLSポリシー（強化された安全チェック付き）
+DO $$
+BEGIN
+    -- Drop existing policies with error handling
+    BEGIN
+        DROP POLICY IF EXISTS "All users can view active pricing config" ON pricing_config;
+    EXCEPTION WHEN OTHERS THEN
+        RAISE NOTICE 'Could not drop policy "All users can view active pricing config": %', SQLERRM;
+    END;
+    
+    BEGIN
+        DROP POLICY IF EXISTS "Admins can manage pricing config" ON pricing_config;
+    EXCEPTION WHEN OTHERS THEN
+        RAISE NOTICE 'Could not drop policy "Admins can manage pricing config": %', SQLERRM;
+    END;
+    
+    BEGIN
+        DROP POLICY IF EXISTS "Users can manage pricing config" ON pricing_config;
+    EXCEPTION WHEN OTHERS THEN
+        RAISE NOTICE 'Could not drop policy "Users can manage pricing config": %', SQLERRM;
+    END;
+    
+    RAISE NOTICE 'Completed pricing_config policy cleanup';
+END$$;
 
--- pricing_config のRLSポリシー（安全チェック付き）
-DROP POLICY IF EXISTS "All users can view active pricing config" ON pricing_config;
-CREATE POLICY "All users can view active pricing config" ON pricing_config
-  FOR SELECT USING (is_active = true);
-
-DROP POLICY IF EXISTS "Admins can manage pricing config" ON pricing_config;
-CREATE POLICY "Admins can manage pricing config" ON pricing_config
-  FOR ALL USING (
-    auth.uid() IS NOT NULL
-  ) WITH CHECK (
-    auth.uid() IS NOT NULL
-  );
+-- Create pricing_config policies only if they don't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE schemaname = 'public' 
+        AND tablename = 'pricing_config' 
+        AND policyname = 'All users can view active pricing config'
+    ) THEN
+        CREATE POLICY "All users can view active pricing config" ON pricing_config
+          FOR SELECT USING (is_active = true);
+        RAISE NOTICE 'Created policy: All users can view active pricing config';
+    ELSE
+        RAISE NOTICE 'Policy already exists: All users can view active pricing config';
+    END IF;
+    
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE schemaname = 'public' 
+        AND tablename = 'pricing_config' 
+        AND policyname = 'Admins can manage pricing config'
+    ) THEN
+        CREATE POLICY "Admins can manage pricing config" ON pricing_config
+          FOR ALL USING (
+            auth.uid() IS NOT NULL
+          ) WITH CHECK (
+            auth.uid() IS NOT NULL
+          );
+        RAISE NOTICE 'Created policy: Admins can manage pricing config';
+    ELSE
+        RAISE NOTICE 'Policy already exists: Admins can manage pricing config';
+    END IF;
+END$$;
 
 -- 初期設定データ投入（フォールバック設定）
 INSERT INTO pricing_config (
