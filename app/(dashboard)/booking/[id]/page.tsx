@@ -63,35 +63,33 @@ export default function BookingDetailPage() {
     try {
       setIsSaving(true)
       
-      // Clean the data to only include updatable fields
-      const updateData = {
-        start_date: editForm.start_date,
-        end_date: editForm.end_date,
-        pax_total: editForm.pax_total,
-        pax_adults: editForm.pax_adults,
-        pax_adult_leaders: editForm.pax_adult_leaders,
-        pax_students: editForm.pax_students,
-        pax_children: editForm.pax_children,
-        pax_infants: editForm.pax_infants,
-        pax_babies: editForm.pax_babies,
-        guest_name: editForm.guest_name,
-        guest_email: editForm.guest_email,
-        guest_phone: editForm.guest_phone,
-        guest_org: editForm.guest_org,
-        purpose: editForm.purpose,
-        room_amount: editForm.room_amount,
-        pax_amount: editForm.pax_amount,
-        addon_amount: editForm.addon_amount,
-        subtotal_amount: editForm.subtotal_amount,
-        total_amount: editForm.total_amount,
-        notes: editForm.notes,
-        status: editForm.status,
-      }
+      // Clean the data to only include database-valid updatable fields
+      const updateData: Record<string, any> = {}
       
-      // Remove undefined values
-      Object.keys(updateData).forEach(key => 
-        updateData[key as keyof typeof updateData] === undefined && delete updateData[key as keyof typeof updateData]
-      )
+      // Only add fields that exist in the database schema and have valid values
+      const validFields = [
+        'start_date', 'end_date', 'pax_total', 'pax_adults', 'pax_adult_leaders',
+        'pax_students', 'pax_children', 'pax_infants', 'pax_babies',
+        'guest_name', 'guest_email', 'guest_phone', 'guest_org', 'purpose',
+        'room_amount', 'pax_amount', 'addon_amount', 'subtotal_amount',
+        'total_amount', 'notes', 'status'
+      ]
+      
+      validFields.forEach(field => {
+        const value = editForm[field as keyof typeof editForm]
+        if (value !== undefined && value !== null) {
+          updateData[field] = value
+        }
+      })
+      
+      // Handle room data separately if project_rooms exist
+      if (editForm.project_rooms && Array.isArray(editForm.project_rooms)) {
+        updateData.rooms = editForm.project_rooms.map(pr => ({
+          room_id: pr.room_id,
+          assigned_pax: pr.assigned_pax,
+          room_rate: pr.room_rate
+        }))
+      }
       
       const response = await fetch(`/api/booking/${bookingId}`, {
         method: 'PUT',

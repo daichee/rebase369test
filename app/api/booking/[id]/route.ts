@@ -69,6 +69,9 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
       )
     }
 
+    // Log incoming data for debugging
+    console.log("PUT /api/booking/[id] - Incoming body:", JSON.stringify(body, null, 2))
+
     // プロジェクトの存在確認
     const { data: existingProject, error: fetchError } = await supabase
       .from("projects")
@@ -90,8 +93,24 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
       )
     }
 
+    // Extract only valid project fields for update
+    const validProjectFields = [
+      'status', 'start_date', 'end_date', 'pax_total', 'pax_adults', 'pax_adult_leaders',
+      'pax_students', 'pax_children', 'pax_infants', 'pax_babies', 'guest_name',
+      'guest_email', 'guest_phone', 'guest_org', 'purpose', 'room_amount',
+      'pax_amount', 'addon_amount', 'subtotal_amount', 'total_amount', 'notes'
+    ]
+    
+    let updateData: ProjectUpdate = {}
+    
+    // Only include valid fields that exist in the request body
+    validProjectFields.forEach(field => {
+      if (body[field] !== undefined) {
+        updateData[field as keyof ProjectUpdate] = body[field]
+      }
+    })
+    
     // 宿泊日数再計算（日程が変更された場合）
-    let updateData: ProjectUpdate = { ...body }
     if (body.start_date && body.end_date) {
       const startDate = new Date(body.start_date)
       const endDate = new Date(body.end_date)
@@ -114,6 +133,8 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
       const nights = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)))
       updateData.nights = nights
     }
+    
+    console.log("Filtered updateData for projects table:", JSON.stringify(updateData, null, 2))
 
     // プロジェクト更新
     const { data: updatedProject, error: updateError } = await supabase
