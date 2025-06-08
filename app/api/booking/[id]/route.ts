@@ -62,36 +62,41 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
     try {
       body = await request.json()
     } catch (error) {
-      console.error("Invalid JSON in request body:", error)
+      console.error("BOOKING_EDIT_ERROR - Invalid JSON in request body:", error)
       return NextResponse.json(
         { error: "Invalid JSON in request body" },
         { status: 400 }
       )
     }
 
-    // Log incoming data for debugging
-    console.log("PUT /api/booking/[id] - Incoming body:", JSON.stringify(body, null, 2))
+    // Comprehensive logging for debugging
+    console.log("BOOKING_EDIT_DEBUG - PUT /api/booking/[id] Request:")
+    console.log("- Booking ID:", id)
+    console.log("- Request body keys:", Object.keys(body))
+    console.log("- Request body:", JSON.stringify(body, null, 2))
 
     // プロジェクトの存在確認
     const { data: existingProject, error: fetchError } = await supabase
       .from("projects")
-      .select("id, nights")
+      .select("*")  // Get full project to compare with updates
       .eq("id", id)
       .single()
 
     if (fetchError) {
+      console.error("BOOKING_EDIT_ERROR - Project fetch failed:", fetchError)
       if (fetchError.code === "PGRST116") {
         return NextResponse.json(
           { error: "Project not found" },
           { status: 404 }
         )
       }
-      console.error("Error checking project:", fetchError)
       return NextResponse.json(
         { error: "Failed to check project" },
         { status: 500 }
       )
     }
+
+    console.log("BOOKING_EDIT_DEBUG - Existing project data:", JSON.stringify(existingProject, null, 2))
 
     // Extract only valid project fields for update
     const validProjectFields = [
@@ -134,7 +139,81 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
       // PostgreSQL が自動的に (end_date - start_date) を計算する
     }
     
-    console.log("Filtered updateData for projects table:", JSON.stringify(updateData, null, 2))
+    console.log("BOOKING_EDIT_DEBUG - Filtered updateData for projects table:", JSON.stringify(updateData, null, 2))
+
+    // Critical PAX constraint validation BEFORE database update
+    const paxFields = {
+      pax_total: updateData.pax_total ?? existingProject.pax_total,
+      pax_adults: updateData.pax_adults ?? existingProject.pax_adults,
+      pax_adult_leaders: updateData.pax_adult_leaders ?? existingProject.pax_adult_leaders,
+      pax_students: updateData.pax_students ?? existingProject.pax_students,
+      pax_children: updateData.pax_children ?? existingProject.pax_children,
+      pax_infants: updateData.pax_infants ?? existingProject.pax_infants,
+      pax_babies: updateData.pax_babies ?? existingProject.pax_babies
+    }
+
+    console.log("BOOKING_EDIT_DEBUG - PAX validation fields:", paxFields)
+
+    // Calculate PAX sum for validation
+    const paxSum = (paxFields.pax_adults || 0) + 
+                   (paxFields.pax_adult_leaders || 0) + 
+                   (paxFields.pax_students || 0) + 
+                   (paxFields.pax_children || 0) + 
+                   (paxFields.pax_infants || 0) + 
+                   (paxFields.pax_babies || 0)
+
+    console.log("BOOKING_EDIT_DEBUG - PAX calculation:")
+    console.log("- pax_total:", paxFields.pax_total)
+    console.log("- calculated sum:", paxSum)
+    console.log("- constraint validation:", paxFields.pax_total === paxSum)
+
+    // Validate PAX constraint (must match database constraint)
+    if (paxFields.pax_total <= 0) {
+      console.error("BOOKING_EDIT_ERROR - PAX constraint failed: pax_total must be > 0")
+      return NextResponse.json(
+        { 
+          error: "PAX validation failed: Total guests must be greater than 0",
+          details: `pax_total: ${paxFields.pax_total}`
+        },
+        { status: 400 }
+      )
+    }
+
+    if (paxFields.pax_total !== paxSum) {
+      console.error("BOOKING_EDIT_ERROR - PAX constraint failed: pax_total ≠ sum of breakdown")
+      return NextResponse.json(
+        { 
+          error: "PAX validation failed: Total guests must equal sum of breakdown",
+          details: `pax_total: ${paxFields.pax_total}, breakdown sum: ${paxSum}`,
+          breakdown: paxFields
+        },
+        { status: 400 }
+      )
+    }
+
+    // Data type validation for numeric fields
+    const numericFields = ['room_amount', 'pax_amount', 'addon_amount', 'subtotal_amount', 'total_amount']
+    for (const field of numericFields) {
+      if (updateData[field as keyof ProjectUpdate] !== undefined) {
+        const value = updateData[field as keyof ProjectUpdate]
+        if (typeof value === 'string' && !isNaN(Number(value))) {
+          // Convert string numbers to numbers
+          updateData[field as keyof ProjectUpdate] = Number(value)
+          console.log(`BOOKING_EDIT_DEBUG - Converted ${field} from string to number: ${value}`)
+        } else if (typeof value !== 'number' && value !== null) {
+          console.error(`BOOKING_EDIT_ERROR - Invalid type for ${field}: ${typeof value}`)
+          return NextResponse.json(
+            { 
+              error: `Invalid data type for ${field}`,
+              details: `Expected number, got ${typeof value}`
+            },
+            { status: 400 }
+          )
+        }
+      }
+    }
+
+    console.log("BOOKING_EDIT_DEBUG - Final updateData after validation:", JSON.stringify(updateData, null, 2))
 
     // プロジェクト更新
     const { data: updatedProject, error: updateError } = await supabase
@@ -145,17 +224,27 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
       .single()
 
     if (updateError) {
-      console.error("Error updating project:", updateError)
-      console.error("Update data:", updateData)
+      console.error("BOOKING_EDIT_ERROR - Database update failed:", {
+        error: updateError,
+        errorCode: updateError.code,
+        errorMessage: updateError.message,
+        errorDetails: updateError.details,
+        errorHint: updateError.hint,
+        updateData: updateData
+      })
       return NextResponse.json(
         { 
           error: "Failed to update project",
           details: updateError.message,
-          code: updateError.code 
+          code: updateError.code,
+          hint: updateError.hint,
+          updateData: updateData
         },
         { status: 500 }
       )
     }
+
+    console.log("BOOKING_EDIT_DEBUG - Project updated successfully:", JSON.stringify(updatedProject, null, 2))
 
     // 部屋割り当て更新（部屋情報が含まれている場合）
     if (body.rooms && Array.isArray(body.rooms)) {
