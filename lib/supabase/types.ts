@@ -317,6 +317,28 @@ export type Database = {
           is_active?: boolean
         }
       }
+      user_profiles: {
+        Row: {
+          id: string
+          email: string
+          name: string | null
+          first_login: boolean | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id: string
+          email: string
+          name?: string | null
+          first_login?: boolean | null
+        }
+        Update: {
+          id?: string
+          email?: string
+          name?: string | null
+          first_login?: boolean | null
+        }
+      }
     }
     Views: {
       calculated_rates: {
