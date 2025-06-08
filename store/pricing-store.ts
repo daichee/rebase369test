@@ -35,18 +35,75 @@ export interface PricingCalculation {
   }
 }
 
+/**
+ * Pricing store state interface for dynamic pricing rule management
+ * 
+ * Features:
+ * - Rule-based pricing system with multiple rule types
+ * - Seasonal and day-of-week pricing variations
+ * - Special event and add-on pricing rules
+ * - Priority-based rule application
+ * - Real-time calculation and preview
+ * 
+ * Rule Types:
+ * - seasonal: Date range-based pricing adjustments
+ * - weekday: Day-of-week specific pricing
+ * - special: Event-based or custom pricing rules
+ * - addon: Service and amenity pricing
+ * 
+ * Calculation Features:
+ * - Multiplier and fixed amount support
+ * - Rule priority and conflict resolution
+ * - Detailed pricing breakdown with applied rules
+ * - Base price calculation with modifiers
+ */
 interface PricingState {
   rules: PricingRule[]
   isLoading: boolean
   error: string | null
 
   // Actions
+  /**
+   * Sets the complete list of pricing rules
+   * 
+   * @param rules - Array of PricingRule objects
+   */
   setRules: (rules: PricingRule[]) => void
+  
+  /**
+   * Adds a new pricing rule to the store
+   * 
+   * @param rule - Complete PricingRule object
+   */
   addRule: (rule: PricingRule) => void
+  
+  /**
+   * Updates an existing pricing rule
+   * 
+   * @param id - Rule ID to update
+   * @param updates - Partial PricingRule object with changes
+   */
   updateRule: (id: string, updates: Partial<PricingRule>) => void
+  
+  /**
+   * Removes a pricing rule from the store
+   * 
+   * @param id - Rule ID to delete
+   */
   deleteRule: (id: string) => void
 
+  /**
+   * Sets loading state for async operations
+   * 
+   * @param loading - Loading state boolean
+   */
   setLoading: (loading: boolean) => void
+  
+  /**
+   * Sets error state with optional error message
+   * 
+   * @param error - Error message string or null to clear
+   */
   setError: (error: string | null) => void
 
   // Calculations

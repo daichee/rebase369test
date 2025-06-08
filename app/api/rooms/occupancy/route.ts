@@ -1,6 +1,45 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 
+/**
+ * Retrieves room occupancy statistics and utilization data for analytics
+ * 
+ * @param request - Next.js request object containing analysis parameters
+ * @returns JSON response with detailed occupancy statistics grouped by specified criteria
+ * 
+ * Required Query Parameters:
+ * - start_date: Analysis period start date (ISO string format)
+ * - end_date: Analysis period end date (ISO string format)
+ * 
+ * Optional Query Parameters:
+ * - room_id: Analyze specific room only
+ * - floor: Analyze specific floor only
+ * - group_by: Grouping method - "room" (default), "floor", or "overall"
+ * 
+ * Analysis Features:
+ * - Calculates occupancy rates for each room/floor/overall
+ * - Identifies peak usage periods and patterns
+ * - Provides booking counts and guest metrics
+ * - Includes revenue and utilization statistics
+ * 
+ * Response Format (varies by group_by parameter):
+ * {
+ *   occupancyData: {
+ *     [groupKey]: {
+ *       totalNights: number,      // Total available room-nights
+ *       bookedNights: number,     // Total booked room-nights
+ *       occupancyRate: number,    // Percentage utilization
+ *       bookingCount: number,     // Number of bookings
+ *       totalGuests: number,      // Total guest count
+ *       revenue: number           // Total revenue generated
+ *     }
+ *   },
+ *   summary: Object,              // Aggregated statistics
+ *   period: Object                // Analysis period info
+ * }
+ * 
+ * Error Responses: 400 for missing/invalid parameters, 500 for server errors
+ */
 export async function GET(request: NextRequest) {
   try {
     const supabase = createClient()

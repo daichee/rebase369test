@@ -52,9 +52,45 @@ export interface ConflictInfo {
   overlapDays: string[]
 }
 
+/**
+ * Advanced availability checker with intelligent conflict resolution and optimization
+ * 
+ * Features:
+ * - Real-time availability checking with conflict detection
+ * - Alternative date and room suggestions
+ * - Occupancy rate calculation and analytics
+ * - Performance metrics and optimization scoring
+ * - Double-booking prevention with detailed validation
+ * 
+ * Optimization Strategies:
+ * - Smart room assignment based on capacity and preferences
+ * - Alternative date suggestions with scoring algorithms
+ * - Split booking recommendations for complex requirements
+ * - Room upgrade suggestions when suitable rooms are available
+ */
 export class AvailabilityChecker {
   /**
    * 空室状況チェック
+   * Comprehensive availability check with intelligent suggestions and metrics
+   * 
+   * @param request - Availability search parameters (dates, guest count, exclusions)
+   * @param rooms - Available room inventory to search
+   * @param projects - Existing booking projects to check conflicts against
+   * @returns AvailabilityResult - Complete availability analysis with suggestions
+   * 
+   * Analysis Process:
+   * 1. Filters out cancelled/excluded bookings
+   * 2. Identifies conflicting projects in the date range
+   * 3. Determines fully available rooms matching requirements
+   * 4. Finds partially available rooms with conflict details
+   * 5. Calculates occupancy rates for the period
+   * 6. Generates intelligent alternative suggestions
+   * 7. Provides performance metrics and optimization scores
+   * 
+   * Performance Features:
+   * - Tracks search execution time
+   * - Counts evaluated rooms and generated suggestions
+   * - Calculates optimization scores for recommendation quality
    */
   static checkAvailability(request: AvailabilityRequest, rooms: Room[], projects: Project[]): AvailabilityResult {
     const startTime = Date.now()
@@ -101,6 +137,30 @@ export class AvailabilityChecker {
 
   /**
    * ダブルブッキング検証
+   * Comprehensive booking validation with conflict detection and error reporting
+   * 
+   * @param booking - Booking data to validate (partial object for flexibility)
+   * @param existingBookings - Current bookings to check conflicts against
+   * @returns Validation result with conflict details and error messages
+   * 
+   * Validation Checks:
+   * 1. Required field validation (checkIn, checkOut, roomId)
+   * 2. Date logic validation (checkOut > checkIn, no past dates)
+   * 3. Double-booking conflict detection
+   * 4. Overlap period calculation with detailed conflict information
+   * 
+   * Conflict Detection:
+   * - Excludes cancelled bookings and self-references (for updates)
+   * - Checks for same room conflicts in overlapping date ranges
+   * - Calculates exact overlap days for detailed conflict reporting
+   * - Provides conflict booking information for resolution
+   * 
+   * Return Format:
+   * {
+   *   isValid: boolean,           // Overall validation result
+   *   conflicts: ConflictInfo[],  // Detailed conflict information
+   *   errors: string[]            // Human-readable error messages
+   * }
    */
   static validateBooking(
     booking: Partial<Booking>,

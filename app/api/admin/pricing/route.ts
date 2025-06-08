@@ -8,7 +8,31 @@ import { PriceCalculator } from "@/lib/pricing/calculator"
  * 管理者による動的料金設定の管理を担当
  */
 
-// GET /api/admin/pricing - 現在の料金設定取得
+/**
+ * Retrieves current pricing configuration for admin management
+ * 
+ * @returns JSON response with editable pricing configuration
+ * 
+ * Security:
+ * - Requires user authentication
+ * - Requires admin role authorization
+ * 
+ * Response Format:
+ * {
+ *   personalRates: Object,    // Guest pricing by age group and day type
+ *   roomRates: Object,        // Room pricing by room type
+ *   addonRates: Object,       // Add-on service pricing
+ *   peakMonths: number[],     // Peak season months
+ *   configName: string,       // Configuration identifier
+ *   version: string,          // Version information
+ *   lastUpdated: string       // Last modification timestamp
+ * }
+ * 
+ * Error Responses:
+ * - 401: Authentication required
+ * - 403: Admin privileges required
+ * - 500: Server error during config retrieval
+ */
 export async function GET() {
   try {
     const supabase = createClient()
@@ -43,7 +67,45 @@ export async function GET() {
   }
 }
 
-// PUT /api/admin/pricing - 料金設定更新・適用
+/**
+ * Updates and applies new pricing configuration
+ * 
+ * @param request - Next.js request object containing new pricing configuration
+ * @returns JSON response confirming successful update or error details
+ * 
+ * Security:
+ * - Requires user authentication
+ * - Requires admin role authorization
+ * 
+ * Request Body Format:
+ * {
+ *   personalRates: {
+ *     shared: { adult: {...}, student: {...}, ... },
+ *     private: { adult: {...}, student: {...}, ... }
+ *   },
+ *   roomRates: { large: number, medium_a: number, ... },
+ *   addonRates: { meal: {...}, facility: {...}, equipment: {...} },
+ *   peakMonths: number[],
+ *   configName: string,
+ *   version: string
+ * }
+ * 
+ * Validation:
+ * - All rate values must be non-negative numbers
+ * - Peak months must be valid (1-12)
+ * - Configuration structure must match expected schema
+ * 
+ * Side Effects:
+ * - Saves configuration to database
+ * - Clears pricing calculation cache
+ * - Updates configuration version and timestamp
+ * 
+ * Error Responses:
+ * - 401: Authentication required
+ * - 403: Admin privileges required
+ * - 400: Invalid configuration data
+ * - 500: Server error during update
+ */
 export async function PUT(request: NextRequest) {
   try {
     const supabase = createClient()

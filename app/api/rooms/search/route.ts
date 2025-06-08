@@ -1,6 +1,37 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 
+/**
+ * Searches for available rooms based on date range and guest requirements
+ * 
+ * @param request - Next.js request object containing search criteria
+ * @returns JSON response with available rooms and their availability status
+ * 
+ * Required Query Parameters:
+ * - start_date: Check-in date (ISO string format)
+ * - end_date: Check-out date (ISO string format)
+ * - guest_count: Number of guests (positive integer)
+ * 
+ * Optional Query Parameters:
+ * - room_type: Filter by specific room type
+ * - usage_type: Filter by usage type (shared/private)
+ * - floor: Filter by specific floor number
+ * 
+ * Search Logic:
+ * 1. Retrieves rooms with capacity >= guest_count
+ * 2. Filters by optional criteria (type, usage, floor)
+ * 3. Checks availability against existing bookings in date range
+ * 4. Returns rooms with availability status and conflict information
+ * 
+ * Response Format:
+ * {
+ *   available: Room[],    // Fully available rooms
+ *   partially: Room[],    // Rooms with some availability
+ *   unavailable: Room[]   // Fully booked rooms
+ * }
+ * 
+ * Error Responses: 400 for missing/invalid parameters, 500 for server errors
+ */
 export async function GET(request: NextRequest) {
   try {
     const supabase = createClient()

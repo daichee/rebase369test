@@ -2,6 +2,28 @@ import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { ApiErrorHandler, ValidationUtils } from "@/lib/utils/api-error-handler"
 
+/**
+ * Retrieves filtered list of rooms with comprehensive filtering options
+ * 
+ * @param request - Next.js request object containing filter parameters
+ * @returns JSON response with filtered room data or error message
+ * 
+ * Query Parameters:
+ * - floor: Filter by floor number (e.g., "2", "3")
+ * - room_type: Filter by room type (large, medium_a, medium_b, small_a, small_b, small_c)
+ * - usage_type: Filter by usage type (shared, private)
+ * - is_active: Filter by active status (true/false)
+ * - min_capacity: Minimum room capacity (positive integer)
+ * - max_capacity: Maximum room capacity (positive integer)
+ * 
+ * Validation Rules:
+ * - Capacity parameters must be positive integers
+ * - min_capacity cannot be greater than max_capacity
+ * - Boolean parameters are validated for proper format
+ * 
+ * Response: Array of room objects matching the filter criteria
+ * Error Responses: 400 for validation errors, 500 for server errors
+ */
 export async function GET(request: NextRequest) {
   try {
     const supabase = createClient()
