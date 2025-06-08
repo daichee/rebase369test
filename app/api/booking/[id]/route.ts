@@ -110,7 +110,7 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
       }
     })
     
-    // 宿泊日数再計算（日程が変更された場合）
+    // 日程バリデーション（日程が変更された場合）
     if (body.start_date && body.end_date) {
       const startDate = new Date(body.start_date)
       const endDate = new Date(body.end_date)
@@ -130,8 +130,8 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
         )
       }
       
-      const nights = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)))
-      updateData.nights = nights
+      // NOTE: nights は GENERATED ALWAYS カラムのため手動設定不可
+      // PostgreSQL が自動的に (end_date - start_date) を計算する
     }
     
     console.log("Filtered updateData for projects table:", JSON.stringify(updateData, null, 2))
@@ -180,8 +180,8 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
           room_id: room.room_id,
           assigned_pax: room.assigned_pax,
           room_rate: room.room_rate,
-          nights: updateData.nights || updatedProject.nights,
-          amount: room.room_rate * (updateData.nights || updatedProject.nights),
+          nights: updatedProject.nights, // 更新されたプロジェクトから取得
+          amount: room.room_rate * updatedProject.nights,
         }))
 
         const { error: roomError } = await supabase
